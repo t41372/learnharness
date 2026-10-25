@@ -42,6 +42,7 @@ import { MermaidError } from "@/components/mermaid-error";
 import { blurAfterPointerClick } from "@/components/focus-hygiene";
 import { chartSize, useSessionMermaid } from "@/components/session-overlay";
 import { Hint } from "@/components/ui/hint";
+import { useT } from "@/components/i18n";
 
 // ─── The one affordance: the hover-reveal corner copy ────────────────────────
 
@@ -144,6 +145,7 @@ function MermaidInline({ chart }: { chart: string }) {
 	const [attempt, setAttempt] = useState(0);
 	const overlay = useSessionMermaid();
 	const incomplete = useIsCodeFenceIncomplete();
+	const { t } = useT("artifacts");
 	// The font-parity cap (owner rule, 2026-09-19): the house CSS
 	// (`max-width: 100% !important`) overrides mermaid's own natural-size cap,
 	// so a chart would otherwise stretch to the full column and render its
@@ -199,17 +201,17 @@ function MermaidInline({ chart }: { chart: string }) {
 				dangerouslySetInnerHTML={{ __html: svg ?? "" }}
 			/>
 			<div className="absolute top-0 right-0 flex items-start gap-0.5">
-				<CopyCorner getText={() => chart} label="Copy diagram source" />
+				<CopyCorner getText={() => chart} label={t("mdBlocks.copyDiagram")} />
 				{overlay && (
 					<Hint
 					// Full-screen overlay copy (tooltip wave) — "session view" was
 					// internal direction-speak for the same thing.
-					label="Open full-screen"
+					label={t("mdBlocks.openFullScreen")}
 					side="bottom"
 				>
 <button
 						type="button"
-						aria-label="Expand diagram"
+						aria-label={t("mdBlocks.expandDiagram")}
 						data-testid="md-mermaid-expand"
 												className="flex size-6 items-center justify-center rounded-md text-muted-foreground/70 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover/md:opacity-100"
 						onClick={(e) => {
@@ -235,6 +237,7 @@ function MermaidInline({ chart }: { chart: string }) {
  *  (data-streamdown="code-block"…). */
 export function MarkdownCode(props: ComponentProps<"code"> & ExtraProps) {
 	const incomplete = useIsCodeFenceIncomplete();
+	const { t } = useT("artifacts");
 	const { children, className, node, ...rest } = props;
 
 	// Inline code: no data-block (the pre handler stamps block fences only).
@@ -257,7 +260,7 @@ export function MarkdownCode(props: ComponentProps<"code"> & ExtraProps) {
 	const lineNumbers = !/\bnoLineNumbers\b/.test(meta);
 	return (
 		<div className="group/md relative" data-testid="md-code">
-			<CopyCorner className="absolute top-1.5 right-2 z-10" getText={() => source} label="Copy code" />
+			<CopyCorner className="absolute top-1.5 right-2 z-10" getText={() => source} label={t("mdBlocks.copyCode")} />
 			<CodeBlock
 				code={source}
 				language={language}
@@ -376,6 +379,7 @@ export function MarkdownBlockquote(props: ComponentProps<"blockquote"> & ExtraPr
 export function MarkdownTable(props: ComponentProps<"table"> & ExtraProps) {
 	const { children, node, ...rest } = props;
 	const ref = useRef<HTMLTableElement>(null);
+	const { t } = useT("artifacts");
 	return (
 		<div className="group/md relative my-4" data-testid="md-table">
 			<CopyCorner
@@ -385,7 +389,7 @@ export function MarkdownTable(props: ComponentProps<"table"> & ExtraProps) {
 				// cells it hovers over; the scroll container stays under it (the
 				// corner is fixed to the wrapper, not the scrolling table).
 				className="absolute top-1 right-1 z-10"
-				label="Copy table"
+				label={t("mdBlocks.copyTable")}
 				getText={() => (ref.current ? tableDataToMarkdown(extractTableDataFromElement(ref.current)) : "")}
 			/>
 			<div className="overflow-x-auto">
@@ -432,16 +436,20 @@ export function MathDisplay(props: ComponentProps<"span"> & ExtraProps) {
 		// nor copies; everything else works). display:block gives the corner a
 		// real box; z-10 keeps it above the equation spans it overlays.
 		<span className="group/md relative block z-0" data-testid="md-math">
-			<CopyCorner
-				className="absolute top-0 right-0 z-10"
-				label="Copy equation source"
-				getText={() => ref.current?.querySelector("annotation")?.textContent ?? ""}
-			/>
+			<EquationCopyCorner getText={() => ref.current?.querySelector("annotation")?.textContent ?? ""} />
 			<span ref={ref} className={className} {...rest}>
 				{children}
 			</span>
 		</span>
 	);
+}
+
+/** The equation's corner, labelled — its own component so the translation
+ *  hook mounts per display equation only, not on every pass-through span
+ *  (KaTeX emits hundreds). */
+function EquationCopyCorner({ getText }: { getText: () => string }) {
+	const { t } = useT("artifacts");
+	return <CopyCorner className="absolute top-0 right-0 z-10" label={t("mdBlocks.copyEquation")} getText={getText} />;
 }
 
 // ─── The stable override set (module identity: Streamdown is memoized) ────────

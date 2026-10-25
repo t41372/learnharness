@@ -7,6 +7,7 @@ import { InvertDiscIcon } from "@/components/artifacts/invert-disc";
 import { ChatActionsContext } from "@/components/chat";
 import { downloadFile, slugFilename } from "@/components/artifacts/download";
 import { DispatchCard } from "@/components/artifacts/dispatch-card";
+import { useT } from "@/components/i18n";
 import type { ArtifactPartProps, DemoResult } from "@/src/core";
 
 /**
@@ -59,6 +60,10 @@ export interface DemoBridgeState {
 
 export const INITIAL_DEMO_BRIDGE_STATE: DemoBridgeState = { height: null, error: null };
 
+/** The reducer's placeholder for a message-less error — state (it also
+ *  rides the send-to-teacher text); the chip shows it translated. */
+const UNKNOWN_DEMO_ERROR = "unknown error";
+
 const MIN_HEIGHT = 80;
 const MAX_HEIGHT = 2400;
 
@@ -72,7 +77,7 @@ export function reduceDemoBridgeState(state: DemoBridgeState, data: unknown): De
 		return height === state.height ? state : { ...state, height };
 	}
 	if (message.type === "demo-error") {
-		const text = typeof message.message === "string" && message.message.trim() ? message.message : "unknown error";
+		const text = typeof message.message === "string" && message.message.trim() ? message.message : UNKNOWN_DEMO_ERROR;
 		return text === state.error ? state : { ...state, error: text };
 	}
 	return state;
@@ -100,11 +105,12 @@ export function DemoOutputCard({
 	messageId?: string;
 	initialInverted?: boolean;
 }) {
+	const { t } = useT("artifacts");
 	const result = output as DemoResult | undefined;
 	if (!result || typeof result.html !== "string" || typeof result.title !== "string") {
 		return (
 			<div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-				Demo completed, but the result could not be displayed.
+				{t("demoCard.unreadable")}
 			</div>
 		);
 	}
@@ -113,10 +119,10 @@ export function DemoOutputCard({
 		return (
 			<div className="rounded-xl border bg-card p-4 text-card-foreground" data-testid="demo-card-failed">
 				<div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-					Interactive demo
-					<span className="rounded bg-red-500/15 px-1.5 py-0.5 text-red-500">failed</span>
+					{t("demoCard.failedTitle")}
+					<span className="rounded bg-red-500/15 px-1.5 py-0.5 text-red-500">{t("shared.failed")}</span>
 				</div>
-				<p className="mt-2 text-sm text-muted-foreground">{result.notes ?? "The demo could not be built."}</p>
+				<p className="mt-2 text-sm text-muted-foreground">{result.notes ?? t("demoCard.buildFailed")}</p>
 			</div>
 		);
 	}
@@ -136,6 +142,7 @@ function DemoFrame({
 	messageId?: string;
 	initialInverted?: boolean;
 }) {
+	const { t } = useT("artifacts");
 	const actions = useContext(ChatActionsContext);
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 	const [state, setState] = useState<DemoBridgeState>(INITIAL_DEMO_BRIDGE_STATE);
@@ -177,7 +184,7 @@ function DemoFrame({
 			<div className="flex items-center justify-between gap-2">
 				<div className="flex min-w-0 items-baseline gap-2">
 					<span className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-						interactive demo
+						{t("demoCard.title")}
 					</span>
 					<span className="truncate text-xs font-medium tracking-wide text-foreground">{title}</span>
 				</div>
@@ -185,14 +192,14 @@ function DemoFrame({
 					<Toggle
 						checked={inverted}
 						onChange={toggleInverted}
-						label="Invert demo brightness"
-						title="Invert colors"
+						label={t("demoCard.invert")}
+						title={t("shared.invertColors")}
 						discIcon={<InvertDiscIcon className="size-3" />}
 					/>
 					<button
 						type="button"
-						aria-label="Download demo as HTML"
-						title="Download as HTML"
+						aria-label={t("demoCard.downloadAria")}
+						title={t("demoCard.download")}
 						onClick={() => downloadFile(`${slugFilename(title)}.html`, html, "text/html")}
 						data-testid="demo-download"
 						className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -205,6 +212,7 @@ function DemoFrame({
 				<DemoErrorChip
 					title={title}
 					message={state.error}
+					// The send text is the learner's message to the teacher (model-facing) — English.
 					onSend={actions ? () => actions.sendText(`The demo "${title}" threw an error: ${state.error}`) : undefined}
 				/>
 			)}
@@ -245,14 +253,16 @@ export function DemoErrorChip({
 	message: string;
 	onSend?: () => void;
 }) {
+	const { t } = useT("artifacts");
+	const shown = message === UNKNOWN_DEMO_ERROR ? t("demoCard.error.unknown") : message;
 	return (
 		<div
 			className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-500"
 			data-testid="demo-error-chip"
 		>
-			<span className="font-medium">This demo threw an error</span>
-			<span className="min-w-0 flex-1 truncate font-mono text-xs" title={message}>
-				{message}
+			<span className="font-medium">{t("demoCard.error.title")}</span>
+			<span className="min-w-0 flex-1 truncate font-mono text-xs" title={shown}>
+				{shown}
 			</span>
 			{onSend && (
 				<button
@@ -261,7 +271,7 @@ export function DemoErrorChip({
 					className="rounded-md border border-red-500/40 px-2 py-1 text-xs font-medium hover:bg-red-500/15"
 					data-testid="demo-error-send"
 				>
-					Send to teacher
+					{t("demoCard.error.send")}
 				</button>
 			)}
 		</div>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2Icon, MicIcon } from "lucide-react";
 import { useSettingsDialog } from "@/components/settings/settings-dialog";
 import { Hint } from "@/components/ui/hint";
+import { useT, type TFunction } from "@/components/i18n";
 
 /**
  * Voice dictation — the cloud engine (STT wave 1, 2026-09-17).
@@ -110,9 +111,34 @@ export const DEEPGRAM_KEY_ID = "DEEPGRAM_API_KEY";
 /** The client-authored KEYLESS line (zero-keys wave, owner 2026-09-25):
  * the token route's raw 503 message is dev-speak ("add it to auth.json
  * (desktop) or .env.local (dev)") — the surface says the short truth
- * instead. Exported for pins; the errored idle button's click recognizes
- * it and deep-links Settings → Keys → the Deepgram row. */
+ * instead. Exported for pins; the start path recognizes it as the
+ * `keyless` error, whose errored idle button's click deep-links Settings
+ * → Keys → the Deepgram row. */
 export const DICTATION_KEYLESS = "Dictation needs a Deepgram key";
+
+/** A terminal failure (i18n wave, 2026-10-25): an id per client-authored
+ *  line — the bar renders it in the interface language — and `message`
+ *  for text the browser or the token route wrote, shown as given. */
+export type DictationError =
+	| { kind: "keyless" }
+	| { kind: "micDenied" }
+	| { kind: "micUnavailable" }
+	| { kind: "tokenUnavailable" }
+	| { kind: "reconnectFailed" }
+	| { kind: "connectionLost"; code: number }
+	| { kind: "message"; text: string };
+
+/** The line the bar shows for a failure. */
+function dictationErrorText(error: DictationError, t: TFunction<"artifacts">): string {
+	switch (error.kind) {
+		case "connectionLost":
+			return t("dictation.error.connectionLost", { code: error.code });
+		case "message":
+			return error.text;
+		default:
+			return t(`dictation.error.${error.kind}`);
+	}
+}
 
 /** Mint a fresh short-lived token (the route holds the real key
  *  server-side). Module-level: the start path's warm cache and the
@@ -250,7 +276,7 @@ export type DictationPhase = "idle" | "connecting" | "recording" | "stopping";
 export type Dictation = {
 	phase: DictationPhase;
 	/** Terminal-state explanation, shown inside the wide button (cleared on the next start). */
-	error: string | null;
+	error: DictationError | null;
 	/** Latest observed RMS, 0..1 — sampled by the meter's own tick, never reset. */
 	levelRef: { current: number };
 	/** Not idle — from the click until the stop completes (the optimistic window). */
@@ -286,7 +312,7 @@ export type Dictation = {
  */
 export function useDictation({ append }: { append: (text: string) => void }): Dictation {
 	const [phase, setPhase] = useState<DictationPhase>("idle");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<DictationError | null>(null);
 	/** Latest RMS from the worklet — the meter samples this (dictate pattern). */
 	const levelRef = useRef(0);
 	/** The page's fallback append — kept fresh per render so a mid-recording
@@ -412,12 +438,12 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 						})
 						.catch(() => {
 							if (gen === genRef.current) {
-								setError("Deepgram reconnect failed");
+								setError({ kind: "reconnectFailed" });
 								cleanup();
 							}
 						});
 				} else {
-					setError(`Deepgram connection lost (${ev.code})`);
+					setError({ kind: "connectionLost", code: ev.code });
 					cleanup();
 				}
 			});
@@ -486,13 +512,13 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 			worklet.connect(ctx.destination);
 		} catch (e) {
 			if (gen !== genRef.current) return;
-			const msg =
+			setError(
 				e instanceof DOMException && (e.name === "NotAllowedError" || e.name === "SecurityError")
-					? "Microphone permission denied"
+					? { kind: "micDenied" }
 					: e instanceof Error
-						? e.message
-						: "mic unavailable";
-			setError(msg);
+						? { kind: "message", text: e.message }
+						: { kind: "micUnavailable" },
+			);
 			cleanup();
 			return;
 		}
@@ -502,7 +528,13 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 			token = await tokenPromise;
 		} catch (e) {
 			if (gen !== genRef.current) return;
-			setError(e instanceof Error ? e.message : "token unavailable");
+			setError(
+				!(e instanceof Error)
+					? { kind: "tokenUnavailable" }
+					: e.message === DICTATION_KEYLESS
+						? { kind: "keyless" }
+						: { kind: "message", text: e.message },
+			);
 			cleanup();
 			return;
 		}
@@ -624,11 +656,13 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 export function DictationBar({ dictation }: { dictation: Dictation }) {
 	const { phase, error, levelRef, toggle, active, clearError } = dictation;
 	const { open: openSettings } = useSettingsDialog();
+	const { t } = useT("artifacts");
+	const errorText = error ? dictationErrorText(error, t) : null;
 	/** The keyless click (zero-keys wave, owner dictation trio): the errored
 	 *  idle button deep-links Settings → Keys → the Deepgram row and clears
 	 *  the error — the surface is clean when the user returns. Any other
 	 *  error keeps the old behavior (click = retry, which clears). */
-	const keyless = error === DICTATION_KEYLESS;
+	const keyless = error?.kind === "keyless";
 	const [levels, setLevels] = useState<number[]>(() => new Array(METER_CELLS).fill(0));
 	const recording = phase === "recording" || phase === "stopping";
 	/** Adaptive cell count (owner round 2): derived from the meter's
@@ -678,8 +712,8 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 				// full reveal (the keyless line KEEPS "Deepgram" — owner overrule:
 				// it's the Keys row label, the truth the user needs). Otherwise the
 				// quiet label + the live ⌘D binding.
-				label={error ?? "Dictate"}
-				action={error ? undefined : "toggle-dictation"}
+				label={errorText ?? t("dictation.dictate")}
+				action={errorText ? undefined : "toggle-dictation"}
 				side="top"
 			>
 				<button
@@ -692,14 +726,14 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 							toggle();
 						}
 					}}
-					aria-label={error ? `Dictation failed: ${error}` : "Start dictation"}
+					aria-label={errorText ? t("dictation.failedAria", { reason: errorText }) : t("dictation.start")}
 					data-testid="dictation-toggle"
 				// Same blurring as the floating chrome (owner, fix wave round 3),
 			// but lower opacity — the mic stays quieter than the model pills.
 			className="flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/50 bg-card/50 text-xs text-muted-foreground/70 shadow-lg backdrop-blur transition-colors hover:border-border hover:text-muted-foreground"
 			>
 					<MicIcon className="size-3.5" />
-					<span className="max-w-full truncate">{error ?? "Dictate"}</span>
+					<span className="max-w-full truncate">{errorText ?? t("dictation.dictate")}</span>
 				</button>
 			</Hint>
 		);
@@ -710,14 +744,14 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 			<Hint
 				// The owner flagged this copy good ("Stop dictation (Esc)") —
 				// kept verbatim; only the machinery moved to the styled tooltip.
-				label="Stop dictation (Esc)"
+				label={t("dictation.stopHint")}
 				side="top"
 			>
 				<button
 					type="button"
 					onClick={toggle}
 					disabled={phase === "stopping"}
-					aria-label="Stop dictation"
+					aria-label={t("dictation.stop")}
 				data-testid="dictation-toggle"
 				className="flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/10 px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
 			>
@@ -726,7 +760,7 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 				) : (
 					<MicIcon className="size-3.5" />
 				)}
-					Stop
+					{t("dictation.stopButton")}
 				</button>
 			</Hint>
 			<span className="size-1.5 shrink-0 animate-pulse rounded-full bg-destructive" aria-hidden />
