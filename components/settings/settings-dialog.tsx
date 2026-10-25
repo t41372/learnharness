@@ -33,12 +33,17 @@ import { createPortal } from "react-dom";
 import { useBackdropDismiss } from "@/components/backdrop-dismiss";
 import {
 	CURRENT_SETTINGS_VERSION,
+	LANGUAGE_NAMES,
+	LANGUAGE_SETTINGS,
 	type AgentSettings,
 	type AppearanceSettings,
 	type CompactionSettings,
 	type GraphSettings,
+	type LanguageSetting,
 	type UserSettings,
 } from "@/src/core";
+import { useLanguage, useT } from "@/components/i18n";
+import { cn } from "@/lib/utils";
 import { useAppearance } from "./appearance.tsx";
 import { SettingsSection, SettingsRow, Toggle } from "./controls.tsx";
 import { AgentSection } from "./agent-section.tsx";
@@ -362,6 +367,12 @@ export function SettingsDialogBody({
 									title="General"
 									testid="section-general"
 								>
+									<LanguageRow
+										value={record.general?.language ?? "system"}
+										onChange={(language) =>
+											void write("general", { ...record.general, language })
+										}
+									/>
 									<SettingsRow
 										label="Auto-update"
 										hint={AUTO_UPDATE_HINT}
@@ -371,7 +382,9 @@ export function SettingsDialogBody({
 											checked={record.general?.autoUpdate ?? true}
 											label="auto update"
 											onChange={(on) =>
-												void write("general", { autoUpdate: on })
+												// The PUT replaces the whole section — carry the
+												// sibling keys (the language choice) along.
+												void write("general", { ...record.general, autoUpdate: on })
 											}
 										/>
 									</SettingsRow>
@@ -444,5 +457,53 @@ export function SettingsDialogBody({
 				</div>
 			</div>
 		</div>
+	);
+}
+
+/** The interface-language row (i18n wave, 2026-10-25): Follow system +
+ *  every shipped language, each named in its own language. A pick applies
+ *  to the running interface at once (useLanguage) and persists through the
+ *  dialog's one writer. */
+export function LanguageRow({
+	value,
+	onChange,
+}: {
+	value: LanguageSetting;
+	onChange: (setting: LanguageSetting) => void;
+}) {
+	const { t } = useT("settings");
+	const { setSetting } = useLanguage();
+	return (
+		<SettingsRow label={t("general.language.label")} testid="row-language">
+			<div
+				role="radiogroup"
+				aria-label={t("general.language.aria")}
+				className="flex rounded-lg border border-border/60 bg-muted/30 p-0.5"
+			>
+				{LANGUAGE_SETTINGS.map((option) => {
+					const active = option === value;
+					return (
+						<button
+							key={option}
+							type="button"
+							role="radio"
+							aria-checked={active}
+							data-testid={`language-${option}`}
+							onClick={() => {
+								if (active) return;
+								setSetting(option);
+								onChange(option);
+							}}
+							className={cn(
+								"h-8 rounded-md px-3 text-sm font-medium transition-colors",
+								active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+							)}
+						>
+							{option === "system" ? t("general.language.system") : LANGUAGE_NAMES[option]}
+						</button>
+					);
+				})}
+			</div>
+		</SettingsRow>
 	);
 }

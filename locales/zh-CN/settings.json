@@ -1,0 +1,9 @@
+{
+	"general": {
+		"language": {
+			"label": "语言",
+			"system": "跟随系统",
+			"aria": "界面语言"
+		}
+	}
+}

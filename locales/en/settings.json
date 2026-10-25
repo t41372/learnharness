@@ -1,0 +1,9 @@
+{
+	"general": {
+		"language": {
+			"label": "Language",
+			"system": "Follow system",
+			"aria": "Interface language"
+		}
+	}
+}

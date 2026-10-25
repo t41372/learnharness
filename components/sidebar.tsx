@@ -69,6 +69,8 @@ declare global {
 			/** Auto-update channel (Wave C, 2026-10-10): "lh:update-status" pushes once a staged update exists. */
 			onUpdateStatus?: (cb: (status: { status: string; version: string | null }) => void) => () => void;
 			installUpdate?: () => void;
+			/** The interface language the renderer runs (i18n wave) — main localizes its menus. */
+			setLanguage?: (language: string) => void;
 		};
 	}
 }
