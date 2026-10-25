@@ -1,1 +1,134 @@
-{}
+{
+	"shared": {
+		"failed": "失敗",
+		"invertColors": "反轉色彩"
+	},
+	"demoCard": {
+		"unreadable": "示範已完成，但無法顯示結果。",
+		"failedTitle": "互動式示範",
+		"title": "互動式示範",
+		"buildFailed": "無法建立這個示範。",
+		"invert": "反轉示範亮度",
+		"downloadAria": "將示範下載為 HTML",
+		"download": "下載為 HTML",
+		"error": {
+			"title": "這個示範發生錯誤",
+			"unknown": "未知錯誤",
+			"send": "傳送給老師"
+		}
+	},
+	"dispatchCard": {
+		"kind": {
+			"research": "研究 Agent",
+			"demo": "示範 Agent",
+			"visual": "圖示 Agent",
+			"pdf": "PDF 閱讀器"
+		},
+		"refused": {
+			"modelsLine": "需要先設定模型",
+			"modelsButton": "設定模型",
+			"keyLine": "需要供應商金鑰",
+			"keyButton": "新增金鑰"
+		},
+		"delivered": "已送達",
+		"running": "{{label}} 執行中",
+		"elapsed": "{{seconds}} 秒",
+		"pending": "已派出…"
+	},
+	"jobCard": {
+		"pdf": {
+			"unreadable": "PDF 閱讀已完成，但無法顯示結果。",
+			"title": "PDF 摘要",
+			"pagesRead": "已讀頁面：{{pages}}",
+			"pagesConsulted": "查閱過的頁面：{{pages}}"
+		},
+		"research": {
+			"unreadable": "研究已完成，但無法顯示結果。",
+			"title": "研究摘要",
+			"sources": "來源"
+		}
+	},
+	"liveToolCard": {
+		"live": "{{activity}}（即時）",
+		"input": "輸入（串流中）",
+		"activity": {
+			"read": "正在讀取檔案…",
+			"ls": "正在列出目錄…",
+			"find": "正在尋找檔案…",
+			"grep": "正在搜尋檔案內容…",
+			"research": "正在派出研究任務…",
+			"demo": "正在建立示範…",
+			"visual": "正在製作圖示…",
+			"pdf": "正在閱讀 PDF…",
+			"planInit": "正在擬定計畫…",
+			"probeDone": "正在完成評估…",
+			"question": "正在出題…",
+			"working": "處理中…"
+		}
+	},
+	"probeDoneCard": {
+		"title": "診斷完成——你的評估",
+		"retried": "診斷 Agent 已重試：{{error}}",
+		"malformed": "評估格式有誤——診斷 Agent 已用修正後的評估重試。",
+		"writing": "正在撰寫評估…"
+	},
+	"steerCard": {
+		"unreadable": "一個子 Agent 已完成，但無法顯示它的結果。",
+		"kind": {
+			"research": "研究",
+			"demo": "示範",
+			"visual": "圖示",
+			"pdf": "PDF",
+			"job": "任務"
+		},
+		"aborted": "已由你中止",
+		"pdfComplete": "閱讀完成",
+		"pagesRead_other": "已讀 {{count}} 頁",
+		"research": "研究",
+		"researchComplete": "已完成",
+		"sources": "{{count}} 個來源",
+		"viewBrief": "檢視摘要",
+		"hideBrief": "收合摘要"
+	},
+	"toolCallCard": {
+		"input": "輸入",
+		"error": "錯誤",
+		"output": "輸出",
+		"running": "執行中…",
+		"imagesAttached_other": "[已附加 {{count}} 張圖片給模型]"
+	},
+	"visualCard": {
+		"unreadable": "圖示已完成，但無法顯示結果。",
+		"label": "圖示",
+		"drawFailed": "無法繪製這張圖示。",
+		"invert": "反轉圖示亮度",
+		"downloadAria": "將圖示下載為 SVG",
+		"download": "下載為 SVG",
+		"openAria": "以全螢幕開啟圖示",
+		"open": "以全螢幕開啟"
+	},
+	"mdBlocks": {
+		"copyDiagram": "複製圖表原始碼",
+		"copyCode": "複製程式碼",
+		"copyTable": "複製表格",
+		"copyEquation": "複製公式原始碼",
+		"openFullScreen": "以全螢幕開啟",
+		"expandDiagram": "放大圖表"
+	},
+	"dictation": {
+		"dictate": "語音輸入",
+		"start": "開始語音輸入",
+		"failedAria": "語音輸入失敗：{{reason}}",
+		"stopHint": "停止語音輸入 (Esc)",
+		"stop": "停止語音輸入",
+		"stopButton": "停止",
+		"error": {
+			"keyless": "語音輸入需要 Deepgram 金鑰",
+			"micDenied": "麥克風權限遭拒",
+			"micUnavailable": "無法使用麥克風",
+			"tokenUnavailable": "無法取得存取權杖",
+			"reconnectFailed": "Deepgram 重新連線失敗",
+			"connectionLost": "Deepgram 連線中斷（{{code}}）"
+		}
+	}
+}
