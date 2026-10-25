@@ -1,9 +1,274 @@
 {
+	"nav": {
+		"providers": "Providers",
+		"agent": "Agent",
+		"appearance": "Appearance",
+		"graph": "Graph",
+		"keyboard": "Keyboard",
+		"general": "General"
+	},
+	"dialog": {
+		"title": "Settings",
+		"close": "Close",
+		"closeAria": "Close settings",
+		"navAria": "Settings sections",
+		"loading": "Loading settings…",
+		"loadFailed": "Settings could not be loaded — refresh to retry."
+	},
+	"actions": {
+		"save": "Save",
+		"cancel": "Cancel",
+		"delete": "Delete",
+		"close": "Close",
+		"continue": "Continue",
+		"retry": "Retry",
+		"dismiss": "Dismiss",
+		"disconnect": "Disconnect",
+		"signInAgain": "Sign in again"
+	},
 	"general": {
 		"language": {
 			"label": "Language",
 			"system": "Follow system",
 			"aria": "Interface language"
+		},
+		"autoUpdate": {
+			"label": "Auto-update",
+			"hint": "Automatic updates arrive in an upcoming release",
+			"toggle": "auto update"
 		}
+	},
+	"agent": {
+		"models": {
+			"group": "Models",
+			"strong": {
+				"label": "Strong",
+				"hint": "The main model for your sessions"
+			},
+			"cheap": {
+				"label": "Cheap",
+				"hint": "The assistants that research, build demos, and grade your work"
+			},
+			"vision": {
+				"label": "Vision",
+				"hint": "The assistants that draw and read PDFs"
+			},
+			"modelAria": "{{slot}} model",
+			"thinkingAria": "{{slot}} thinking",
+			"footerNoModels": "No models — add a provider key in Keys",
+			"footer": "Runs every agent of this tier"
+		},
+		"tools": {
+			"group": "Tools",
+			"graphTools": {
+				"label": "Graph tools",
+				"hint": "Lets the tutor consult your knowledge map between sessions",
+				"disabledHint": "Graph is disabled",
+				"toggle": "graph tools"
+			},
+			"quizzing": {
+				"label": "Quizzing",
+				"hint": "How both tutors check your understanding",
+				"aria": "Quizzing mechanics",
+				"choice": "Multiple choice",
+				"free": "Free recall"
+			},
+			"tool": {
+				"label": "Tool · {{name}}",
+				"toggle": "tool {{name}}"
+			},
+			"names": {
+				"research": "research",
+				"demo": "demo",
+				"visual": "visual",
+				"pdf": "pdf"
+			},
+			"search": {
+				"label": "Search engine",
+				"automatic": "Automatic",
+				"hasKey": "✓ key",
+				"noKey": "· no key"
+			}
+		},
+		"context": {
+			"group": "Context",
+			"threshold": {
+				"label": "Compaction threshold",
+				"hint": "{{tokens}} tok",
+				"aria": "compaction threshold"
+			}
+		},
+		"prompts": {
+			"group": "System prompts",
+			"loading": "Loading prompt segments…",
+			"sections": {
+				"teacher": "Teacher",
+				"prober": "Prober",
+				"shared": "Shared",
+				"sharedHint": "Used by both agents"
+			},
+			"inUse": "Your version is in use",
+			"toggle": "prompt {{path}}",
+			"showText": "Show text",
+			"hideText": "Hide text",
+			"source": "Source",
+			"override": "Override",
+			"sourceAria": "The original instructions",
+			"overrideAria": "Your version of the instructions",
+			"overridePlaceholder": "Add your own instructions…",
+			"saved": "Saved",
+			"deleted": "Deleted",
+			"saveFailed": "Save failed: {{detail}}",
+			"deleteFailed": "Delete failed: {{status}}"
+		}
+	},
+	"appearance": {
+		"emptyEquals": "Empty = {{value}}",
+		"emptySameAsText": "Empty = same as text",
+		"sameAsText": "same as text",
+		"mode": {
+			"label": "Mode",
+			"hint": "Coming soon",
+			"aria": "mode",
+			"dark": "Dark"
+		},
+		"background": {
+			"label": "Background",
+			"aria": "background hex"
+		},
+		"font": {
+			"label": "Reading font",
+			"tooltip": "Choose from your installed fonts",
+			"footerUnreadable": "Common families — installed fonts could not be read",
+			"footerBrowser": "Common families — your installed list needs the desktop app",
+			"footerInstalled": "Your installed fonts"
+		},
+		"fontSize": {
+			"label": "Reading font size",
+			"aria": "prose font size"
+		},
+		"sessionSerif": {
+			"label": "Session names in serif",
+			"toggle": "session names serif"
+		},
+		"headingWeight": {
+			"label": "Heading weight",
+			"aria": "heading weight"
+		},
+		"boldColor": {
+			"label": "Bold color",
+			"aria": "bold color"
+		},
+		"italicColor": {
+			"label": "Italic color",
+			"aria": "italic color"
+		}
+	},
+	"graph": {
+		"extraction": {
+			"label": "Extraction",
+			"hint": "Off = the graph stops growing",
+			"toggle": "extraction enabled"
+		},
+		"rendering": {
+			"label": "Graph rendering",
+			"hint": "Off = home shows the chains view",
+			"toggle": "graph rendering enabled"
+		},
+		"chunkBudget": {
+			"label": "Extraction chunk budget",
+			"hint": "{{tokens}} tok",
+			"aria": "extraction chunk budget"
+		}
+	},
+	"keyboard": {
+		"storedHint": "Stored on this device",
+		"scopes": {
+			"global": "Global",
+			"chat": "Chat",
+			"graph": "Graph"
+		},
+		"fixed": "Fixed — part of this screen",
+		"pressKeys": "Press keys…",
+		"rebind": "Rebind",
+		"reset": "Reset",
+		"storageNote": "Stored on this device (lh:keymap) — overrides only.",
+		"resetAll": "Reset all to defaults"
+	},
+	"keys": {
+		"loading": "Loading keys…",
+		"groups": {
+			"providerKeys": "Model API keys",
+			"subscriptions": "Subscriptions",
+			"dictation": "Dictation",
+			"search": "Search"
+		},
+		"pastePlaceholder": "Paste key…",
+		"inputAria": "{{provider}} key",
+		"getKey": "key ↗",
+		"saveFailed": "Save failed ({{status}})",
+		"addProvider": "+ Add provider key",
+		"status": {
+			"notSet": "not set",
+			"env": "env"
+		}
+	},
+	"modelMenu": {
+		"searchModels": "Search models…",
+		"loadingModels": "Loading models…",
+		"noModels": "No models match.",
+		"subscriptionTitle": "Subscription connection",
+		"priceTitle": "USD per 1M tokens in/out",
+		"subscriptionProvider": "{{label}} (subscription)",
+		"noThinkingLevels": "No thinking levels.",
+		"searchProviders": "Search providers…",
+		"noProviders": "No providers match.",
+		"searchFonts": "Search fonts…",
+		"loadingFonts": "Loading fonts…",
+		"fontDefault": "default",
+		"useFamily": "Use “{{family}}”",
+		"custom": "custom"
+	},
+	"connections": {
+		"connect": "Connect",
+		"manage": "Manage…",
+		"enableBackground": "Enable background use",
+		"desktopUnavailable": "The desktop connection is unavailable. Retry when the app is ready."
+	},
+	"chatgpt": {
+		"notice": "LearnHarness stores your ChatGPT account details and credentials in an unencrypted local file on this device. When this connection is used, relevant conversation context, learning material, and tool results are sent directly to OpenAI. ChatGPT plan limits apply; any additional credits are authorized and managed in ChatGPT, not LearnHarness.",
+		"backgroundHint": "Background work counts toward your ChatGPT plan usage.",
+		"backgroundLabel": "Allow background use for all ChatGPT accounts",
+		"revocationWarning": "Account disconnected locally. Remote revocation could not be confirmed.",
+		"disconnectTitle": "Disconnect account?",
+		"disconnectBody": "This removes the saved account and its credentials from this device.",
+		"controlError": "The ChatGPT connection could not be changed. Try again.",
+		"account": "ChatGPT account",
+		"disconnectAccount": "Disconnect account",
+		"savedAccountAria": "Saved ChatGPT account",
+		"addAnother": "Add another account or workspace",
+		"privacy": "OpenAI privacy",
+		"manageUsage": "Manage usage",
+		"desktopOnly": "ChatGPT sign-in is available only in the desktop app. API-key connections remain available here.",
+		"waiting": "Waiting for browser sign-in…",
+		"manageAccountAria": "Manage ChatGPT account",
+		"addAccounts": "Add accounts",
+		"continueWith": "Continue with ChatGPT"
+	},
+	"subscriptions": {
+		"policyNotice": "Pi's native Copilot sign-in may enable additional models whose policy is not yet configured. Models explicitly disabled by policy are not enabled. Organization restrictions still apply.",
+		"backgroundHint": "Allow LearnHarness helper agents and automatic follow-ups to use this connection.",
+		"notice": "Your prompts, tool results, and relevant session context are sent to {{label}} to run the work you select. Credentials are stored locally in an owner-only plaintext file. Provider terms, data-use policies, and plan limits apply. This connection never falls back to an API key.",
+		"disconnectTitle": "Disconnect {{label}}?",
+		"disconnectBody": "Disconnect {{label}} from LearnHarness? This stops work using this connection and removes its saved credentials from this device. It does not cancel your subscription or revoke access at the provider. Saved model choices will remain unavailable until you reconnect or change them.",
+		"controlError": "The connection could not be changed. Try again.",
+		"signInFailed": "Sign-in did not complete. Try connecting again.",
+		"browserFailed": "The browser could not be opened. Try again.",
+		"dialogAria": "{{label}} connection",
+		"allowBackground": "Allow background use",
+		"desktopRequired": "Subscription sign-in requires the desktop app's private server connection. API-key connections remain available here.",
+		"deviceCode": "Device code: <code>{{code}}</code>",
+		"openBrowser": "Open browser",
+		"selectPlaceholder": "Select…"
 	}
 }
