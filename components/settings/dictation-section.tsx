@@ -357,7 +357,7 @@ export function DictationSection({
 										testid="standard-asr-model"
 										disabled={busy}
 										onChange={(key) => {
-											onChange({ ...dictation, model: key, language: undefined });
+											onChange({ ...dictation, engine: "standard-asr", model: key, language: undefined });
 										}}
 									>
 										{!selected && <option value="">Choose…</option>}
