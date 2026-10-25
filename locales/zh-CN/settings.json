@@ -343,7 +343,7 @@
 			"auto": "自动"
 		},
 		"engines": {
-			"label": "引擎",
+			"label": "已安装的引擎",
 			"remove": "移除",
 			"cancel": "取消",
 			"removeAsk": "移除…",

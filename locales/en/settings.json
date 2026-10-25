@@ -344,7 +344,7 @@
 			"auto": "Auto"
 		},
 		"engines": {
-			"label": "Engines",
+			"label": "Installed engines",
 			"remove": "Remove",
 			"cancel": "Cancel",
 			"removeAsk": "Remove…",
