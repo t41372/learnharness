@@ -30,7 +30,7 @@ function files(key: string, ready = false): AsrModelStatus {
 }
 
 function fixture(installed = true, language: Language = "en") {
-	let settings: DictationSettings = { engine: "standard-asr" };
+	let settings: DictationSettings = { engine: "deepgram" };
 	const commands: Array<{ op: string; model?: string }> = [];
 	const reports = new Map<string, AsrModelStatus>();
 	const status: StandardAsrStatus = {
@@ -136,6 +136,7 @@ test("switching models reads the selected files and ignores a late response for 
 	const f = fixture();
 	await f.mount();
 	await selectModel("speech/small");
+	assert.equal(f.settings.engine, "standard-asr", "choosing a local dictation model activates its engine");
 	element("standard-asr-download");
 	let resolve!: (status: AsrModelStatus) => void;
 	f.holdRead(new Promise((done) => { resolve = done; }));
