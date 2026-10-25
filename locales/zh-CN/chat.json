@@ -1,1 +1,167 @@
-{}
+{
+	"session": {
+		"titleAria": "会话标题",
+		"titleRename": "重命名此会话",
+		"planChip": "计划",
+		"planHint": "打开完整计划",
+		"practiceTag": "练习",
+		"emptyTitle": "新会话",
+		"emptyDescription": "老师会先提几个问题，摸清你已经掌握了什么。",
+		"you": "你",
+		"nextProblemLine": "下一题",
+		"retrying": "正在重试…",
+		"compactingLabel": "正在压缩上下文",
+		"compacting": "正在压缩上下文…",
+		"thinkingLabel": "思考中",
+		"thinking": "思考中…",
+		"setupModels": "设置你的模型",
+		"nextPlaceholder": "随便问点什么，或按 Enter 进入下一题。"
+	},
+	"errors": {
+		"banner": "出错了：{{message}}",
+		"generic": "未知错误。",
+		"turnRunning": "已有一轮回复正在进行，请稍后再试。",
+		"attachFailed": "无法连接到正在进行的回复。",
+		"emptyStream": "回复的数据流为空。",
+		"sendFailed": "发送失败（{{status}}）。",
+		"steerFailed": "引导消息发送失败（{{status}}）。",
+		"dismissFailed": "跳过/舍弃失败（{{status}}）。",
+		"modelsNotConfigured": "尚未配置模型，请先完成模型设置",
+		"providerKeyMissing": "尚未设置 {{provider}} 密钥，请在“设置 → 密钥”中添加"
+	},
+	"composer": {
+		"placeholder": "提问、回答，或引导这节课的方向…",
+		"nextProblem": "下一题",
+		"send": "发送",
+		"stop": "停止"
+	},
+	"nodePicker": {
+		"selected_other": "已选 {{count}} 个节点",
+		"pick": "选择节点",
+		"clear": "清除"
+	},
+	"questionLabel": {
+		"probe": "摸底",
+		"recall": "回忆",
+		"prediction": "预测",
+		"check": "测验",
+		"explain": "解释",
+		"question": "问题"
+	},
+	"questionDock": {
+		"malformed": "这道题的格式有误，重试记录会保留在会话中。",
+		"revealTitle": "检验一下你的理解",
+		"revealOpen": "打开",
+		"answer": "作答",
+		"multiSelect": " · 可多选",
+		"dontKnow": "我不知道",
+		"otherPlaceholder": "输入你自己的回答…",
+		"confidence": "把握程度",
+		"confidenceAria": "把握程度——你所选答案正确的概率",
+		"confidenceValue": "{{value}}%",
+		"confidenceTitle": "你所选答案正确的概率——50% 相当于抛硬币。用 ←/→ 调整。",
+		"yourAnswer": "你的回答",
+		"answerPlaceholder": "输入你的回答…",
+		"thinkingPlaceholder": "为什么选这个？想到什么就写什么。",
+		"submit": "提交回答"
+	},
+	"dock": {
+		"compacting": "正在压缩会话…",
+		"keys": "↵ 提交 · ⇧↵ 换行"
+	},
+	"thinking": {
+		"yours": "你的思路"
+	},
+	"answeredCard": {
+		"skipped": "<q/>——已跳过",
+		"didntKnow": "不知道",
+		"correct": "正确",
+		"incorrect": "错误",
+		"quote": "“{{text}}”",
+		"answeredDontKnow": "回答了“我不知道”。",
+		"why": "解析",
+		"hideWhy": "收起解析",
+		"whyLabel": "解析：",
+		"theAnswer": "参考答案："
+	},
+	"readingThinking": {
+		"label": "边读边想",
+		"placeholder": "读的时候想到什么，都可以写在这里。"
+	},
+	"abortTurn": {
+		"cancel": "取消",
+		"turn": {
+			"title": "中止这一轮回复？",
+			"line": "已生成的部分会保留在会话记录中。",
+			"action": "中止"
+		},
+		"question": {
+			"title": "跳过这个问题？",
+			"line": "跳过后，老师会直接往下讲。",
+			"lineBusy": "跳过后，老师会直接往下讲。正在进行的回复也会停止。",
+			"action": "跳过"
+		},
+		"problem": {
+			"title": "舍弃这道题？",
+			"line": "这道题将被舍弃，不会公布解答。",
+			"lineBusy": "这道题将被舍弃，不会公布解答。正在进行的回复也会停止。",
+			"action": "舍弃"
+		}
+	},
+	"phase": {
+		"probe": "摸底",
+		"plan": "规划",
+		"teach": "教学",
+		"planNodes_other": "计划 · {{count}} 个节点"
+	},
+	"compaction": {
+		"moment": "上下文已压缩",
+		"cut": "历史已压缩",
+		"cutTokens": "历史已压缩 · {{k}}k token"
+	},
+	"practice": {
+		"problem": "题目",
+		"problemDismissed": "题目已舍弃。",
+		"concluded": "已结束",
+		"modelSolution": "参考解答",
+		"thinkingPlaceholder": "在这里推演，边想边写。",
+		"submit": "提交思路",
+		"outcome": {
+			"solved": "已解决",
+			"solvedWithHints": "借助提示解决",
+			"movedOn": "已跳过",
+			"surrendered": "已放弃",
+			"dismissed": "已舍弃"
+		},
+		"metadata": {
+			"toggle": "元数据",
+			"mode": "模式",
+			"targets": "目标",
+			"outcome": "结果",
+			"hintRung": "提示层级",
+			"missClass": "错误类型",
+			"retest": "复测",
+			"untagged": "未标记",
+			"none": "无",
+			"yes": "是",
+			"no": "否",
+			"separator": "、"
+		}
+	},
+	"spinner": {
+		"working": "处理中"
+	},
+	"reasoning": {
+		"thinking": "思考中…",
+		"agentThinking": "Agent 的思路"
+	},
+	"conversation": {
+		"emptyTitle": "还没有消息",
+		"emptyDescription": "开始对话后，消息会显示在这里"
+	},
+	"message": {
+		"previousBranch": "上一个分支",
+		"nextBranch": "下一个分支",
+		"branchPage": "{{current}} / {{total}}"
+	}
+}
