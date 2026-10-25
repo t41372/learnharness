@@ -209,7 +209,6 @@
 		"groups": {
 			"providerKeys": "模型 API 密钥",
 			"subscriptions": "订阅",
-			"dictation": "语音输入",
 			"search": "搜索"
 		},
 		"pastePlaceholder": "粘贴密钥…",

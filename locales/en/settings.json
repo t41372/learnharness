@@ -209,7 +209,6 @@
 		"groups": {
 			"providerKeys": "Model API keys",
 			"subscriptions": "Subscriptions",
-			"dictation": "Dictation",
 			"search": "Search"
 		},
 		"pastePlaceholder": "Paste key…",
