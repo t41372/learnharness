@@ -99,13 +99,19 @@ function ensure(): Recognizer {
 	return recognizer;
 }
 
-/** Load a model in the bridge ahead of the first dictation. */
+/** Load a model in the bridge ahead of the first dictation. One model is
+ *  resident at a time: switching drops the previous one first (a second
+ *  model would double the memory for the server's lifetime; switching
+ *  back pays the load again). */
 export function warmRecognizer(model: string): void {
 	const recognizer = ensure();
 	if (recognizer.warmed.has(model)) return;
+	const evict = recognizer.warmed.size > 0;
+	recognizer.warmed.clear();
 	recognizer.warmed.add(model);
 	void recognizer.ready.then(() => {
 		recognizer.state = "warming";
+		if (evict) recognizer.child.stdin?.write(JSON.stringify({ cmd: "evict" }) + "\n");
 		recognizer.child.stdin?.write(JSON.stringify({ cmd: "warm", model }) + "\n");
 	}, () => {});
 }
