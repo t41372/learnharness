@@ -8,7 +8,9 @@ import { ActivityProvider } from "@/components/activity-dock";
 import { ServerEventsProvider } from "@/components/server-events";
 import { AppearanceProvider } from "@/components/settings/appearance";
 import UpdateBanner from "@/components/update-banner";
-import { I18nProvider } from "@/components/i18n";
+// The provider module itself ("use client"): the barrel also loads
+// react-i18next, which a server component may not evaluate.
+import { I18nProvider } from "@/components/i18n/provider";
 import { parseAcceptLanguage, resolveLanguage, resolveSettings } from "@/src/core";
 import { readSettingsRecord } from "@/src/server";
 
