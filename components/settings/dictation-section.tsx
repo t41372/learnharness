@@ -282,7 +282,7 @@ export function DictationSection({
 								)}
 
 								<div className="flex flex-col gap-1" data-testid="standard-asr-engines">
-									<p className="text-xs uppercase tracking-widest text-muted-foreground/70">Engines</p>
+									<p className="text-xs uppercase tracking-widest text-muted-foreground/70">Installed engines</p>
 									{(status.inventory?.plugins ?? []).map((plugin) => (
 										<div key={plugin.name} className="flex items-center justify-between gap-3 py-0.5" data-testid={`standard-asr-plugin-${plugin.name}`}>
 											<span className="min-w-0 truncate font-ui text-xs">
