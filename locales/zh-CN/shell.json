@@ -20,7 +20,7 @@
 		"settings": "设置",
 		"menu": {
 			"rename": "重命名",
-			"exportMarkdown": "导出为Markdown…",
+			"exportMarkdown": "导出为 Markdown…",
 			"delete": "删除…"
 		},
 		"meta": {
@@ -31,9 +31,9 @@
 		},
 		"time": {
 			"justNow": "刚刚",
-			"minutesAgo": "{{n}}分钟前",
-			"hoursAgo": "{{n}}小时前",
-			"daysAgo": "{{n}}天前"
+			"minutesAgo": "{{n}} 分钟前",
+			"hoursAgo": "{{n}} 小时前",
+			"daysAgo": "{{n}} 天前"
 		}
 	},
 	"draft": {
@@ -70,7 +70,7 @@
 		}
 	},
 	"activity": {
-		"title": "后台Agent",
+		"title": "后台 Agent",
 		"totalCost": "运行中的总费用（估算）",
 		"needsModelSetup": "需要设置模型",
 		"needsProviderKey": "需要服务商密钥",
@@ -87,8 +87,8 @@
 			"research": "研究员",
 			"demo": "演示制作者",
 			"visual": "图示制作者",
-			"pdf": "PDF阅读者",
-			"subAgent": "子Agent"
+			"pdf": "PDF 阅读者",
+			"subAgent": "子 Agent"
 		},
 		"abortFailed": "终止失败——请重试",
 		"end": "结束这个后台进程",
@@ -102,13 +102,13 @@
 	},
 	"update": {
 		"ready": "LearnHarness {{version}} 已就绪",
-		"readyUnversioned": "LearnHarness更新已就绪",
+		"readyUnversioned": "LearnHarness 更新已就绪",
 		"restartToInstall": "，重启即可完成安装。",
 		"restart": "重启"
 	},
 	"cheatSheet": {
 		"title": "键盘快捷键",
-		"escToClose": "按Esc关闭",
+		"escToClose": "按 Esc 关闭",
 		"scope": {
 			"global": "全局",
 			"chat": "会话",
@@ -195,7 +195,7 @@
 			},
 			"vision": {
 				"label": "视觉",
-				"roster": "图示制作者 + PDF阅读者"
+				"roster": "图示制作者 + PDF 阅读者"
 			}
 		}
 	},
@@ -203,7 +203,7 @@
 		"thinking": "思考强度",
 		"rejected": "设置被拒绝（{{status}}）",
 		"unreachable": "无法连接服务器——请重试。",
-		"noModels": "没有可用模型——请在“密钥”中添加服务商密钥",
+		"noModels": "没有可用模型——请在“设置 → 服务商”中添加 API 密钥",
 		"sessionModel": "此会话的模型",
 		"strongDefault": "主力档位——新会话的默认模型",
 		"noLevels": "{{model}} 不支持思考强度。",
@@ -216,7 +216,7 @@
 		"context": "上下文（最近一次调用）",
 		"usage": "用量",
 		"totalCost": "总费用",
-		"manageChatGPT": "管理ChatGPT用量",
+		"manageChatGPT": "管理 ChatGPT 用量",
 		"unpriced": "未计价轮次",
 		"turns": "轮次",
 		"steps": "{{n}} 步"

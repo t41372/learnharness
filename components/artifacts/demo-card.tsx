@@ -193,6 +193,7 @@ function DemoFrame({
 						checked={inverted}
 						onChange={toggleInverted}
 						label={t("demoCard.invert")}
+						testid="toggle-invert-demo-brightness"
 						title={t("shared.invertColors")}
 						discIcon={<InvertDiscIcon className="size-3" />}
 					/>

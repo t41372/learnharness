@@ -140,6 +140,7 @@ export function VisualOutputCard({
 						checked={inverted}
 						onChange={toggleInverted}
 						label={t("visualCard.invert")}
+						testid="toggle-invert-figure-brightness"
 						title={t("shared.invertColors")}
 						discIcon={<InvertDiscIcon className="size-3" />}
 					/>

@@ -103,7 +103,7 @@
 			"loading": "提示詞片段載入中…",
 			"sections": {
 				"teacher": "老師",
-				"prober": "摸底老師",
+				"prober": "前測老師",
 				"shared": "共用",
 				"sharedHint": "兩位老師都會用到"
 			},

@@ -7,7 +7,7 @@ The interface ships in English (the reference), Simplified Chinese (`zh-CN`) and
 - Translate meaning, not words. Write what a native speaker would put on that button or in that tooltip.
 - `zh-CN` uses mainland vocabulary, `zh-TW` uses Taiwan vocabulary. Converting one into the other character by character is not enough: 设置/設定, 文件/檔案, 文件夹/資料夾, 程序/程式, 窗口/視窗, 默认/預設, 链接/連結, 消息/訊息, 搜索/搜尋, 视频/影片, 质量/品質, 信息/資訊, 屏幕/螢幕, 打开/開啟, 保存/儲存, 删除/刪除, 加载/載入, 网络/網路, 支持/支援, 用户/使用者.
 - Punctuation in Chinese is full width (，。：；！？「」（）), except inside code, keyboard shortcuts, numbers with units, and around ASCII-only fragments. `zh-CN` quotes with “”, `zh-TW` with 「」.
-- Put no space between Chinese and Latin text or digits unless the English needs one for a variable: `{{count}} 个节点`, `Deepgram 密钥`.
+- Put one space between Chinese and Latin letters or digits, including a `{{variable}}` that holds a number or a Latin name: `{{count}} 个节点`, `Deepgram 密钥`, `导出为 Markdown…`. No space next to full-width punctuation, and none around a variable that holds Chinese text (`{{slot}}模型`).
 - Keep product and provider names, model ids, file names, keyboard keys and code in English: LearnHarness, OpenRouter, Deepgram, ChatGPT, Standard ASR, `mermaid`, ⌘K.
 - Keep `{{variables}}` exactly. Plurals: English has `_one` and `_other`; Chinese has only `_other`.
 
@@ -25,6 +25,11 @@ The interface ships in English (the reference), Simplified Chinese (`zh-CN`) and
 | your thinking (the learner's reasoning field) | 你的思路 | 你的思路 |
 | confidence | 把握程度 | 把握程度 |
 | teacher | 老师 | 老師 |
+| probe / prober (the first, measuring phase) | 摸底 / 摸底老师 | 前測 / 前測老師 |
+| planning (phase) | 规划 | 規劃 |
+| recall (free-recall quiz) | 回忆 | 回想 |
+| brief (a research result) | 摘要 | 摘要 |
+| figure (a visual) | 图示 | 圖示 |
 | plan / plan tree | 计划 / 计划树 | 計畫 / 計畫樹 |
 | step (of the plan) | 步骤 | 步驟 |
 | knowledge graph / graph | 知识图谱 / 图谱 | 知識圖譜 / 圖譜 |
@@ -38,6 +43,7 @@ The interface ships in English (the reference), Simplified Chinese (`zh-CN`) and
 | agent | Agent | Agent |
 | model | 模型 | 模型 |
 | provider | 服务商 | 供應商 |
+| Settings → Providers (where keys live) | 设置 → 服务商 | 設定 → 供應商 |
 | API key / key | API 密钥 / 密钥 | API 金鑰 / 金鑰 |
 | subscription | 订阅 | 訂閱 |
 | thinking level | 思考强度 | 思考強度 |

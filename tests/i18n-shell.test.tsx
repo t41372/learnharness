@@ -107,7 +107,7 @@ describe("shell in Simplified Chinese (zh-CN)", () => {
 
 	it("the background-agents strip: header, the refusal line, the extraction phase", () => {
 		const html = inLanguage("zh-CN", <ActivitySection feed={refusedFeed} />);
-		assert.ok(html.includes("后台Agent"));
+		assert.ok(html.includes("后台 Agent"));
 		assert.ok(html.includes("需要设置模型"), "toBlobs' English refusal line maps at render");
 		assert.ok(!html.includes("needs model setup"));
 		assert.ok(html.includes("提取——合并中"));
@@ -116,7 +116,7 @@ describe("shell in Simplified Chinese (zh-CN)", () => {
 	it("timeAgo takes the caller's t", () => {
 		const t = i18n.getFixedT("zh-CN", "shell");
 		const now = new Date("2026-01-02T12:00:00.000Z");
-		assert.equal(timeAgo("2026-01-02T11:55:00.000Z", now, t), "5分钟前");
+		assert.equal(timeAgo("2026-01-02T11:55:00.000Z", now, t), "5 分钟前");
 		assert.equal(timeAgo("2025-06-02T12:00:00.000Z", now, t), "2025-06-02", "the ISO date is locale-neutral");
 	});
 });
@@ -144,7 +144,7 @@ describe("shell in Traditional Chinese (zh-TW)", () => {
 
 	it("the background-agents strip", () => {
 		const html = inLanguage("zh-TW", <ActivitySection feed={refusedFeed} />);
-		assert.ok(html.includes("背景Agent"));
+		assert.ok(html.includes("背景 Agent"));
 		assert.ok(html.includes("需要設定模型"));
 		assert.ok(html.includes("擷取——合併中"));
 	});

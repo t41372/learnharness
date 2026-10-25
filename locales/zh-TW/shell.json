@@ -20,7 +20,7 @@
 		"settings": "設定",
 		"menu": {
 			"rename": "重新命名",
-			"exportMarkdown": "匯出為Markdown…",
+			"exportMarkdown": "匯出為 Markdown…",
 			"delete": "刪除…"
 		},
 		"meta": {
@@ -31,9 +31,9 @@
 		},
 		"time": {
 			"justNow": "剛剛",
-			"minutesAgo": "{{n}}分鐘前",
-			"hoursAgo": "{{n}}小時前",
-			"daysAgo": "{{n}}天前"
+			"minutesAgo": "{{n}} 分鐘前",
+			"hoursAgo": "{{n}} 小時前",
+			"daysAgo": "{{n}} 天前"
 		}
 	},
 	"draft": {
@@ -70,7 +70,7 @@
 		}
 	},
 	"activity": {
-		"title": "背景Agent",
+		"title": "背景 Agent",
 		"totalCost": "執行中的總費用（估算）",
 		"needsModelSetup": "需要設定模型",
 		"needsProviderKey": "需要供應商金鑰",
@@ -87,8 +87,8 @@
 			"research": "研究員",
 			"demo": "示範製作者",
 			"visual": "圖示製作者",
-			"pdf": "PDF閱讀者",
-			"subAgent": "子Agent"
+			"pdf": "PDF 閱讀者",
+			"subAgent": "子 Agent"
 		},
 		"abortFailed": "終止失敗——請重試",
 		"end": "結束這個背景程序",
@@ -102,13 +102,13 @@
 	},
 	"update": {
 		"ready": "LearnHarness {{version}} 已準備就緒",
-		"readyUnversioned": "LearnHarness更新已準備就緒",
+		"readyUnversioned": "LearnHarness 更新已準備就緒",
 		"restartToInstall": "，重新啟動即可完成安裝。",
 		"restart": "重新啟動"
 	},
 	"cheatSheet": {
 		"title": "鍵盤快速鍵",
-		"escToClose": "按Esc關閉",
+		"escToClose": "按 Esc 關閉",
 		"scope": {
 			"global": "全域",
 			"chat": "對話",
@@ -195,7 +195,7 @@
 			},
 			"vision": {
 				"label": "視覺",
-				"roster": "圖示製作者 + PDF閱讀者"
+				"roster": "圖示製作者 + PDF 閱讀者"
 			}
 		}
 	},
@@ -203,7 +203,7 @@
 		"thinking": "思考強度",
 		"rejected": "設定遭拒（{{status}}）",
 		"unreachable": "無法連線到伺服器——請重試。",
-		"noModels": "沒有可用的模型——請在「金鑰」中新增供應商金鑰",
+		"noModels": "沒有可用的模型——請在「設定 → 供應商」新增 API 金鑰",
 		"sessionModel": "此對話的模型",
 		"strongDefault": "主力層級——新對話的預設模型",
 		"noLevels": "{{model}} 不支援思考強度。",
@@ -216,7 +216,7 @@
 		"context": "上下文（最近一次呼叫）",
 		"usage": "用量",
 		"totalCost": "總費用",
-		"manageChatGPT": "管理ChatGPT用量",
+		"manageChatGPT": "管理 ChatGPT 用量",
 		"unpriced": "未計價輪次",
 		"turns": "輪次",
 		"steps": "{{n}} 步"

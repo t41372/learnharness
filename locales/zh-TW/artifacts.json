@@ -67,9 +67,9 @@
 		}
 	},
 	"probeDoneCard": {
-		"title": "診斷完成——你的評估",
-		"retried": "診斷 Agent 已重試：{{error}}",
-		"malformed": "評估格式有誤——診斷 Agent 已用修正後的評估重試。",
+		"title": "前測完成——你的評估",
+		"retried": "前測 Agent 已重試：{{error}}",
+		"malformed": "評估格式有誤——前測 Agent 已用修正後的評估重試。",
 		"writing": "正在撰寫評估…"
 	},
 	"steerCard": {

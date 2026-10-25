@@ -171,7 +171,7 @@
 		"requestFailed": "匯入請求失敗（HTTP {{status}}），請重新匯入此檔案。",
 		"requestFailedDetail": "匯入請求失敗（HTTP {{status}}）：{{detail}}。請重新匯入此檔案。",
 		"modelsNotConfigured": "尚未設定模型——請先設定你的模型",
-		"providerKeyMissing": "尚未設定 {{provider}} 金鑰——請到「設定 → 金鑰」新增"
+		"providerKeyMissing": "尚未設定 {{provider}} 金鑰——請到「設定 → 供應商」新增"
 	},
 	"plan": {
 		"diagramLabel": "計畫圖",

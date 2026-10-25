@@ -171,7 +171,7 @@
 		"requestFailed": "导入请求失败（HTTP {{status}}），请重新导入该文件。",
 		"requestFailedDetail": "导入请求失败（HTTP {{status}}）：{{detail}}。请重新导入该文件。",
 		"modelsNotConfigured": "尚未配置模型——请先设置模型",
-		"providerKeyMissing": "未设置 {{provider}} 密钥——请在“设置 → 密钥”中添加"
+		"providerKeyMissing": "未设置 {{provider}} 密钥——请在“设置 → 服务商”中添加"
 	},
 	"plan": {
 		"diagramLabel": "计划图",
