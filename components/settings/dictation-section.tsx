@@ -19,7 +19,7 @@
  * dialog's one writer (the `dictation` settings section, replace-PUT).
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2Icon } from "lucide-react";
 import {
 	formatBytes,
@@ -96,14 +96,18 @@ export function filesLine(status: AsrModelStatus | null): { text: string; downlo
 }
 
 async function command(body: object): Promise<string | null> {
-	const res = await fetch("/api/stt/standard-asr", {
-		method: "POST",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify(body),
-	});
-	if (res.ok) return null;
-	const detail = (await res.json().catch(() => ({}))) as { error?: string };
-	return detail.error ?? `status ${res.status}`;
+	try {
+		const res = await fetch("/api/stt/standard-asr", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(body),
+		});
+		if (res.ok) return null;
+		const detail = (await res.json().catch(() => ({}))) as { error?: string };
+		return detail.error ?? `status ${res.status}`;
+	} catch (error) {
+		return error instanceof Error ? error.message : "The speech environment is unreachable";
+	}
 }
 
 export function DictationSection({
@@ -118,39 +122,88 @@ export function DictationSection({
 }) {
 	const engine = dictation?.engine ?? "deepgram";
 	const [status, setStatus] = useState<StandardAsrStatus | null>(null);
+	const [modelStatus, setModelStatus] = useState<AsrModelStatus | null>(null);
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [requirement, setRequirement] = useState("");
 	const [removing, setRemoving] = useState<string | null>(null);
+	const [submitting, setSubmitting] = useState(false);
+	const readGeneration = useRef(0);
 
-	const read = useCallback(() => {
-		fetch("/api/stt/standard-asr")
-			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
-			.then((body: StandardAsrStatus) => setStatus(body))
-			.catch(() => {});
+	const read = useCallback(async () => {
+		const generation = ++readGeneration.current;
+		try {
+			const res = await fetch("/api/stt/standard-asr");
+			if (!res.ok) throw new Error(`status ${res.status}`);
+			const body = (await res.json()) as StandardAsrStatus;
+			if (generation === readGeneration.current) setStatus(body);
+		} catch (error) {
+			if (generation === readGeneration.current) setActionError(error instanceof Error ? error.message : String(error));
+		}
 	}, []);
-	useEffect(() => read(), [read]);
-	// Poll while a step runs (and once after it ends, for the final state).
+	useEffect(() => {
+		void read();
+		return () => { readGeneration.current++; };
+	}, [read]);
+	// Wait for each read before scheduling the next: inspecting a plugin can
+	// take longer than the polling interval, especially on its first import.
 	const running = status?.step != null;
 	useEffect(() => {
 		if (!running) return;
-		const id = setInterval(read, 1000);
+		let cancelled = false;
+		let timer = setTimeout(poll, 1000);
+		async function poll() {
+			await read();
+			if (!cancelled) timer = setTimeout(poll, 1000);
+		}
 		return () => {
-			clearInterval(id);
-			read();
+			cancelled = true;
+			clearTimeout(timer);
 		};
 	}, [running, read]);
 
 	const run = async (body: object) => {
+		setSubmitting(true);
 		setActionError(null);
 		const error = await command(body);
 		if (error) setActionError(error);
-		read();
+		await read();
+		setSubmitting(false);
+		return error === null;
 	};
 
+	const busy = running || submitting;
 	const models = status?.inventory?.models ?? [];
 	const selected = models.find((m) => m.key === dictation?.model) ?? null;
-	const files = filesLine(status?.selectedStatus ?? null);
+	const modelKey = selected?.key;
+	// The per-model endpoint bypasses the overview cache. Inspect again
+	// after each operation, including a failed or partial download. A late
+	// response can never replace the newly selected model's files.
+	useEffect(() => {
+		if (!modelKey || busy) return;
+		let cancelled = false;
+		const controller = new AbortController();
+		void fetch(`/api/stt/standard-asr/model?key=${encodeURIComponent(modelKey)}`, { signal: controller.signal })
+			.then(async (res) => {
+				if (!res.ok) throw new Error(`status ${res.status}`);
+				return (await res.json()) as AsrModelStatus;
+			})
+			.then((body) => { if (!cancelled) setModelStatus(body); })
+			.catch((error: unknown) => {
+				if (!cancelled) setModelStatus({ key: modelKey, report: null, error: error instanceof Error ? error.message : String(error) });
+			});
+		return () => { cancelled = true; controller.abort(); };
+	}, [modelKey, busy]);
+	const selectedStatus = modelStatus?.key === modelKey ? modelStatus : null;
+	const files = filesLine(selectedStatus);
 	const languages = (selected?.languages ?? []).filter((l) => l !== "auto");
+	const readiness = selectedStatus?.report?.readiness;
+	const readyModel = engine === "standard-asr" && !busy && (readiness === "ready" || readiness === "not_applicable") ? selected?.key : null;
+	useEffect(() => {
+		if (readyModel) void command({ op: "warm", model: readyModel });
+	}, [readyModel]);
+	const installCustom = async () => {
+		if (await run({ op: "installEngine", requirement: requirement.trim() })) setRequirement("");
+	};
 
 	return (
 		<>
@@ -185,8 +238,15 @@ export function DictationSection({
 			</SettingsGroup>
 
 			<SettingsGroup label="On this device" testid="group-standard-asr">
+				{(actionError ?? status?.error) && (
+					<p role="alert" className="whitespace-pre-wrap break-words rounded-sm border border-red-500/40 px-3 py-2 font-mono text-[11px] text-red-500" data-testid="standard-asr-error">
+						{actionError ?? status?.error}
+					</p>
+				)}
 				{status === null ? (
-					<p className="text-xs text-muted-foreground/70">Checking the speech environment…</p>
+					actionError ? (
+						<button type="button" onClick={() => { setActionError(null); void read(); }} className="self-start text-xs hover:underline">Retry</button>
+					) : <p className="text-xs text-muted-foreground/70">Checking the speech environment…</p>
 				) : (
 					<div className="flex flex-col gap-3" data-testid="standard-asr">
 						{status.step && (
@@ -196,27 +256,20 @@ export function DictationSection({
 								{progressLine(status.progress) && <span className="tabular-nums">{progressLine(status.progress)}</span>}
 							</p>
 						)}
-						{(actionError ?? status.error) && (
-							<p role="alert" className="whitespace-pre-wrap break-words rounded-sm border border-red-500/40 px-3 py-2 font-mono text-[11px] text-red-500" data-testid="standard-asr-error">
-								{actionError ?? status.error}
-							</p>
-						)}
-
-						{!status.installed ? (
+						{!status.inventory?.plugins.some((plugin) => plugin.name === status.recommended.package) && (
 							<div className="flex flex-col gap-2" data-testid="standard-asr-install">
 								<p className="text-xs text-muted-foreground/80">
-									Recognize speech on your computer with Standard ASR — no key, and audio never leaves the device. The
-									first install downloads Python packages and the model files (about a gigabyte).
+									Install the recommended engine plugin or specify your own below. Then choose a model and download its files.
 								</p>
 								{status.uv ? (
 									<button
 										type="button"
-										disabled={running}
+										disabled={busy}
 										onClick={() => void run({ op: "install" })}
 										data-testid="standard-asr-install-button"
 										className="self-start rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
 									>
-										Install {status.recommended.label} ({status.recommended.runtime})
+										Install {status.recommended.package} ({status.recommended.runtime})
 									</button>
 								) : (
 									<p className="text-xs text-muted-foreground" data-testid="standard-asr-no-uv">
@@ -225,17 +278,86 @@ export function DictationSection({
 									</p>
 								)}
 							</div>
-						) : (
+						)}
+
+						<div className="flex flex-col gap-1" data-testid="standard-asr-engines">
+							<p className="text-xs uppercase tracking-widest text-muted-foreground/70">Engine plugins</p>
+							{(status.inventory?.plugins ?? []).map((plugin) => (
+								<div key={plugin.name} className="flex items-center justify-between gap-3 py-0.5" data-testid={`standard-asr-plugin-${plugin.name}`}>
+									<span className="min-w-0 truncate font-ui text-xs">
+										{plugin.name} <span className="text-muted-foreground/70">{plugin.version}</span>
+										{plugin.commit && <span className="text-muted-foreground/50"> · {plugin.commit.slice(0, 7)}</span>}
+									</span>
+									{removing === plugin.name ? (
+										<span className="flex shrink-0 items-center gap-2 text-xs">
+											<button
+												type="button"
+												onClick={() => {
+													setRemoving(null);
+													void run({ op: "uninstallEngine", name: plugin.name });
+												}}
+												className="text-red-500 underline-offset-2 hover:underline"
+											>
+												Remove
+											</button>
+											<button type="button" onClick={() => setRemoving(null)} className="text-muted-foreground/70 underline-offset-2 hover:underline">
+												Cancel
+											</button>
+										</span>
+									) : (
+										<button
+											type="button"
+											disabled={busy}
+											onClick={() => setRemoving(plugin.name)}
+											className="shrink-0 text-xs text-muted-foreground/70 underline-offset-2 hover:text-red-500 hover:underline disabled:opacity-40"
+										>
+											Remove…
+										</button>
+									)}
+								</div>
+							))}
+							<div className="mt-1 flex items-center gap-2">
+								<input
+									type="text"
+									value={requirement}
+									onChange={(e) => setRequirement(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" && requirement.trim() && !busy && status.uv) {
+											void installCustom();
+										}
+									}}
+									placeholder="PyPI name, Git URL or folder"
+									aria-label="Engine to install"
+									data-testid="standard-asr-requirement"
+									className="h-7 min-w-0 flex-1 rounded-sm border border-border bg-background px-1.5 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/60"
+								/>
+								<button
+									type="button"
+									disabled={!requirement.trim() || busy || !status.uv}
+									onClick={() => {
+										void installCustom();
+									}}
+									data-testid="standard-asr-install-engine"
+									className="shrink-0 text-xs text-foreground underline-offset-2 hover:underline disabled:text-muted-foreground/40 disabled:no-underline"
+								>
+									Install
+								</button>
+							</div>
+							<p className="text-xs text-muted-foreground/60">
+								Any Standard ASR engine plugin works — its models appear below.
+							</p>
+						</div>
+
+						{status.installed && (
 							<>
 								<SettingsRow label="Model" hint={selected ? modelCapabilities(selected) : "Choose the model dictation uses"} testid="standard-asr-model-row">
 									<ThinSelect
 										value={selected?.key ?? ""}
 										ariaLabel="Dictation model"
 										testid="standard-asr-model"
-										disabled={running}
+										disabled={busy}
 										onChange={(key) => {
 											onChange({ ...dictation, model: key, language: undefined });
-											void command({ op: "warm", model: key });
 										}}
 									>
 										{!selected && <option value="">Choose…</option>}
@@ -251,7 +373,7 @@ export function DictationSection({
 										{files.downloadable ? (
 											<button
 												type="button"
-												disabled={running}
+												disabled={busy}
 												onClick={() => void run({ op: "download", model: selected.key })}
 												data-testid="standard-asr-download"
 												className="text-xs text-foreground underline-offset-2 hover:underline disabled:text-muted-foreground/40 disabled:no-underline"
@@ -281,75 +403,6 @@ export function DictationSection({
 									</SettingsRow>
 								)}
 
-								<div className="flex flex-col gap-1" data-testid="standard-asr-engines">
-									<p className="text-xs uppercase tracking-widest text-muted-foreground/70">Installed engines</p>
-									{(status.inventory?.plugins ?? []).map((plugin) => (
-										<div key={plugin.name} className="flex items-center justify-between gap-3 py-0.5" data-testid={`standard-asr-plugin-${plugin.name}`}>
-											<span className="min-w-0 truncate font-ui text-xs">
-												{plugin.name} <span className="text-muted-foreground/70">{plugin.version}</span>
-												{plugin.commit && <span className="text-muted-foreground/50"> · {plugin.commit.slice(0, 7)}</span>}
-											</span>
-											{removing === plugin.name ? (
-												<span className="flex shrink-0 items-center gap-2 text-xs">
-													<button
-														type="button"
-														onClick={() => {
-															setRemoving(null);
-															void run({ op: "uninstallEngine", name: plugin.name });
-														}}
-														className="text-red-500 underline-offset-2 hover:underline"
-													>
-														Remove
-													</button>
-													<button type="button" onClick={() => setRemoving(null)} className="text-muted-foreground/70 underline-offset-2 hover:underline">
-														Cancel
-													</button>
-												</span>
-											) : (
-												<button
-													type="button"
-													disabled={running}
-													onClick={() => setRemoving(plugin.name)}
-													className="shrink-0 text-xs text-muted-foreground/70 underline-offset-2 hover:text-red-500 hover:underline disabled:opacity-40"
-												>
-													Remove…
-												</button>
-											)}
-										</div>
-									))}
-									<div className="mt-1 flex items-center gap-2">
-										<input
-											type="text"
-											value={requirement}
-											onChange={(e) => setRequirement(e.target.value)}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" && requirement.trim() && !running) {
-													void run({ op: "installEngine", requirement: requirement.trim() });
-													setRequirement("");
-												}
-											}}
-											placeholder="PyPI name, Git URL or folder"
-											aria-label="Engine to install"
-											data-testid="standard-asr-requirement"
-											className="h-7 min-w-0 flex-1 rounded-sm border border-border bg-background px-1.5 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/60"
-										/>
-										<button
-											type="button"
-											disabled={!requirement.trim() || running}
-											onClick={() => {
-												void run({ op: "installEngine", requirement: requirement.trim() });
-												setRequirement("");
-											}}
-											data-testid="standard-asr-install-engine"
-											className="shrink-0 text-xs text-foreground underline-offset-2 hover:underline disabled:text-muted-foreground/40 disabled:no-underline"
-										>
-											Install
-										</button>
-									</div>
-									<p className="text-xs text-muted-foreground/60">
-										Any Standard ASR engine plugin works — its models join the list above.
-									</p>
-								</div>
 							</>
 						)}
 					</div>
