@@ -145,6 +145,15 @@ export const DICTATION_KEYLESS = "Dictation needs a Deepgram key";
  *  Settings → Dictation, like the keyless line. */
 export const DICTATION_LOCAL_UNSET = "Set up local dictation";
 
+/** The local engine's model can't run (its files aren't downloaded, it
+ *  isn't installed any more, it can't stream or record) — the bridge said
+ *  so at the start frame. Deep-links to Settings → Dictation too; the
+ *  bridge's own reason rides the tooltip. */
+export const DICTATION_LOCAL_NOT_READY = "The dictation model isn't ready";
+
+/** The bridge's refusal codes that mean "fix it in settings", not "retry". */
+const LOCAL_NOT_READY_CODES = new Set(["service_unavailable", "unknown_model", "unsupported"]);
+
 /** A terminal failure (i18n wave, 2026-10-25): an id per client-authored
  *  line — the bar renders it in the interface language — and `message`
  *  for text the browser, the session route or the local bridge wrote,
@@ -152,6 +161,7 @@ export const DICTATION_LOCAL_UNSET = "Set up local dictation";
 export type DictationError =
 	| { kind: "keyless" }
 	| { kind: "localUnset" }
+	| { kind: "localNotReady" }
 	| { kind: "micDenied" }
 	| { kind: "micUnavailable" }
 	| { kind: "tokenUnavailable" }
@@ -380,6 +390,8 @@ export type Dictation = {
 	phase: DictationPhase;
 	/** Terminal-state explanation, shown inside the wide button (cleared on the next start). */
 	error: DictationError | null;
+	/** The engine's own reason behind `error`, when it gave one (the tooltip). */
+	errorDetail: string | null;
 	/** Latest observed RMS, 0..1 — sampled by the meter's own tick, never reset. */
 	levelRef: { current: number };
 	/** Not idle — from the click until the stop completes (the optimistic window). */
@@ -416,6 +428,8 @@ export type Dictation = {
 export function useDictation({ append }: { append: (text: string) => void }): Dictation {
 	const [phase, setPhase] = useState<DictationPhase>("idle");
 	const [error, setError] = useState<DictationError | null>(null);
+	/** The engine's own words behind a short error line (the tooltip). */
+	const [errorDetail, setErrorDetail] = useState<string | null>(null);
 	/** Latest RMS from the worklet — the meter samples this (dictate pattern). */
 	const levelRef = useRef(0);
 	/** The page's fallback append — kept fresh per render so a mid-recording
@@ -450,6 +464,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 	/** The local engine's live segments (this connection's) — the preview
 	 *  and, should the bridge never send its transcript, the fallback text. */
 	const transcriptRef = useRef<AsrTranscript>(EMPTY_ASR_TRANSCRIPT);
+
 	/** Resolvers waiting for the run to fully end (finish(), owner
 	 *  2026-10-01): released by cleanup() — every terminal path runs it. */
 	const waitersRef = useRef<Array<() => void>>([]);
@@ -533,8 +548,9 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 					: new WebSocket(session.url);
 			ws.binaryType = "arraybuffer";
 			wsRef.current = ws;
-			/** The local bridge's own failure line, if it sent one. */
+			/** The local bridge's own failure line and code, if it sent one. */
 			let localError: string | null = null;
+			let localErrorCode: string | null = null;
 			/** The local bridge's final text, if it sent it. */
 			let localTranscript: string | null = null;
 
@@ -582,13 +598,24 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 					// this connection's segments (owner, 2026-10-25).
 					setPreview([...bufferRef.current, asrTranscriptText(transcriptRef.current).trim()].filter(Boolean).join(" "));
 				} else if (msg.type === "transcript") localTranscript = typeof msg.text === "string" ? msg.text : "";
-				else if (msg.type === "error") localError = typeof msg.message === "string" ? msg.message : "Local dictation failed";
+				else if (msg.type === "error") {
+					localError = typeof msg.message === "string" ? msg.message : "Local dictation failed";
+					localErrorCode = typeof msg.code === "string" ? msg.code : null;
+				}
 			});
 			ws.addEventListener("close", (ev) => {
 				if (gen !== genRef.current) return;
 				if (session.engine === "standard-asr") {
 					commitLocal(localTranscript);
 					if (localError === null && ev.code === 1000) {
+						cleanup();
+						return;
+					}
+					// The model can't run as configured: a reconnect would only
+					// repeat the refusal — say so and point at the settings.
+					if (localErrorCode !== null && LOCAL_NOT_READY_CODES.has(localErrorCode)) {
+						setErrorDetail(localError);
+						setError({ kind: "localNotReady" });
 						cleanup();
 						return;
 					}
@@ -625,6 +652,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 	const start = useCallback(async () => {
 		dictationActiveFlag = true;
 		setError(null);
+		setErrorDetail(null);
 		setPhase("connecting");
 		reconnectsRef.current = 0;
 		bufferRef.current = []; // fresh run, fresh buffer (round 2)
@@ -822,7 +850,11 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		stop,
 		finish,
 		cancel,
-		clearError: () => setError(null),
+		errorDetail,
+		clearError: () => {
+			setError(null);
+			setErrorDetail(null);
+		},
 	};
 }
 
@@ -839,7 +871,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
  *             (full text in the tooltip), cleared on the next click.
  */
 export function DictationBar({ dictation }: { dictation: Dictation }) {
-	const { phase, error, levelRef, toggle, active, clearError } = dictation;
+	const { phase, error, errorDetail, levelRef, toggle, active, clearError } = dictation;
 	const { open: openSettings } = useSettingsDialog();
 	const { t } = useT("artifacts");
 	const errorText = error ? dictationErrorText(error, t) : null;
@@ -850,7 +882,7 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 	const keyless = error?.kind === "keyless";
 	/** The local engine's not-set-up line deep-links the same way — to the
 	 *  Dictation section, where the engine is installed and chosen. */
-	const localUnset = error?.kind === "localUnset";
+	const localUnset = error?.kind === "localUnset" || error?.kind === "localNotReady";
 	const [levels, setLevels] = useState<number[]>(() => new Array(METER_CELLS).fill(0));
 	const recording = phase === "recording" || phase === "stopping";
 	/** Adaptive cell count (owner round 2): derived from the meter's
@@ -900,7 +932,7 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 				// full reveal (the keyless line KEEPS "Deepgram" — owner overrule:
 				// it's the Keys row label, the truth the user needs). Otherwise the
 				// quiet label + the live ⌘D binding.
-				label={errorText ?? t("dictation.dictate")}
+				label={errorText ? (errorDetail ? `${errorText} — ${errorDetail}` : errorText) : t("dictation.dictate")}
 				action={errorText ? undefined : "toggle-dictation"}
 				side="top"
 			>

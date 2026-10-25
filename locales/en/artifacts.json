@@ -133,7 +133,8 @@
 			"connectionLost": "Deepgram connection lost ({{code}})",
 			"localUnset": "Set up local dictation",
 			"localReconnectFailed": "Local dictation reconnect failed",
-			"localConnectionLost": "Local dictation connection lost ({{code}})"
+			"localConnectionLost": "Local dictation connection lost ({{code}})",
+			"localNotReady": "The dictation model isn't ready"
 		}
 	}
 }

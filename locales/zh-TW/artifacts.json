@@ -131,7 +131,8 @@
 			"connectionLost": "Deepgram 連線中斷（{{code}}）",
 			"localUnset": "請先設定本機語音輸入",
 			"localReconnectFailed": "本機語音輸入重新連線失敗",
-			"localConnectionLost": "本機語音輸入連線中斷（{{code}}）"
+			"localConnectionLost": "本機語音輸入連線中斷（{{code}}）",
+			"localNotReady": "語音輸入模型尚未就緒"
 		}
 	}
 }

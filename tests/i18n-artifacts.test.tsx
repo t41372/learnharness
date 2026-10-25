@@ -68,6 +68,7 @@ const researchSteer = {
 const dictation = (error: DictationError | null): Dictation => ({
 	phase: "idle",
 	error,
+	errorDetail: null,
 	levelRef: { current: 0 },
 	active: false,
 	toggle: () => {},

@@ -131,7 +131,8 @@
 			"connectionLost": "Deepgram 连接已断开（{{code}}）",
 			"localUnset": "请先设置本机语音输入",
 			"localReconnectFailed": "本机语音输入重新连接失败",
-			"localConnectionLost": "本机语音输入连接已断开（{{code}}）"
+			"localConnectionLost": "本机语音输入连接已断开（{{code}}）",
+			"localNotReady": "语音输入模型尚未就绪"
 		}
 	}
 }
