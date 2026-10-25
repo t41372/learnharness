@@ -188,7 +188,7 @@ flowchart LR
         FS["fs stores — src/store (data/)"]
         LLM["LLM engines — pi-ai/OpenRouter via piEngineFor"]
         HEAD["headless Chrome — demo verify · SVG render"]
-        DEEP["Deepgram STT — token-minting route, browser-side WebSocket"]
+        DEEP["Dictation — Deepgram (token-minting route) or Standard ASR (resident local bridge); browser-side WebSocket either way"]
         WEB["web tools — Google CSE + Readability/Jina (researcher)"]
     end
 
@@ -405,6 +405,7 @@ flowchart LR
     subgraph OUTSIDE["outside the process"]
         OR["OpenRouter (BYOK key from auth.json, env-injected — never argv)"]
         DG["Deepgram STT (browser-direct WebSocket)"]
+        ASR["Standard ASR bridge (Python, userData/data/speech venv)<br/>loopback WebSocket, per-launch token"]
         GCSE["Google CSE / Jina (researcher tools)"]
         CHROME["system Chrome (headless: demo verify · SVG render)"]
         DISK["data/ ledgers (via LH_DATA_DIR seam)"]
@@ -414,10 +415,16 @@ flowchart LR
     NEXT --> CHROME
     NEXT --> DISK
     REND --> DG
+    REND -->|"PCM over ws://127.0.0.1"| ASR
+    NEXT -->|"spawn + stdin control; uv installs"| ASR
     REND -->|"fetch /api/*"| NEXT
 ```
 
 The Electron main is a launcher + credential/security guard, never a host for teaching or inference logic: single-instance lock, deny-by-default permissions, origin-pinned navigation, sandboxed renderer. All Next.js code runs unchanged in a child process (`output: "standalone"`), relocated by the `LH_DATA_DIR` seam (also the test seam — `data-dir-seam.test.ts` covers it, including a fresh-child-process case). The build hard-fails if repo `data/` would leak into the bundle or if prompt assets fall out of the trace (`scripts/build-server.mjs`).
+
+### 8.0 Local dictation boundary (Standard ASR, 2026-10-25)
+
+Settings → Dictation chooses the engine: Deepgram (cloud, a key) or Standard ASR — any engine plugin installed in the app's own speech environment, recognizing on the device. The server owns that environment (`src/server/standard-asr/`): a uv venv under `LH_DATA_DIR/speech` (uv bundled with the desktop app, `LH_UV_PATH`; PATH otherwise), the pinned core and plugins (`pins.ts` — commits, never `@main`), model files under `speech/models` (`STANDARD_ASR_MODEL_DIR`). Management (inventory, file status, downloads) runs `bridge.py` in a fresh interpreter per call; recognition runs in ONE resident `bridge.py serve` per server process — it keeps engines created and warmed, so only the first dictation after start pays the model load. The bridge listens on 127.0.0.1 and admits a socket only with this launch's random token; `GET /api/stt/session` hands the renderer the URL + token (the Deepgram token flow's shape), and audio flows renderer → bridge, never through the Next server. Recognition never downloads (`STANDARD_ASR_ALLOW_DOWNLOAD=0`); package changes stop the bridge so the next session discovers the new entry points. The bridge's lifetime is tied to the server's: its stdin is the control channel, and EOF exits it.
 
 ---
 
@@ -539,6 +546,7 @@ Every place the architecture is designed to be cut — the "one file" a future c
 | Extraction trigger | `src/server/turn-service.ts` (`triggerExtraction`) | when the Library runs |
 | Practice orchestration | `src/agent/subagents/practice-pipeline.ts` | generation/grading flow without touching contracts |
 | Graph access for teacher | `src/agent/tools/graph.ts` (`list_sessions` / `list_propositions`) | what the teacher can probe, one gate |
+| Dictation engine | `src/server/dictation.ts` (`dictationSession`) + `src/server/standard-asr/` | Deepgram vs. a local Standard ASR engine; what the renderer's socket connects to |
 | Steer delivery (wake) | `src/server/jobs.ts` + injected `deliver` | how background results re-enter lessons |
 | Push events | `src/core/events.ts` (bus) + `src/server/events-stream.ts` (SSE seam) + `components/server-events.tsx` (the window's EventSource) | change notification, end to end |
 | Agent construction (tests) | `handleChatRequest(req, buildAgent?)` | scripted engines, no refactor |

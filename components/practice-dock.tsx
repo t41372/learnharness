@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { Button } from "@/components/ui/button";
-import { joinDictation, useDictationTarget } from "@/components/dictation";
+import { DictationField, joinDictation, useDictationPreview, useDictationTarget } from "@/components/dictation";
 import { useEnterSubmits } from "@/components/enter-submits";
 import { cn } from "@/lib/utils";
 import { repairMathForDisplay } from "@/src/core";
@@ -67,6 +67,7 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 		),
 		true,
 	);
+	const livePreview = useDictationPreview("question");
 
 	const submit = () => {
 		if (compactionRunning) return;
@@ -122,6 +123,7 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 				<div className="px-2.5 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 					YOUR THINKING
 				</div>
+				<DictationField value={thinking} preview={livePreview} layout="lh-input max-h-64 min-h-16 px-2.5 pb-2">
 				<textarea
 					value={thinking}
 					onChange={(e) => {
@@ -150,6 +152,7 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 						"field-sizing-content lh-input max-h-64 min-h-16 w-full resize-none bg-transparent px-2.5 pb-2 outline-none placeholder:text-muted-foreground",
 					)}
 				/>
+				</DictationField>
 				{/* The submit row (owner round 4, 2026-10-05): IDENTICAL to the
 				    question dock's — hint left, the SAME Button (h-9, px-3.5),
 				    one p-1 row. Corner radii concentric: shell 16 − m-1.5 (6) =

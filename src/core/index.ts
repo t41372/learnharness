@@ -58,6 +58,9 @@ export * from "./fuzzy.ts";
 // the user-settings record's shape/sanitizer (pure) and its fully-resolved
 // view. Browser-safe — the Wave-4 panel imports these directly.
 export * from "./settings.ts";
+// Local dictation through Standard ASR (2026-10-25): the shared status and
+// session shapes + the transcript reducer. Pure, browser-safe.
+export * from "./standard-asr.ts";
 // graph-deletion.ts (wave 6): the whole module is PURE but storage-port
 // driven — the deletion RUNS server-side only. The shell needs exactly one
 // two type-only things from it: the ChatDeleteMode union (the delete

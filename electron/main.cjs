@@ -220,6 +220,10 @@ function startServer(port) {
 					LH_AUTH_FILE: AUTH_FILE(),
 					LH_DESKTOP_SERVER: "1",
 					LH_DESKTOP_API_SECRET: desktopAPISecret,
+					// The bundled uv (scripts/fetch-uv.mjs) — local dictation's
+					// speech environment is made with it; absent = the server
+					// looks for one on PATH.
+					...(fs.existsSync(bundledUv()) ? { LH_UV_PATH: bundledUv() } : {}),
 				},
 				stdio: ["ignore", "pipe", "pipe", "ipc"],
 			},
@@ -242,6 +246,11 @@ function startServer(port) {
 		});
 		resolve(child);
 	});
+}
+
+/** The uv binary shipped in Resources/uv (electron-builder.yml). */
+function bundledUv() {
+	return path.join(process.resourcesPath, "uv", process.platform === "win32" ? "uv.exe" : "uv");
 }
 
 /** No "ready" event exists — poll until the server answers (docs-confirmed). */

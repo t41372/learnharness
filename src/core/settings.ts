@@ -264,6 +264,35 @@ export interface AgentSettings {
 	prompts?: Record<string, boolean>;
 }
 
+/** The dictation engines (local dictation, 2026-10-25): Deepgram in the
+ *  cloud (a key in Settings → Dictation), or Standard ASR on this device
+ *  (any engine plugin installed in the app's speech environment). */
+export const DICTATION_ENGINES = ["deepgram", "standard-asr"] as const;
+export type DictationEngine = (typeof DICTATION_ENGINES)[number];
+
+/** Dictation settings — which engine the Dictate button runs, and for
+ *  Standard ASR which model and language. Absent engine = Deepgram (the
+ *  engine dictation shipped with); absent language = "auto". */
+export interface DictationSettings {
+	engine?: DictationEngine;
+	/** The Standard ASR model key ("engine/model") — the selection survives
+	 *  engine switches, so flipping back to local keeps the model. */
+	model?: string;
+	/** A language the model declares selectable, or "auto". */
+	language?: string;
+}
+
+/** A Standard ASR model key: "engine/model" (the model part may be empty
+ *  for an engine's default preset, and may itself contain slashes). */
+export function isAsrModelKey(value: unknown): value is string {
+	return typeof value === "string" && value.length <= 200 && /^[a-z0-9][a-z0-9._-]*\/[^\s]*$/.test(value);
+}
+
+/** A language tag as Standard ASR declares them ("auto", "en", "zh-Hant"…). */
+export function isAsrLanguage(value: unknown): value is string {
+	return typeof value === "string" && /^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/.test(value);
+}
+
 /** Markdown-rendering knobs — the bare-bones set (owner decision). */
 export interface MdRenderingSettings {
 	/** Heading font weight (100–900, default 900). CSS resolves the nearest
@@ -367,6 +396,7 @@ export interface UserSettings {
 	appearance?: AppearanceSettings;
 	graph?: GraphSettings;
 	compaction?: CompactionSettings;
+	dictation?: DictationSettings;
 	[key: string]: unknown;
 }
 
@@ -559,6 +589,16 @@ function sanitizeAppearance(raw: Record<string, unknown>): AppearanceSettings {
 	return out;
 }
 
+function sanitizeDictation(raw: Record<string, unknown>): DictationSettings {
+	// Lenient read side (the write side's parser is strict): a bad field
+	// drops and its default resumes.
+	const out: DictationSettings = {};
+	if ((DICTATION_ENGINES as readonly unknown[]).includes(raw.engine)) out.engine = raw.engine as DictationEngine;
+	if (isAsrModelKey(raw.model)) out.model = raw.model;
+	if (isAsrLanguage(raw.language)) out.language = raw.language;
+	return out;
+}
+
 function sanitizeGraph(raw: Record<string, unknown>): GraphSettings {
 	// Wave 7 collapse (owner ruling 2026-09-23): the section is the master
 	// switch ONLY. The dead rungs' keys (embedding/clustering/labeling/
@@ -630,6 +670,9 @@ export function sanitizeUserSettings(raw: unknown): UserSettings | null {
 		if (r.compaction !== undefined && r.compaction !== null && typeof r.compaction === "object") {
 			out.compaction = sanitizeCompaction(r.compaction as Record<string, unknown>);
 		}
+	}
+	if (r.dictation !== null && typeof r.dictation === "object" && !Array.isArray(r.dictation)) {
+		out.dictation = sanitizeDictation(r.dictation as Record<string, unknown>);
 	}
 	// Unknown top-level keys ride along untouched (forward-compat). One
 	// known-DEAD key is stripped instead of riding: `chat` (the old

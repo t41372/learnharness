@@ -321,8 +321,13 @@ export function KeysSection({
 	 *  while mounted too — the settings dialog's while-open retarget
 	 *  pattern. undefined = nothing seeded. */
 	initialRow,
+	scope = "providers",
 }: {
 	initialRow?: string;
+	/** Which rows render (local dictation, 2026-10-25): the Providers
+	 *  section shows every key but Deepgram's; the Dictation section shows
+	 *  only Deepgram's, beside the engine choice it serves. */
+	scope?: "providers" | "dictation";
 }) {
 	const [statuses, setStatuses] = useState<AuthKeyStatus[] | null>(null);
 	const [providers, setProviders] = useState<ProviderKeyInfo[] | undefined>(undefined);
@@ -401,6 +406,25 @@ export function KeysSection({
 	}
 
 	const { providerRows, toolRows, unknownRows, addable } = classifyKeys(statuses, providers);
+	const keyRow = (status: AuthKeyStatus) => (
+		<KeyTableRow
+			key={status.id}
+			label={status.info?.label ?? status.id}
+			docsUrl={status.info?.docsUrl}
+			status={status}
+			expanded={openRow === status.id}
+			onToggle={() => setOpenRow(openRow === status.id ? null : status.id)}
+			onSave={async (v) => {
+				const err = await saveKey(status.id, v);
+				if (!err) setOpenRow(null);
+				return err;
+			}}
+			onCancel={() => setOpenRow(null)}
+			onDelete={() => deleteKey(status.id)}
+			testid={`key-${status.id.toLowerCase()}`}
+		/>
+	);
+	if (scope === "dictation") return <>{toolRows.filter((status) => status.id === "DEEPGRAM_API_KEY").map(keyRow)}</>;
 
 	async function saveNewProvider(p: ProviderKeyInfo, value: string) {
 		const err = await saveKey(p.envVar, value);
@@ -459,26 +483,11 @@ export function KeysSection({
 				<SubscriptionConnections />
 			</SettingsGroup>
 
-			{(["Dictation", "Search"] as const).map((label) => <SettingsGroup key={label} label={label} testid={label === "Dictation" ? "group-dictation" : "group-search"}>
-				{toolRows.filter((status) => label === "Dictation" ? status.id === "DEEPGRAM_API_KEY" : status.id !== "DEEPGRAM_API_KEY").map((status) => (
-					<KeyTableRow
-						key={status.id}
-						label={status.info?.label ?? status.id}
-						docsUrl={status.info?.docsUrl}
-						status={status}
-						expanded={openRow === status.id}
-						onToggle={() => setOpenRow(openRow === status.id ? null : status.id)}
-						onSave={async (v) => {
-							const err = await saveKey(status.id, v);
-							if (!err) setOpenRow(null);
-							return err;
-						}}
-						onCancel={() => setOpenRow(null)}
-						onDelete={() => deleteKey(status.id)}
-						testid={`key-${status.id.toLowerCase()}`}
-					/>
-				))}
-			</SettingsGroup>)}
+			{/* The Deepgram key lives in Settings → Dictation (local dictation,
+			    2026-10-25). */}
+			<SettingsGroup label="Search" testid="group-search">
+				{toolRows.filter((status) => status.id !== "DEEPGRAM_API_KEY").map(keyRow)}
+			</SettingsGroup>
 
 		</>
 	);
