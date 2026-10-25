@@ -127,6 +127,16 @@ export const SETTINGS_FILE = path.join(DATA_ROOT, "settings.json");
 export const PROMPTS_OVERRIDE_DIR = path.join(DATA_ROOT, "prompts");
 
 /**
+ * THE LOCAL SPEECH ENVIRONMENT (local dictation, 2026-10-25): everything
+ * Standard ASR needs on this machine, owned by src/server/standard-asr —
+ * the uv venv (venv/), the model files engines download (models/, via
+ * STANDARD_ASR_MODEL_DIR), and the installed engines' sources
+ * (sources.json, so a reinstall resolves them together). Deleting the
+ * directory uninstalls local dictation completely.
+ */
+export const SPEECH_DIR = path.join(DATA_ROOT, "speech");
+
+/**
  * THE AUTH/KEY STORE (auth-keys wave, 2026-09-19): BYOK provider keys in a
  * flat {VAR: value} JSON map — the SAME file the Electron app has always
  * hand-edited (owner decision: option A, zero migration). Desktop main.cjs

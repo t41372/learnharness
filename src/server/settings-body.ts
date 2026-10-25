@@ -25,6 +25,7 @@ import type {
 } from "../core/settings.ts";
 import { BACKGROUND_MODEL_ROLES, COMPACTION_THRESHOLD_FLOOR, EXTRACTION_CHUNK_TOKENS_FLOOR, LEARNER_INSTRUCTIONS_MAX_CHARS, MODEL_SLOTS } from "../core/settings.ts";
 import { WRITABLE_TOOL_KEYS } from "../core/pending.ts";
+import { DICTATION_ENGINES, isAsrLanguage, isAsrModelKey, type DictationEngine, type DictationSettings } from "../core/settings.ts";
 
 /** Parsed-or-rejected — `ok: false` carries the 400's error message. */
 export type SettingsBodyResult<T> =
@@ -384,6 +385,32 @@ export function parseCompactionSettingsBody(body: unknown): SettingsBodyResult<C
 	return { ok: true, settings };
 }
 
+/** dictation: { engine?, model?, language? } — strict (local dictation,
+ *  2026-10-25): an unknown engine, a malformed model key or language tag
+ *  is a 400. Whether the model is INSTALLED is not checked here — the
+ *  environment can change under a stored choice, and dictation reports
+ *  that honestly at start. */
+export function parseDictationSettingsBody(body: unknown): SettingsBodyResult<DictationSettings> {
+	const raw = asRecord(body);
+	if (!raw) return { ok: false, error: "Invalid JSON body" };
+	const settings: DictationSettings = {};
+	if (raw.engine !== undefined) {
+		if (!(DICTATION_ENGINES as readonly unknown[]).includes(raw.engine)) {
+			return { ok: false, error: `engine must be one of ${DICTATION_ENGINES.join(", ")}` };
+		}
+		settings.engine = raw.engine as DictationEngine;
+	}
+	if (raw.model !== undefined) {
+		if (!isAsrModelKey(raw.model)) return { ok: false, error: "model must be a Standard ASR model key (engine/model)" };
+		settings.model = raw.model;
+	}
+	if (raw.language !== undefined) {
+		if (!isAsrLanguage(raw.language)) return { ok: false, error: "language must be a language tag or \"auto\"" };
+		settings.language = raw.language;
+	}
+	return { ok: true, settings };
+}
+
 /** The section→parser map for PUT /api/settings/[section] (the route also
  *  carries the special prompts sub-resource). */
 export const SETTINGS_SECTIONS = {
@@ -394,6 +421,7 @@ export const SETTINGS_SECTIONS = {
 	graph: parseGraphSettingsBody,
 	compaction: parseCompactionSettingsBody,
 	models: parseModelsSettingsBody,
+	dictation: parseDictationSettingsBody,
 } as const;
 
 export type SettingsSectionName = keyof typeof SETTINGS_SECTIONS;

@@ -34,6 +34,9 @@ export { effectivePromptSegments, allSegmentPaths, readPromptOverride } from "..
 // keeps its plain process.env reads (that seam is the point).
 export * from "./keys.ts";
 export * from "./search.ts";
+// Dictation (local dictation, 2026-10-25): the Deepgram mint, the session
+// for whichever engine is selected, and the Standard ASR environment.
+export * from "./dictation.ts";
 export { authStore } from "../store/auth.ts";
 export * from "./settings-body.ts";
 export * from "./turn-liveness.ts";
