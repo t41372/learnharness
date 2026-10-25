@@ -304,7 +304,12 @@ class Recognizer:
             emit("warm", {"model": key, "ok": False, "error": error_message(error)})
 
     def evict(self):
+        # Drop every loaded engine (the parent switches models one at a
+        # time); the memory goes back once the collector runs.
         self.engines.clear()
+        import gc
+
+        gc.collect()
 
     async def handle(self, ws):
         cancelled = asyncio.Event()
