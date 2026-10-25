@@ -28,7 +28,7 @@ Instead of just giving you an explanation, it uses your answers and thinking to 
 3. **Teach.** Each step builds on something you already understand. You predict, get an explanation, and check your understanding. Confusions are repaired before anything is built on them. The aim is for the goal to feel obviously true, not merely familiar.
 4. **Practice.** Separate sessions pose varied problems that require the right knowledge to come to mind without being named first. Problems and hints adapt to your reasoning.
 
-**Think out loud.** The thinking fields let you explain your reasoning, uncertainties, and reactions in your own words. This is how the agent gets a detailed picture rather than just a record of right and wrong answers. You can type or use dictation — in the cloud with a Deepgram key, or on your computer with any [Standard ASR](https://github.com/standard-voice/standard_asr) engine (one click installs Qwen3-ASR on Apple Silicon, Whisper elsewhere).
+**Think out loud.** The thinking fields let you explain your reasoning, uncertainties, and reactions in your own words. This is how the agent gets a detailed picture rather than just a record of right and wrong answers. You can type or use dictation — in the cloud with a Deepgram key, or on your computer with any [Standard ASR](https://github.com/standard-voice/standard_asr) engine (install a plugin, choose a model, then download its files).
 
 The agent can also research questions in the background, create visual explanations, and build interactive demonstrations.
 

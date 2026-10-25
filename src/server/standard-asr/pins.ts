@@ -27,7 +27,7 @@ export interface RecommendedEngine {
 	label: string;
 	/** What runs it — shown beside the label. */
 	runtime: string;
-	/** The model key the install selects. */
+	/** A model provided by the recommended plugin. */
 	model: string;
 	/** The plugin's distribution name (its sources.json key). */
 	package: string;
