@@ -14,6 +14,10 @@
 
 import { useTranslation } from "react-i18next";
 
+// <Trans> for copy with embedded elements (links, emphasis): import it from
+// here too, so the instance is initialized first.
+export { Trans } from "react-i18next";
+
 export { i18n } from "./i18n.ts";
 export { I18nProvider, useLanguage } from "./provider.tsx";
 export { NAMESPACES, type Namespace } from "./resources.ts";
