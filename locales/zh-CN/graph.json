@@ -1,1 +1,201 @@
-{}
+{
+	"graphView": {
+		"empty": {
+			"title": "知识图谱",
+			"body": "开始会话或导入笔记，即可构建你的图谱。"
+		},
+		"search": {
+			"label": "搜索节点",
+			"placeholder": "搜索节点…",
+			"noMatch": "没有匹配的节点。"
+		},
+		"chains": {
+			"hint": "所有推理链",
+			"button": "推理链"
+		},
+		"import": {
+			"hint": "将笔记导入图谱",
+			"button": "导入笔记…",
+			"importing": "导入中…"
+		},
+		"contextMenu": {
+			"delete": "删除"
+		},
+		"detail": {
+			"sessions": "会话",
+			"noSessions": "暂无会话记录。"
+		},
+		"pipeline": {
+			"phase": {
+				"queued": "排队中",
+				"extracting": "提取中",
+				"waiting": "等待中",
+				"auditing": "审核中",
+				"merging": "合并中"
+			},
+			"elapsed": "{{seconds}} 秒"
+		}
+	},
+	"graphCosts": {
+		"hint": "图谱费用——点击查看明细",
+		"title": "图谱构建费用",
+		"unpriced": "{{count}} 次未计价",
+		"plusUnpriced": "+{{count}} 次未计价",
+		"stage": {
+			"extraction": "提取",
+			"audit": "审核"
+		},
+		"tokens": "输入 {{input}} / 输出 {{output}}",
+		"merged": "+{{count}} 个节点",
+		"ago": {
+			"now": "刚刚",
+			"minutes": "{{count}} 分钟",
+			"hours": "{{count}} 小时",
+			"days": "{{count}} 天"
+		}
+	},
+	"graphSettings": {
+		"hint": "图谱显示设置",
+		"nodeSize": "节点大小",
+		"edgeWidth": "连线粗细",
+		"arrowSize": "箭头大小",
+		"labelSize": "标签大小",
+		"labelZoom": "标签显示倍率",
+		"regions": {
+			"title": "区域",
+			"background": "背景色块",
+			"dilation": "扩张",
+			"blur": "模糊",
+			"edgeAlpha": "边缘透明度",
+			"bitmap": "位图分辨率",
+			"clusterLabels": "分组标签",
+			"clusterLabelSize": "分组标签大小"
+		},
+		"physics": {
+			"title": "物理",
+			"repulsion": "节点斥力",
+			"edgeAttraction": "连线引力",
+			"edgeLength": "连线长度",
+			"centralPull": "向心力",
+			"clusterPull": "分组聚合力",
+			"off": "关",
+			"friction": "摩擦力",
+			"depthAnchor": "深度锚定",
+			"depthMode": {
+				"off": "关闭",
+				"vertical": "纵向（向上）",
+				"radial": "径向（向外）"
+			},
+			"depthStrength": "深度强度",
+			"depthSpacing": "深度间距",
+			"baseRadius": "基础环半径"
+		}
+	},
+	"chainTable": {
+		"summary": "{{chains}} · {{nodes}}",
+		"chainCount_other": "{{count}} 条链",
+		"nodeCount_other": "{{count}} 个节点",
+		"search": {
+			"label": "搜索节点",
+			"placeholder": "搜索节点…"
+		},
+		"close": "关闭推理链",
+		"columns": {
+			"name": "名称",
+			"props": "命题数",
+			"created": "创建时间"
+		},
+		"noMatch": "没有匹配的推理链。",
+		"unlabeled": "未命名",
+		"notesTag": "笔记",
+		"noPremises": "{{name}}（无前提）",
+		"selectCluster": "选中“{{label}}”中产生的全部内容",
+		"expandCluster": "展开分组“{{label}}”",
+		"selectChain": "选中推理链“{{name}}”",
+		"expandChain": "展开推理链“{{name}}”",
+		"selectNode": "选中节点“{{name}}”",
+		"selection": {
+			"summary": "{{nodes}} → {{chains}}",
+			"clear": "清除",
+			"done": "完成",
+			"doneLabel_other": "完成选择——已选 {{count}} 个命题",
+			"delete": "删除",
+			"deleteLabel_other": "删除选中的 {{count}} 个节点"
+		}
+	},
+	"deleteNode": {
+		"aria": "删除节点",
+		"title": "删除节点？",
+		"titleMany": "删除 {{count}} 个节点？",
+		"more": ", 以及另外 {{count}} 个",
+		"permanence": "这将永久删除该节点，且无法撤销。",
+		"permanenceMany": "这将永久删除全部 {{count}} 个节点，且无法撤销。",
+		"failure": {
+			"extractionRunning": "有提取任务正在运行——请等活动面板中的任务完成后再试。",
+			"notFound": "节点不存在",
+			"http": "删除失败（{{status}}）",
+			"network": "删除失败——网络错误，请重试。"
+		},
+		"retry": "重试",
+		"cancel": "取消",
+		"confirm": "删除",
+		"deleting": "删除中…"
+	},
+	"coverage": {
+		"extracting": "提取中…",
+		"fullyExtracted": "已全部提取",
+		"tokUncovered": "{{tokens}} token 未覆盖",
+		"messagesUnextracted_other": "{{count}} 条消息未提取",
+		"running": "运行中",
+		"extract": "提取",
+		"ringHint": "本会话还有多少内容未纳入图谱",
+		"detail": {
+			"title": "提取覆盖率",
+			"uncovered": "未覆盖",
+			"covered": "已覆盖",
+			"tokens": "{{tokens}} token",
+			"messages": "消息",
+			"chunkThreshold": "分块阈值",
+			"lastExtraction": "上次提取",
+			"status": "状态"
+		},
+		"ago": {
+			"justNow": "刚刚",
+			"minutes": "{{count}} 分钟前",
+			"hours": "{{count}} 小时前",
+			"days": "{{count}} 天前"
+		}
+	},
+	"notesImport": {
+		"invalidResponse": "导入响应无效，请重新导入该文件。",
+		"requestFailed": "导入请求失败（HTTP {{status}}），请重新导入该文件。",
+		"requestFailedDetail": "导入请求失败（HTTP {{status}}）：{{detail}}。请重新导入该文件。",
+		"modelsNotConfigured": "尚未配置模型——请先设置模型",
+		"providerKeyMissing": "未设置 {{provider}} 密钥——请在“设置 → 密钥”中添加"
+	},
+	"plan": {
+		"diagramLabel": "计划图",
+		"open": "打开完整计划",
+		"popup": {
+			"aria": "完整计划",
+			"title": "计划",
+			"live": "实时——状态由你的测验结果得出",
+			"close": "关闭",
+			"panHint": "拖动平移 · 滚动缩放",
+			"zoomOut": "缩小",
+			"fit": "缩放至适合屏幕",
+			"zoomIn": "放大",
+			"empty": "本会话还没有计划。"
+		}
+	},
+	"graphContext": {
+		"title": "图谱上下文",
+		"propositions_other": "{{count}} 个命题",
+		"chains_other": "{{count}} 条链"
+	},
+	"mermaidError": {
+		"title": "图表渲染失败",
+		"showSource": "查看图表源码",
+		"retry": "重试"
+	}
+}
