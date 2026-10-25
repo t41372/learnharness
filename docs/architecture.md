@@ -539,6 +539,7 @@ Every place the architecture is designed to be cut — the "one file" a future c
 | Extraction trigger | `src/server/turn-service.ts` (`triggerExtraction`) | when the Library runs |
 | Practice orchestration | `src/agent/subagents/practice-pipeline.ts` | generation/grading flow without touching contracts |
 | Graph access for teacher | `src/agent/tools/graph.ts` (`list_sessions` / `list_propositions`) | what the teacher can probe, one gate |
+| The learner's instructions | `src/agent/learner-instructions.ts` (`withLearnerInstructions`), applied to every engine `src/server/chat-handler.ts` builds | text from Settings → Agent (`agent.instructions`) appended to every agent's system prompt as a named section |
 | Steer delivery (wake) | `src/server/jobs.ts` + injected `deliver` | how background results re-enter lessons |
 | Push events | `src/core/events.ts` (bus) + `src/server/events-stream.ts` (SSE seam) + `components/server-events.tsx` (the window's EventSource) | change notification, end to end |
 | Agent construction (tests) | `handleChatRequest(req, buildAgent?)` | scripted engines, no refactor |
