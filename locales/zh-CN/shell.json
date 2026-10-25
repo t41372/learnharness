@@ -1,1 +1,224 @@
-{}
+{
+	"sidebar": {
+		"open": "打开侧栏",
+		"close": "关闭侧栏",
+		"home": "主页",
+		"practiceSession": "练习会话",
+		"renameInput": "重命名会话",
+		"kind": {
+			"teach": "教学",
+			"practice": "练习",
+			"all": "全部"
+		},
+		"newTeachingSr": "新建教学会话",
+		"newPracticeSr": "新建练习会话",
+		"sessions": "会话",
+		"searchPlaceholder": "搜索…",
+		"loading": "加载中…",
+		"noMatches": "没有匹配的会话。",
+		"empty": "还没有会话。",
+		"settings": "设置",
+		"menu": {
+			"rename": "重命名",
+			"exportMarkdown": "导出为Markdown…",
+			"delete": "删除…"
+		},
+		"meta": {
+			"compacting": "正在压缩上下文 · {{ago}}",
+			"waiting": "等待输入 · {{ago}}",
+			"problemWaiting": "题目待作答 · {{ago}}",
+			"working": "处理中…"
+		},
+		"time": {
+			"justNow": "刚刚",
+			"minutesAgo": "{{n}}分钟前",
+			"hoursAgo": "{{n}}小时前",
+			"daysAgo": "{{n}}天前"
+		}
+	},
+	"draft": {
+		"learnPlaceholder": "你想学什么？",
+		"practicePlaceholder": "你想练习什么？",
+		"setupModels": "设置模型"
+	},
+	"home": {
+		"start": "开始会话",
+		"mode": {
+			"teach": "教学",
+			"practice": "练习"
+		}
+	},
+	"newSession": {
+		"title": "新建会话",
+		"practiceTitle": "新建练习会话",
+		"description": "老师会先通过提问，了解你已经掌握了什么。",
+		"practiceDescription": "从知识图谱中挑选节点、描述你想练习的内容，或者带上你自己的题目。"
+	},
+	"minimalHome": {
+		"chains": "推理链",
+		"chainsHint": "所有推理链",
+		"import": "导入笔记…",
+		"importHint": "将笔记导入图谱",
+		"importing": "正在导入…",
+		"summary": {
+			"propositions_other": "{{count}} 个命题",
+			"chains_other": "{{count}} 条推理链",
+			"teachSessions_other": "{{count}} 个教学会话",
+			"practiceSessions_other": "{{count}} 个练习会话",
+			"importedNotes_other": "{{count}} 篇导入的笔记",
+			"empty": "这里还什么都没有——导入笔记，开始构建图谱。"
+		}
+	},
+	"activity": {
+		"title": "后台Agent",
+		"totalCost": "运行中的总费用（估算）",
+		"needsModelSetup": "需要设置模型",
+		"needsProviderKey": "需要服务商密钥",
+		"extraction": "提取——{{phase}}",
+		"phase": {
+			"queued": "排队中",
+			"extracting": "提取中",
+			"waiting": "等待中",
+			"auditing": "审核中",
+			"merging": "合并中",
+			"running": "运行中"
+		},
+		"kind": {
+			"research": "研究员",
+			"demo": "演示制作者",
+			"visual": "图示制作者",
+			"pdf": "PDF阅读者",
+			"subAgent": "子Agent"
+		},
+		"abortFailed": "终止失败——请重试",
+		"end": "结束这个后台进程",
+		"endAria": "结束“{{title}}”中的{{label}}",
+		"cost": "费用",
+		"context": "上下文",
+		"model": "模型",
+		"steps": "步数",
+		"openSession": "打开会话 →",
+		"stopping": "正在停止…"
+	},
+	"update": {
+		"ready": "LearnHarness {{version}} 已就绪",
+		"readyUnversioned": "LearnHarness更新已就绪",
+		"restartToInstall": "，重启即可完成安装。",
+		"restart": "重启"
+	},
+	"cheatSheet": {
+		"title": "键盘快捷键",
+		"escToClose": "按Esc关闭",
+		"scope": {
+			"global": "全局",
+			"chat": "会话",
+			"graph": "图谱视图"
+		}
+	},
+	"deleteSession": {
+		"aria": "删除会话",
+		"title": "删除会话？",
+		"body": "这会永久删除该会话，包括它的消息、后台任务和提取记录。除非勾选下方选项，它添加到图谱中的内容都会保留。此操作无法撤销。",
+		"traces": {
+			"title": "同时移除它在图谱中的痕迹",
+			"body": "该会话的主题、关联和事件也会从图谱中移除。其他会话或导入的笔记也涉及的主题会保留；只由该会话创建的主题会被彻底删除。"
+		},
+		"failure": {
+			"not_found": "找不到该会话",
+			"turn_in_flight": "该会话中有一轮回复正在进行——请等它结束后重试",
+			"jobs_running": "该会话中仍有后台任务在运行——请等它们结束后重试",
+			"extraction_winding_down": "该会话的提取仍在收尾——请稍后重试",
+			"network": "删除失败：网络错误。请重试。"
+		},
+		"failedStatus": "删除失败（{{status}}）",
+		"retry": "重试",
+		"cancel": "取消",
+		"deleting": "正在删除…",
+		"confirm": "删除"
+	},
+	"find": {
+		"aria": "会话内查找",
+		"input": "在会话中查找",
+		"placeholder": "在会话中查找…",
+		"previous": "上一个匹配项",
+		"previousTitle": "上一个匹配项 (Shift+Enter)",
+		"next": "下一个匹配项",
+		"nextTitle": "下一个匹配项 (Enter)",
+		"close": "关闭查找",
+		"closeTitle": "关闭查找 (Esc)"
+	},
+	"diagram": {
+		"aria": "图表聚焦视图",
+		"title": "图表",
+		"source": "来自本次会话",
+		"close": "关闭",
+		"panZoomHint": "拖动平移 · 滚动缩放",
+		"zoomOut": "缩小",
+		"fit": "缩放至适合视图",
+		"zoomIn": "放大",
+		"rendering": "正在渲染图表…"
+	},
+	"setupCta": {
+		"addProviderKey": "添加服务商密钥"
+	},
+	"setupDialog": {
+		"title": "设置模型",
+		"close": "关闭",
+		"closeAria": "关闭模型设置",
+		"keysIntro": "选择服务商并粘贴它的 API 密钥。下一步再选择模型。",
+		"provider": "服务商",
+		"pickProvider": "选择服务商…",
+		"pasteKey": "粘贴密钥…",
+		"keyAria": "{{provider}} 密钥",
+		"saving": "正在保存…",
+		"saveKey": "保存密钥",
+		"subscriptions": "订阅",
+		"saveFailedStatus": "保存失败（{{status}}）",
+		"saveFailedReason": "保存失败：{{reason}}",
+		"saveFailedNetwork": "保存失败。请检查网络连接后重试。",
+		"catalogFailed": "无法加载模型目录。请检查网络连接后重试。",
+		"pickersIntro": "为每个档位选择模型。三个档位都选好后才能开始会话。",
+		"needed": "待选",
+		"slotModelAria": "{{slot}}模型",
+		"slotThinkingAria": "{{slot}}思考强度",
+		"pickModel": "选择模型…",
+		"noVisionModels": "没有支持图像输入的模型。请添加可使用视觉模型的服务商密钥。",
+		"saveModels": "保存模型",
+		"slots": {
+			"strong": {
+				"label": "主力",
+				"roster": "探查者、老师"
+			},
+			"cheap": {
+				"label": "经济",
+				"roster": "研究员、演示制作者、提取者、审核者"
+			},
+			"vision": {
+				"label": "视觉",
+				"roster": "图示制作者 + PDF阅读者"
+			}
+		}
+	},
+	"modelPicker": {
+		"thinking": "思考强度",
+		"rejected": "设置被拒绝（{{status}}）",
+		"unreachable": "无法连接服务器——请重试。",
+		"noModels": "没有可用模型——请在“密钥”中添加服务商密钥",
+		"sessionModel": "此会话的模型",
+		"strongDefault": "主力档位——新会话的默认模型",
+		"noLevels": "{{model}} 不支持思考强度。",
+		"pickModelFirst": "请先选择模型。",
+		"loading": "加载中…",
+		"levelsFooter": "此模型实际支持的强度"
+	},
+	"stats": {
+		"title": "会话统计",
+		"context": "上下文（最近一次调用）",
+		"usage": "用量",
+		"totalCost": "总费用",
+		"manageChatGPT": "管理ChatGPT用量",
+		"unpriced": "未计价轮次",
+		"turns": "轮次",
+		"steps": "{{n}} 步"
+	}
+}

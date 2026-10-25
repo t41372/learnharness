@@ -1,1 +1,229 @@
-{}
+{
+	"sidebar": {
+		"open": "Open sidebar",
+		"close": "Close sidebar",
+		"home": "Home",
+		"practiceSession": "Practice session",
+		"renameInput": "Rename session",
+		"kind": {
+			"teach": "Teaching",
+			"practice": "Practice",
+			"all": "All"
+		},
+		"newTeachingSr": "create a new teaching session",
+		"newPracticeSr": "create a new practice session",
+		"sessions": "Sessions",
+		"searchPlaceholder": "Search…",
+		"loading": "Loading…",
+		"noMatches": "No sessions match.",
+		"empty": "No sessions yet.",
+		"settings": "Settings",
+		"menu": {
+			"rename": "Rename",
+			"exportMarkdown": "Export as Markdown…",
+			"delete": "Delete…"
+		},
+		"meta": {
+			"compacting": "Compacting context · {{ago}}",
+			"waiting": "Waiting for input · {{ago}}",
+			"problemWaiting": "Problem waiting · {{ago}}",
+			"working": "Working…"
+		},
+		"time": {
+			"justNow": "just now",
+			"minutesAgo": "{{n}}m ago",
+			"hoursAgo": "{{n}}h ago",
+			"daysAgo": "{{n}}d ago"
+		}
+	},
+	"draft": {
+		"learnPlaceholder": "What do you want to learn?",
+		"practicePlaceholder": "What do you want to practice?",
+		"setupModels": "Set up your models"
+	},
+	"home": {
+		"start": "Start session",
+		"mode": {
+			"teach": "Teach",
+			"practice": "Practice"
+		}
+	},
+	"newSession": {
+		"title": "New session",
+		"practiceTitle": "New practice session",
+		"description": "The teacher will open by probing what you already know.",
+		"practiceDescription": "Pick nodes from your knowledge graph, describe what you want to practice, or bring your own problem."
+	},
+	"minimalHome": {
+		"chains": "Chains",
+		"chainsHint": "Every reasoning chain",
+		"import": "Import notes…",
+		"importHint": "Import notes into the graph",
+		"importing": "Importing…",
+		"summary": {
+			"propositions_one": "{{count}} proposition",
+			"propositions_other": "{{count}} propositions",
+			"chains_one": "{{count}} chain",
+			"chains_other": "{{count}} chains",
+			"teachSessions_one": "{{count}} teaching session",
+			"teachSessions_other": "{{count}} teaching sessions",
+			"practiceSessions_one": "{{count}} practice session",
+			"practiceSessions_other": "{{count}} practice sessions",
+			"importedNotes_one": "{{count}} imported note",
+			"importedNotes_other": "{{count}} imported notes",
+			"empty": "Nothing here yet — import notes to begin building the graph."
+		}
+	},
+	"activity": {
+		"title": "Background agents",
+		"totalCost": "Total running cost (inferred)",
+		"needsModelSetup": "needs model setup",
+		"needsProviderKey": "needs a provider key",
+		"extraction": "Extraction — {{phase}}",
+		"phase": {
+			"queued": "queued",
+			"extracting": "extracting",
+			"waiting": "waiting",
+			"auditing": "auditing",
+			"merging": "merging",
+			"running": "running"
+		},
+		"kind": {
+			"research": "Researcher",
+			"demo": "Demo builder",
+			"visual": "Figure maker",
+			"pdf": "PDF reader",
+			"subAgent": "Sub-agent"
+		},
+		"abortFailed": "Abort failed — try again",
+		"end": "End this background process",
+		"endAria": "End {{label}} in {{title}}",
+		"cost": "Cost",
+		"context": "Context",
+		"model": "Model",
+		"steps": "Steps",
+		"openSession": "Open session →",
+		"stopping": "Stopping…"
+	},
+	"update": {
+		"ready": "LearnHarness {{version}} is ready",
+		"readyUnversioned": "LearnHarness update is ready",
+		"restartToInstall": " — restart to finish installing.",
+		"restart": "Restart"
+	},
+	"cheatSheet": {
+		"title": "Keyboard shortcuts",
+		"escToClose": "Esc to close",
+		"scope": {
+			"global": "Global",
+			"chat": "Chat",
+			"graph": "Graph view"
+		}
+	},
+	"deleteSession": {
+		"aria": "Delete session",
+		"title": "Delete session?",
+		"body": "This permanently removes the session — its messages, background jobs, and extraction records. Everything it added to the graph stays unless you check below. This cannot be undone.",
+		"traces": {
+			"title": "Also remove its graph traces",
+			"body": "This session’s topics, links, and events leave the graph too. Topics other sessions or imported notes also cover survive; topics only this session created are removed entirely."
+		},
+		"failure": {
+			"not_found": "No such session",
+			"turn_in_flight": "A turn is running in this session — try again when it finishes",
+			"jobs_running": "Background jobs are still running in this session — try again when they finish",
+			"extraction_winding_down": "The session's extraction is still winding down — try again in a moment",
+			"network": "Delete failed — network error. Try again."
+		},
+		"failedStatus": "Delete failed ({{status}})",
+		"retry": "Try again",
+		"cancel": "Cancel",
+		"deleting": "Deleting…",
+		"confirm": "Delete"
+	},
+	"find": {
+		"aria": "Session Find",
+		"input": "Find in session",
+		"placeholder": "Find in session…",
+		"previous": "Previous match",
+		"previousTitle": "Previous match (Shift+Enter)",
+		"next": "Next match",
+		"nextTitle": "Next match (Enter)",
+		"close": "Close Find",
+		"closeTitle": "Close Find (Esc)"
+	},
+	"diagram": {
+		"aria": "Diagram focus",
+		"title": "Diagram",
+		"source": "from this lesson",
+		"close": "Close",
+		"panZoomHint": "Drag to pan · scroll to zoom",
+		"zoomOut": "Zoom out",
+		"fit": "Fit diagram to view",
+		"zoomIn": "Zoom in",
+		"rendering": "Rendering diagram…"
+	},
+	"setupCta": {
+		"addProviderKey": "Add a provider key"
+	},
+	"setupDialog": {
+		"title": "Set up your models",
+		"close": "Close",
+		"closeAria": "Close setup",
+		"keysIntro": "Choose your AI provider and paste its API key. You’ll pick your models next.",
+		"provider": "Provider",
+		"pickProvider": "Pick a provider…",
+		"pasteKey": "Paste key…",
+		"keyAria": "{{provider}} key",
+		"saving": "Saving…",
+		"saveKey": "Save key",
+		"subscriptions": "Subscriptions",
+		"saveFailedStatus": "Save failed ({{status}})",
+		"saveFailedReason": "Save failed: {{reason}}",
+		"saveFailedNetwork": "Save failed. Check your connection and try again.",
+		"catalogFailed": "Model catalog could not be loaded. Check the connection and retry.",
+		"pickersIntro": "Pick the model for each tier. All three are required before chats can start.",
+		"needed": "needed",
+		"slotModelAria": "{{slot}} model",
+		"slotThinkingAria": "{{slot}} thinking",
+		"pickModel": "Pick a model…",
+		"noVisionModels": "No image-capable models. Add a provider key with access to a vision model.",
+		"saveModels": "Save models",
+		"slots": {
+			"strong": {
+				"label": "Strong",
+				"roster": "Prober, teacher"
+			},
+			"cheap": {
+				"label": "Cheap",
+				"roster": "Researcher, demo builder, extractor, auditor"
+			},
+			"vision": {
+				"label": "Vision",
+				"roster": "Visual maker + PDF reader"
+			}
+		}
+	},
+	"modelPicker": {
+		"thinking": "Thinking",
+		"rejected": "settings rejected ({{status}})",
+		"unreachable": "Could not reach the server — try again.",
+		"noModels": "No models — add a provider key in Keys",
+		"sessionModel": "This session's model",
+		"strongDefault": "Strong tier — the default for new sessions",
+		"noLevels": "{{model}} has no thinking levels.",
+		"pickModelFirst": "Pick a model first.",
+		"loading": "Loading…",
+		"levelsFooter": "Levels this model actually supports"
+	},
+	"stats": {
+		"title": "Session stats",
+		"context": "Context (last call)",
+		"usage": "Usage",
+		"totalCost": "Total cost",
+		"manageChatGPT": "Manage ChatGPT usage",
+		"unpriced": "Unpriced turns",
+		"turns": "Turns",
+		"steps": "{{n}} steps"
+	}
+}
