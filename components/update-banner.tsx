@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useT } from "@/components/i18n";
 
 // The window.lh bridge type lives in components/sidebar.tsx (the incumbent
 // declare-global) — onUpdateStatus/installUpdate are declared there too.
@@ -19,6 +20,7 @@ import { useEffect, useState } from "react";
 type UpdateStatus = { status: string; version: string | null };
 
 export default function UpdateBanner() {
+	const { t } = useT("shell");
 	const [ready, setReady] = useState<UpdateStatus | null>(null);
 
 	useEffect(() => {
@@ -35,15 +37,17 @@ export default function UpdateBanner() {
 			className="fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-lg border border-border bg-popover px-4 py-3 shadow-lg"
 		>
 			<div className="text-sm">
-				<span className="font-medium">LearnHarness {ready.version ?? "update"} is ready</span>
-				<span className="text-muted-foreground"> — restart to finish installing.</span>
+				<span className="font-medium">
+					{ready.version ? t("update.ready", { version: ready.version }) : t("update.readyUnversioned")}
+				</span>
+				<span className="text-muted-foreground">{t("update.restartToInstall")}</span>
 			</div>
 			<button
 				type="button"
 				onClick={() => window.lh?.installUpdate?.()}
 				className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent/80"
 			>
-				Restart
+				{t("update.restart")}
 			</button>
 		</div>
 	);

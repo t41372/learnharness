@@ -25,6 +25,7 @@ import { GraphCostControl } from "@/components/graph-view.tsx";
 import { NotesImportErrors, useNotesImport } from "@/components/notes-import.tsx";
 import { Hint } from "@/components/ui/hint";
 import type { ChatSummary, GraphCostSummary, GraphSnapshot } from "@/src/core";
+import { useT } from "@/components/i18n";
 
 /** The quiet centered summary — a pure body (props in, markup out) so
  * the render suite can pin it statically. Very quiet by owner ruling:
@@ -42,6 +43,7 @@ export function KnowledgeSummary({
 	practiceSessions: number;
 	importedNotes: number;
 }) {
+	const { t } = useT("shell");
 	const empty =
 		propositions === 0 && chains === 0 && teachSessions === 0 && practiceSessions === 0 && importedNotes === 0;
 	return (
@@ -52,28 +54,28 @@ export function KnowledgeSummary({
 			    list) rides after the same parting. */}
 			<div className="flex flex-col gap-1">
 				<p className="font-ui text-sm text-muted-foreground">
-					{propositions} {propositions === 1 ? "proposition" : "propositions"}
+					{t("minimalHome.summary.propositions", { count: propositions })}
 				</p>
 				<p className="font-ui text-sm text-muted-foreground">
-					{chains} {chains === 1 ? "chain" : "chains"}
+					{t("minimalHome.summary.chains", { count: chains })}
 				</p>
 			</div>
 			<div className="h-4" aria-hidden="true" />
 			<div className="flex flex-col gap-1">
 				<p className="font-ui text-sm text-muted-foreground">
-					{teachSessions} {teachSessions === 1 ? "teaching session" : "teaching sessions"}
+					{t("minimalHome.summary.teachSessions", { count: teachSessions })}
 				</p>
 				<p className="font-ui text-sm text-muted-foreground">
-					{practiceSessions} {practiceSessions === 1 ? "practice session" : "practice sessions"}
+					{t("minimalHome.summary.practiceSessions", { count: practiceSessions })}
 				</p>
 			</div>
 			<div className="h-4" aria-hidden="true" />
 			<p className="font-ui text-sm text-muted-foreground">
-				{importedNotes} {importedNotes === 1 ? "imported note" : "imported notes"}
+				{t("minimalHome.summary.importedNotes", { count: importedNotes })}
 			</p>
 			{empty && (
 				<p className="pt-2 font-ui text-xs text-muted-foreground/70">
-					Nothing here yet — import notes to begin building the graph.
+					{t("minimalHome.summary.empty")}
 				</p>
 			)}
 		</div>
@@ -93,6 +95,7 @@ export function MinimalHome({
 	onPracticeSelectionChange?: (nodes: { id: string; name: string; statement: string }[]) => void;
 	onChainSelectClose?: () => void;
 }) {
+	const { t } = useT("shell");
 	const [snapshot, setSnapshot] = useState<GraphSnapshot | null>(null);
 	const [costs, setCosts] = useState<GraphCostSummary | null>(null);
 	const [chats, setChats] = useState<ChatSummary[]>([]);
@@ -167,7 +170,7 @@ export function MinimalHome({
 			<div className="lh-no-drag lh-wco-floating absolute right-2 top-2 z-10 flex max-w-[calc(100%-5.5rem)] flex-col items-end gap-2">
 				<div className="flex min-w-0 items-start gap-2">
 					<div className="graph-chrome-fade-in shrink-0 rounded-xl border bg-card/85 px-1 py-[3px] shadow-lg backdrop-blur">
-						<Hint label="Every reasoning chain" side="bottom">
+						<Hint label={t("minimalHome.chainsHint")} side="bottom">
 							<button
 								type="button"
 								onClick={() => setChainsOpen(true)}
@@ -175,12 +178,12 @@ export function MinimalHome({
 								className="flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent"
 							>
 								<ListTreeIcon className="size-3" />
-								Chains
+								{t("minimalHome.chains")}
 							</button>
 						</Hint>
 					</div>
 					<div className="shrink-0 rounded-xl border bg-card/85 px-1 py-[3px] shadow-lg backdrop-blur">
-						<Hint label="Import notes into the graph" side="bottom">
+						<Hint label={t("minimalHome.importHint")} side="bottom">
 							<button
 								type="button"
 								disabled={importing}
@@ -189,7 +192,7 @@ export function MinimalHome({
 								className="flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
 							>
 								<UploadIcon className="size-3" />
-								{importing ? "Importing…" : "Import notes…"}
+								{importing ? t("minimalHome.importing") : t("minimalHome.import")}
 							</button>
 						</Hint>
 					</div>

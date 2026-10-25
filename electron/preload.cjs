@@ -17,6 +17,9 @@
  *   publishes it as --lh-zoom so physical-constant lengths (the traffic-
  *   light gutter) can divide by it.
  *
+ *   window.lh.setLanguage(language) — the interface language the renderer
+ *   runs (i18n wave, 2026-10-25): main rebuilds its native menus in it.
+ *
  *   window.lh.onUpdateStatus(cb) / window.lh.installUpdate() — the
  *   auto-update channel (Wave C, 2026-10-10): "lh:update-status" pushes
  *   {status:"downloaded", version} once an update is staged; installUpdate
@@ -71,4 +74,5 @@ contextBridge.exposeInMainWorld("lh", {
 		return () => ipcRenderer.removeListener("lh:update-status", listener);
 	},
 	installUpdate: () => ipcRenderer.send("lh:update-install"),
+	setLanguage: (language) => ipcRenderer.send("lh:language", language),
 });

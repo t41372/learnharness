@@ -1,0 +1,224 @@
+{
+	"sidebar": {
+		"open": "開啟側欄",
+		"close": "關閉側欄",
+		"home": "首頁",
+		"practiceSession": "練習對話",
+		"renameInput": "重新命名對話",
+		"kind": {
+			"teach": "教學",
+			"practice": "練習",
+			"all": "全部"
+		},
+		"newTeachingSr": "新增教學對話",
+		"newPracticeSr": "新增練習對話",
+		"sessions": "對話",
+		"searchPlaceholder": "搜尋…",
+		"loading": "載入中…",
+		"noMatches": "沒有符合的對話。",
+		"empty": "還沒有對話。",
+		"settings": "設定",
+		"menu": {
+			"rename": "重新命名",
+			"exportMarkdown": "匯出為 Markdown…",
+			"delete": "刪除…"
+		},
+		"meta": {
+			"compacting": "正在壓縮上下文 · {{ago}}",
+			"waiting": "等待輸入 · {{ago}}",
+			"problemWaiting": "題目待作答 · {{ago}}",
+			"working": "處理中…"
+		},
+		"time": {
+			"justNow": "剛剛",
+			"minutesAgo": "{{n}} 分鐘前",
+			"hoursAgo": "{{n}} 小時前",
+			"daysAgo": "{{n}} 天前"
+		}
+	},
+	"draft": {
+		"learnPlaceholder": "你想學什麼？",
+		"practicePlaceholder": "你想練習什麼？",
+		"setupModels": "設定模型"
+	},
+	"home": {
+		"start": "開始對話",
+		"mode": {
+			"teach": "教學",
+			"practice": "練習"
+		}
+	},
+	"newSession": {
+		"title": "新增對話",
+		"practiceTitle": "新增練習對話",
+		"description": "老師會先透過提問，了解你已經掌握了什麼。",
+		"practiceDescription": "從知識圖譜中挑選節點、描述你想練習的內容，或是帶上你自己的題目。"
+	},
+	"minimalHome": {
+		"chains": "推理鏈",
+		"chainsHint": "所有推理鏈",
+		"import": "匯入筆記…",
+		"importHint": "將筆記匯入圖譜",
+		"importing": "正在匯入…",
+		"summary": {
+			"propositions_other": "{{count}} 個命題",
+			"chains_other": "{{count}} 條推理鏈",
+			"teachSessions_other": "{{count}} 個教學對話",
+			"practiceSessions_other": "{{count}} 個練習對話",
+			"importedNotes_other": "{{count}} 篇匯入的筆記",
+			"empty": "這裡還沒有任何內容——匯入筆記，開始建立圖譜。"
+		}
+	},
+	"activity": {
+		"title": "背景 Agent",
+		"totalCost": "執行中的總費用（估算）",
+		"needsModelSetup": "需要設定模型",
+		"needsProviderKey": "需要供應商金鑰",
+		"extraction": "擷取——{{phase}}",
+		"phase": {
+			"queued": "排隊中",
+			"extracting": "擷取中",
+			"waiting": "等待中",
+			"auditing": "審核中",
+			"merging": "合併中",
+			"running": "執行中"
+		},
+		"kind": {
+			"research": "研究員",
+			"demo": "示範製作者",
+			"visual": "圖示製作者",
+			"pdf": "PDF 閱讀者",
+			"subAgent": "子 Agent"
+		},
+		"abortFailed": "終止失敗——請重試",
+		"end": "結束這個背景程序",
+		"endAria": "結束「{{title}}」中的{{label}}",
+		"cost": "費用",
+		"context": "上下文",
+		"model": "模型",
+		"steps": "步數",
+		"openSession": "開啟對話 →",
+		"stopping": "正在停止…"
+	},
+	"update": {
+		"ready": "LearnHarness {{version}} 已準備就緒",
+		"readyUnversioned": "LearnHarness 更新已準備就緒",
+		"restartToInstall": "，重新啟動即可完成安裝。",
+		"restart": "重新啟動"
+	},
+	"cheatSheet": {
+		"title": "鍵盤快速鍵",
+		"escToClose": "按 Esc 關閉",
+		"scope": {
+			"global": "全域",
+			"chat": "對話",
+			"graph": "圖譜檢視"
+		}
+	},
+	"deleteSession": {
+		"aria": "刪除對話",
+		"title": "刪除對話？",
+		"body": "這會永久刪除此對話，包括它的訊息、背景任務與擷取紀錄。除非勾選下方選項，它新增到圖譜中的內容都會保留。此操作無法復原。",
+		"traces": {
+			"title": "同時移除它在圖譜中的痕跡",
+			"body": "此對話的主題、關聯與事件也會從圖譜中移除。其他對話或匯入的筆記也涵蓋的主題會保留；只由此對話建立的主題會被完全刪除。"
+		},
+		"failure": {
+			"not_found": "找不到此對話",
+			"turn_in_flight": "此對話中有一輪回應正在進行——請等它結束後重試",
+			"jobs_running": "此對話中仍有背景任務在執行——請等它們結束後重試",
+			"extraction_winding_down": "此對話的擷取仍在收尾——請稍後重試",
+			"network": "刪除失敗：網路錯誤。請重試。"
+		},
+		"failedStatus": "刪除失敗（{{status}}）",
+		"retry": "重試",
+		"cancel": "取消",
+		"deleting": "正在刪除…",
+		"confirm": "刪除"
+	},
+	"find": {
+		"aria": "對話內尋找",
+		"input": "在對話中尋找",
+		"placeholder": "在對話中尋找…",
+		"previous": "上一個相符項目",
+		"previousTitle": "上一個相符項目 (Shift+Enter)",
+		"next": "下一個相符項目",
+		"nextTitle": "下一個相符項目 (Enter)",
+		"close": "關閉尋找",
+		"closeTitle": "關閉尋找 (Esc)"
+	},
+	"diagram": {
+		"aria": "圖表聚焦檢視",
+		"title": "圖表",
+		"source": "來自這次對話",
+		"close": "關閉",
+		"panZoomHint": "拖曳平移 · 捲動縮放",
+		"zoomOut": "縮小",
+		"fit": "縮放至符合檢視",
+		"zoomIn": "放大",
+		"rendering": "正在繪製圖表…"
+	},
+	"setupCta": {
+		"addProviderKey": "新增供應商金鑰"
+	},
+	"setupDialog": {
+		"title": "設定模型",
+		"close": "關閉",
+		"closeAria": "關閉模型設定",
+		"keysIntro": "選擇供應商並貼上它的 API 金鑰。下一步再選擇模型。",
+		"provider": "供應商",
+		"pickProvider": "選擇供應商…",
+		"pasteKey": "貼上金鑰…",
+		"keyAria": "{{provider}} 金鑰",
+		"saving": "正在儲存…",
+		"saveKey": "儲存金鑰",
+		"subscriptions": "訂閱",
+		"saveFailedStatus": "儲存失敗（{{status}}）",
+		"saveFailedReason": "儲存失敗：{{reason}}",
+		"saveFailedNetwork": "儲存失敗。請檢查網路連線後重試。",
+		"catalogFailed": "無法載入模型目錄。請檢查網路連線後重試。",
+		"pickersIntro": "為每個層級選擇模型。三個層級都選好後才能開始對話。",
+		"needed": "待選",
+		"slotModelAria": "{{slot}}模型",
+		"slotThinkingAria": "{{slot}}思考強度",
+		"pickModel": "選擇模型…",
+		"noVisionModels": "沒有支援影像輸入的模型。請新增可使用視覺模型的供應商金鑰。",
+		"saveModels": "儲存模型",
+		"slots": {
+			"strong": {
+				"label": "主力",
+				"roster": "探查者、老師"
+			},
+			"cheap": {
+				"label": "經濟",
+				"roster": "研究員、示範製作者、擷取者、審核者"
+			},
+			"vision": {
+				"label": "視覺",
+				"roster": "圖示製作者 + PDF 閱讀者"
+			}
+		}
+	},
+	"modelPicker": {
+		"thinking": "思考強度",
+		"rejected": "設定遭拒（{{status}}）",
+		"unreachable": "無法連線到伺服器——請重試。",
+		"noModels": "沒有可用的模型——請在「設定 → 供應商」新增 API 金鑰",
+		"sessionModel": "此對話的模型",
+		"strongDefault": "主力層級——新對話的預設模型",
+		"noLevels": "{{model}} 不支援思考強度。",
+		"pickModelFirst": "請先選擇模型。",
+		"loading": "載入中…",
+		"levelsFooter": "此模型實際支援的強度"
+	},
+	"stats": {
+		"title": "對話統計",
+		"context": "上下文（最近一次呼叫）",
+		"usage": "用量",
+		"totalCost": "總費用",
+		"manageChatGPT": "管理 ChatGPT 用量",
+		"unpriced": "未計價輪次",
+		"turns": "輪次",
+		"steps": "{{n}} 步"
+	}
+}

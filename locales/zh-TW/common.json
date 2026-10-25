@@ -1,0 +1,21 @@
+{
+	"shortcuts": {
+		"toggle-dictation": "開關語音輸入",
+		"open-settings": "開啟設定",
+		"open-model-picker": "模型選擇器",
+		"cycle-thinking": "切換思考強度",
+		"toggle-sidebar": "顯示或隱藏對話側欄",
+		"sessions-search": "搜尋對話",
+		"jump-graph": "圖譜檢視",
+		"new-session": "新增對話",
+		"rename-session": "重新命名對話",
+		"toggle-user-thinking": "展開或收合你的全部思路",
+		"find": "尋找",
+		"cheat-sheet": "快速鍵一覽",
+		"question-focus": "題目 · 在思路與選項之間切換",
+		"question-next-row": "題目 · 下一項",
+		"question-prev-row": "題目 · 上一項",
+		"question-pick-row": "題目 · 選取此項",
+		"question-submit": "題目 · 送出"
+	}
+}

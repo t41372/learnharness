@@ -1,0 +1,208 @@
+{
+	"graphView": {
+		"empty": {
+			"title": "Knowledge graph",
+			"body": "Start a session or import notes to build your graph."
+		},
+		"search": {
+			"label": "Search nodes",
+			"placeholder": "Search nodes…",
+			"noMatch": "No matching nodes."
+		},
+		"chains": {
+			"hint": "Every reasoning chain",
+			"button": "Chains"
+		},
+		"import": {
+			"hint": "Import notes into the graph",
+			"button": "Import notes…",
+			"importing": "Importing…"
+		},
+		"contextMenu": {
+			"delete": "Delete"
+		},
+		"detail": {
+			"sessions": "Sessions",
+			"noSessions": "No sessions recorded."
+		},
+		"pipeline": {
+			"phase": {
+				"queued": "queued",
+				"extracting": "extracting",
+				"waiting": "waiting",
+				"auditing": "auditing",
+				"merging": "merging"
+			},
+			"elapsed": "{{seconds}}s"
+		}
+	},
+	"graphCosts": {
+		"hint": "Graph costs — click for details",
+		"title": "Graph pipeline costs",
+		"unpriced": "{{count}} unpriced",
+		"plusUnpriced": "+{{count}} unpriced",
+		"stage": {
+			"extraction": "Extraction",
+			"audit": "Audit"
+		},
+		"tokens": "{{input}} in / {{output}} out",
+		"merged": "+{{count}}n",
+		"ago": {
+			"now": "now",
+			"minutes": "{{count}}m",
+			"hours": "{{count}}h",
+			"days": "{{count}}d"
+		}
+	},
+	"graphSettings": {
+		"hint": "Graph display settings",
+		"nodeSize": "Node size",
+		"edgeWidth": "Edge width",
+		"arrowSize": "Arrowhead size",
+		"labelSize": "Label size",
+		"labelZoom": "Labels until zoom",
+		"regions": {
+			"title": "Regions",
+			"background": "Background colors",
+			"dilation": "Dilation",
+			"blur": "Blur",
+			"edgeAlpha": "Edge alpha",
+			"bitmap": "Bitmap resolution",
+			"clusterLabels": "Cluster labels",
+			"clusterLabelSize": "Cluster label size"
+		},
+		"physics": {
+			"title": "Physics",
+			"repulsion": "Node repulsion",
+			"edgeAttraction": "Edge attraction",
+			"edgeLength": "Edge length",
+			"centralPull": "Central pull",
+			"clusterPull": "Cluster pull",
+			"off": "off",
+			"friction": "Friction",
+			"depthAnchor": "Depth anchor",
+			"depthMode": {
+				"off": "Off",
+				"vertical": "Vertical (up)",
+				"radial": "Radial (outward)"
+			},
+			"depthStrength": "Depth strength",
+			"depthSpacing": "Depth spacing",
+			"baseRadius": "Base ring radius"
+		}
+	},
+	"chainTable": {
+		"summary": "{{chains}} · {{nodes}}",
+		"chainCount_one": "{{count}} chain",
+		"chainCount_other": "{{count}} chains",
+		"nodeCount_one": "{{count}} node",
+		"nodeCount_other": "{{count}} nodes",
+		"search": {
+			"label": "Search nodes",
+			"placeholder": "Search nodes…"
+		},
+		"close": "Close chains",
+		"columns": {
+			"name": "Name",
+			"props": "Props",
+			"created": "Created"
+		},
+		"noMatch": "No matching chains.",
+		"unlabeled": "unlabeled",
+		"notesTag": "notes",
+		"noPremises": "{{name}} (no premises)",
+		"selectCluster": "Select everything born in {{label}}",
+		"expandCluster": "Expand cluster {{label}}",
+		"selectChain": "Select chain {{name}}",
+		"expandChain": "Expand chain {{name}}",
+		"selectNode": "Select node {{name}}",
+		"selection": {
+			"summary": "{{nodes}} → {{chains}}",
+			"clear": "Clear",
+			"done": "Done",
+			"doneLabel_one": "Done picking — {{count}} proposition selected",
+			"doneLabel_other": "Done picking — {{count}} propositions selected",
+			"delete": "Delete",
+			"deleteLabel_one": "Delete {{count}} selected node",
+			"deleteLabel_other": "Delete {{count}} selected nodes"
+		}
+	},
+	"deleteNode": {
+		"aria": "Delete node",
+		"title": "Delete node?",
+		"titleMany": "Delete {{count}} nodes?",
+		"more": ", and {{count}} more",
+		"permanence": "This permanently deletes the node — this cannot be undone.",
+		"permanenceMany": "This permanently deletes all {{count}} nodes — this cannot be undone.",
+		"failure": {
+			"extractionRunning": "An extraction is running — try again when the activity dock drains.",
+			"notFound": "No such node",
+			"http": "Delete failed ({{status}})",
+			"network": "Delete failed — network error. Try again."
+		},
+		"retry": "Try again",
+		"cancel": "Cancel",
+		"confirm": "Delete",
+		"deleting": "Deleting…"
+	},
+	"coverage": {
+		"extracting": "extracting…",
+		"fullyExtracted": "fully extracted",
+		"tokUncovered": "{{tokens}} tok uncovered",
+		"messagesUnextracted_one": "{{count}} message unextracted",
+		"messagesUnextracted_other": "{{count}} messages unextracted",
+		"running": "Running",
+		"extract": "Extract",
+		"ringHint": "How much of this session isn't mapped yet",
+		"detail": {
+			"title": "Extraction coverage",
+			"uncovered": "Uncovered",
+			"covered": "Covered",
+			"tokens": "{{tokens}} tokens",
+			"messages": "Messages",
+			"chunkThreshold": "Chunk threshold",
+			"lastExtraction": "Last extraction",
+			"status": "Status"
+		},
+		"ago": {
+			"justNow": "just now",
+			"minutes": "{{count}}m ago",
+			"hours": "{{count}}h ago",
+			"days": "{{count}}d ago"
+		}
+	},
+	"notesImport": {
+		"invalidResponse": "Invalid import response. Please retry the file.",
+		"requestFailed": "Import request failed (HTTP {{status}}). Please retry the file.",
+		"requestFailedDetail": "Import request failed (HTTP {{status}}): {{detail}}. Please retry the file.",
+		"modelsNotConfigured": "No model configured — set up your models first",
+		"providerKeyMissing": "No {{provider}} key is set — add one in Settings → Keys"
+	},
+	"plan": {
+		"diagramLabel": "Plan diagram",
+		"open": "Open the full plan",
+		"popup": {
+			"aria": "The full plan",
+			"title": "The plan",
+			"live": "live — statuses derive from your check outcomes",
+			"close": "Close",
+			"panHint": "Drag to pan · scroll to zoom",
+			"zoomOut": "Zoom out",
+			"fit": "Fit plan to screen",
+			"zoomIn": "Zoom in",
+			"empty": "No plan in this session yet."
+		}
+	},
+	"graphContext": {
+		"title": "Graph context",
+		"propositions_one": "{{count}} proposition",
+		"propositions_other": "{{count}} propositions",
+		"chains_one": "{{count}} chain",
+		"chains_other": "{{count}} chains"
+	},
+	"mermaidError": {
+		"title": "Diagram failed to render",
+		"showSource": "Show diagram source",
+		"retry": "Retry"
+	}
+}

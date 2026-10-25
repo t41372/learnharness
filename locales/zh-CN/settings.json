@@ -1,0 +1,356 @@
+{
+	"nav": {
+		"providers": "服务商",
+		"agent": "Agent",
+		"appearance": "外观",
+		"graph": "图谱",
+		"keyboard": "快捷键",
+		"general": "常规",
+		"dictation": "语音输入"
+	},
+	"dialog": {
+		"title": "设置",
+		"close": "关闭",
+		"closeAria": "关闭设置",
+		"navAria": "设置分区",
+		"loading": "设置加载中…",
+		"loadFailed": "无法加载设置，请刷新后重试。"
+	},
+	"actions": {
+		"save": "保存",
+		"cancel": "取消",
+		"delete": "删除",
+		"close": "关闭",
+		"continue": "继续",
+		"retry": "重试",
+		"dismiss": "知道了",
+		"disconnect": "断开连接",
+		"signInAgain": "重新登录"
+	},
+	"general": {
+		"language": {
+			"label": "语言",
+			"system": "跟随系统",
+			"aria": "界面语言"
+		},
+		"autoUpdate": {
+			"label": "自动更新",
+			"hint": "自动更新将在后续版本中推出",
+			"toggle": "自动更新"
+		}
+	},
+	"agent": {
+		"models": {
+			"group": "模型",
+			"strong": {
+				"label": "主力",
+				"hint": "会话使用的主要模型"
+			},
+			"cheap": {
+				"label": "经济",
+				"hint": "负责研究、制作演示和批改作答的助手"
+			},
+			"vision": {
+				"label": "视觉",
+				"hint": "负责绘制图示和阅读 PDF 的助手"
+			},
+			"modelAria": "{{slot}}模型",
+			"thinkingAria": "{{slot}}思考强度",
+			"footerNoModels": "暂无模型——请先在“服务商”中添加 API 密钥",
+			"footer": "此档位的所有 Agent 都使用该模型"
+		},
+		"tools": {
+			"group": "工具",
+			"graphTools": {
+				"label": "图谱工具",
+				"hint": "让老师在不同会话之间查阅你的知识图谱",
+				"disabledHint": "图谱已关闭",
+				"toggle": "图谱工具"
+			},
+			"quizzing": {
+				"label": "测验",
+				"hint": "两位老师检查你理解程度的方式",
+				"aria": "测验方式",
+				"choice": "选择题",
+				"free": "自由回忆"
+			},
+			"tool": {
+				"label": "工具 · {{name}}",
+				"toggle": "{{name}}工具"
+			},
+			"names": {
+				"research": "研究",
+				"demo": "演示",
+				"visual": "图示",
+				"pdf": "PDF"
+			},
+			"search": {
+				"label": "搜索引擎",
+				"automatic": "自动",
+				"hasKey": "✓ 有密钥",
+				"noKey": "· 无密钥"
+			}
+		},
+		"context": {
+			"group": "上下文",
+			"threshold": {
+				"label": "压缩阈值",
+				"hint": "{{tokens}} token",
+				"aria": "压缩阈值"
+			}
+		},
+		"prompts": {
+			"group": "系统提示词",
+			"loading": "提示词片段加载中…",
+			"sections": {
+				"teacher": "老师",
+				"prober": "摸底老师",
+				"shared": "共用",
+				"sharedHint": "两位老师都会用到"
+			},
+			"inUse": "正在使用你的版本",
+			"toggle": "提示词 {{path}}",
+			"showText": "显示内容",
+			"hideText": "隐藏内容",
+			"source": "原始内容",
+			"override": "自定义内容",
+			"sourceAria": "原始指令",
+			"overrideAria": "你自定义的指令",
+			"overridePlaceholder": "添加你自己的指令…",
+			"saved": "已保存",
+			"deleted": "已删除",
+			"saveFailed": "保存失败：{{detail}}",
+			"deleteFailed": "删除失败：{{status}}"
+		},
+		"instructions": {
+			"group": "你的指令",
+			"hint": "附加在每个 Agent 指令的末尾——老师、练习、研究、演示、图示和知识图谱都会遵循。从下一次回复起生效。",
+			"aria": "给所有 Agent 的指令",
+			"placeholder": "例如：始终用简体中文回复。",
+			"save": "保存",
+			"saved": "已保存"
+		}
+	},
+	"appearance": {
+		"emptyEquals": "留空时为 {{value}}",
+		"emptySameAsText": "留空时与正文相同",
+		"sameAsText": "与正文相同",
+		"mode": {
+			"label": "模式",
+			"hint": "即将推出",
+			"aria": "模式",
+			"dark": "深色"
+		},
+		"background": {
+			"label": "背景",
+			"aria": "背景色值"
+		},
+		"font": {
+			"label": "阅读字体",
+			"tooltip": "从已安装的字体中选择",
+			"footerUnreadable": "常用字体——无法读取已安装的字体",
+			"footerBrowser": "常用字体——需在桌面应用中才能列出已安装的字体",
+			"footerInstalled": "你已安装的字体"
+		},
+		"fontSize": {
+			"label": "阅读字号",
+			"aria": "正文字号"
+		},
+		"sessionSerif": {
+			"label": "会话名称使用衬线字体",
+			"toggle": "会话名称使用衬线字体"
+		},
+		"headingWeight": {
+			"label": "标题字重",
+			"aria": "标题字重"
+		},
+		"boldColor": {
+			"label": "粗体颜色",
+			"aria": "粗体颜色"
+		},
+		"italicColor": {
+			"label": "斜体颜色",
+			"aria": "斜体颜色"
+		}
+	},
+	"graph": {
+		"extraction": {
+			"label": "提取",
+			"hint": "关闭后图谱不再增长",
+			"toggle": "启用提取"
+		},
+		"rendering": {
+			"label": "图谱渲染",
+			"hint": "关闭后首页改为显示推理链视图",
+			"toggle": "启用图谱渲染"
+		},
+		"chunkBudget": {
+			"label": "提取分块预算",
+			"hint": "{{tokens}} token",
+			"aria": "提取分块预算"
+		}
+	},
+	"keyboard": {
+		"storedHint": "仅保存在此设备上",
+		"scopes": {
+			"global": "全局",
+			"chat": "会话",
+			"graph": "图谱"
+		},
+		"fixed": "固定——属于此界面",
+		"pressKeys": "请按下按键…",
+		"rebind": "重新绑定",
+		"reset": "重置",
+		"storageNote": "保存在此设备上（lh:keymap），只记录改动过的快捷键。",
+		"resetAll": "全部恢复默认"
+	},
+	"keys": {
+		"loading": "密钥加载中…",
+		"groups": {
+			"providerKeys": "模型 API 密钥",
+			"subscriptions": "订阅",
+			"dictation": "语音输入",
+			"search": "搜索"
+		},
+		"pastePlaceholder": "粘贴密钥…",
+		"inputAria": "{{provider}} 密钥",
+		"getKey": "获取密钥 ↗",
+		"saveFailed": "保存失败（{{status}}）",
+		"addProvider": "+ 添加服务商密钥",
+		"status": {
+			"notSet": "未设置",
+			"env": "环境变量"
+		}
+	},
+	"modelMenu": {
+		"searchModels": "搜索模型…",
+		"loadingModels": "模型加载中…",
+		"noModels": "没有匹配的模型。",
+		"subscriptionTitle": "订阅连接",
+		"priceTitle": "每 100 万 token 的输入/输出价格（美元）",
+		"subscriptionProvider": "{{label}}（订阅）",
+		"noThinkingLevels": "没有可用的思考强度。",
+		"searchProviders": "搜索服务商…",
+		"noProviders": "没有匹配的服务商。",
+		"searchFonts": "搜索字体…",
+		"loadingFonts": "字体加载中…",
+		"fontDefault": "默认",
+		"useFamily": "使用“{{family}}”",
+		"custom": "自定义"
+	},
+	"connections": {
+		"connect": "连接",
+		"manage": "管理…",
+		"enableBackground": "启用后台使用",
+		"desktopUnavailable": "桌面端连接不可用，请在应用就绪后重试。"
+	},
+	"chatgpt": {
+		"notice": "LearnHarness 会把你的 ChatGPT 账户信息和凭据保存在此设备上一个未加密的本地文件中。使用此连接时，相关的会话上下文、学习材料和工具结果会直接发送给 OpenAI。ChatGPT 套餐的用量限制同样适用；任何额外额度都在 ChatGPT 中授权和管理，而不是在 LearnHarness 中。",
+		"backgroundHint": "后台任务会计入你的 ChatGPT 套餐用量。",
+		"backgroundLabel": "允许所有 ChatGPT 账户在后台使用",
+		"revocationWarning": "账户已在本地断开连接，但无法确认远程授权已撤销。",
+		"disconnectTitle": "要断开账户连接吗？",
+		"disconnectBody": "这会从此设备上移除已保存的账户及其凭据。",
+		"controlError": "无法更改 ChatGPT 连接，请重试。",
+		"account": "ChatGPT 账户",
+		"disconnectAccount": "断开账户连接",
+		"savedAccountAria": "已保存的 ChatGPT 账户",
+		"addAnother": "添加其他账户或工作区",
+		"privacy": "OpenAI 隐私政策",
+		"manageUsage": "管理用量",
+		"desktopOnly": "ChatGPT 登录仅在桌面应用中可用。这里仍可使用 API 密钥连接。",
+		"waiting": "正在等待浏览器登录…",
+		"manageAccountAria": "管理 ChatGPT 账户",
+		"addAccounts": "添加账户",
+		"continueWith": "使用 ChatGPT 继续"
+	},
+	"subscriptions": {
+		"policyNotice": "Pi 的原生 Copilot 登录可能会启用尚未配置策略的其他模型。被策略明确禁用的模型不会被启用。组织的限制仍然适用。",
+		"backgroundHint": "允许 LearnHarness 的辅助 Agent 和自动后续任务使用此连接。",
+		"notice": "你的提示词、工具结果和相关的会话上下文会发送给 {{label}}，用于执行你选择的工作。凭据以仅限本人访问的明文文件保存在本地。服务商的条款、数据使用政策和套餐限制均适用。此连接绝不会改用 API 密钥。",
+		"disconnectTitle": "要断开 {{label}} 的连接吗？",
+		"disconnectBody": "要将 {{label}} 与 LearnHarness 断开连接吗？这会停止使用此连接的工作，并从此设备上移除已保存的凭据。这不会取消你的订阅，也不会在服务商处撤销访问权限。在你重新连接或更改之前，已保存的模型选择将无法使用。",
+		"controlError": "无法更改连接，请重试。",
+		"signInFailed": "登录未完成，请重新连接。",
+		"browserFailed": "无法打开浏览器，请重试。",
+		"dialogAria": "{{label}} 连接",
+		"allowBackground": "允许后台使用",
+		"desktopRequired": "订阅登录需要桌面应用的私有服务器连接。这里仍可使用 API 密钥连接。",
+		"deviceCode": "设备代码：<code>{{code}}</code>",
+		"openBrowser": "打开浏览器",
+		"selectPlaceholder": "请选择…"
+	},
+	"dictation": {
+		"engine": {
+			"group": "引擎",
+			"label": "识别方式",
+			"aria": "语音输入引擎",
+			"local": "本机",
+			"hintDeepgram": "用你的 Deepgram 密钥在云端识别",
+			"hintLocal": "Standard ASR——在你的电脑上识别"
+		},
+		"checking": "正在检查语音环境…",
+		"step": {
+			"environment": "正在准备语音环境…",
+			"packages": "正在安装软件包…",
+			"model": "正在下载模型文件…",
+			"removing": "正在移除…"
+		},
+		"phase": {
+			"resolving": "解析中",
+			"transferring": "传输中",
+			"extracting": "解压中",
+			"converting": "转换中",
+			"verifying": "校验中",
+			"finalizing": "收尾中"
+		},
+		"progress": {
+			"bytes": "{{pct}}% · {{done}} / {{total}}"
+		},
+		"install": {
+			"intro": "用 Standard ASR 在你的电脑上识别语音——不需要密钥，音频不会离开本机。首次安装会下载 Python 软件包和模型文件（约 1 GB）。",
+			"button": "安装 {{label}}（{{runtime}}）",
+			"noUv": "本机语音输入需要 uv，桌面版已内置。在浏览器中使用时，请先安装 uv（docs.astral.sh/uv）。"
+		},
+		"model": {
+			"label": "模型",
+			"hint": "选择语音输入使用的模型",
+			"aria": "语音输入模型",
+			"choose": "请选择…"
+		},
+		"capability": {
+			"streamingLive": "流式识别，实时显示文字",
+			"streaming": "流式识别",
+			"batch": "整段识别",
+			"none": "无法录音",
+			"vocabulary": "会参考本次会话的词汇",
+			"languages_other": "{{count}} 种语言"
+		},
+		"files": {
+			"label": "文件",
+			"checking": "正在检查文件…",
+			"none": "无需下载文件",
+			"ready": "文件已就绪",
+			"readySize": "文件已就绪 · {{size}}",
+			"missing": "尚未下载",
+			"missingSize": "尚未下载 · {{size}}",
+			"download": "下载"
+		},
+		"language": {
+			"label": "语言",
+			"hint": "自动识别你说的语言",
+			"aria": "语音输入语言",
+			"auto": "自动"
+		},
+		"engines": {
+			"label": "引擎",
+			"remove": "移除",
+			"cancel": "取消",
+			"removeAsk": "移除…",
+			"placeholder": "PyPI 包名、Git URL 或文件夹",
+			"aria": "要安装的引擎",
+			"install": "安装",
+			"footnote": "任何 Standard ASR 引擎插件都可以使用——它的模型会出现在上面的列表中。"
+		}
+	}
+}

@@ -1,0 +1,356 @@
+{
+	"nav": {
+		"providers": "供應商",
+		"agent": "Agent",
+		"appearance": "外觀",
+		"graph": "圖譜",
+		"keyboard": "快速鍵",
+		"general": "一般",
+		"dictation": "語音輸入"
+	},
+	"dialog": {
+		"title": "設定",
+		"close": "關閉",
+		"closeAria": "關閉設定",
+		"navAria": "設定分類",
+		"loading": "設定載入中…",
+		"loadFailed": "無法載入設定，請重新整理後再試。"
+	},
+	"actions": {
+		"save": "儲存",
+		"cancel": "取消",
+		"delete": "刪除",
+		"close": "關閉",
+		"continue": "繼續",
+		"retry": "重試",
+		"dismiss": "知道了",
+		"disconnect": "中斷連線",
+		"signInAgain": "重新登入"
+	},
+	"general": {
+		"language": {
+			"label": "語言",
+			"system": "跟隨系統",
+			"aria": "介面語言"
+		},
+		"autoUpdate": {
+			"label": "自動更新",
+			"hint": "自動更新將在後續版本推出",
+			"toggle": "自動更新"
+		}
+	},
+	"agent": {
+		"models": {
+			"group": "模型",
+			"strong": {
+				"label": "主力",
+				"hint": "對話使用的主要模型"
+			},
+			"cheap": {
+				"label": "經濟",
+				"hint": "負責研究、製作示範和批改作答的助手"
+			},
+			"vision": {
+				"label": "視覺",
+				"hint": "負責繪製圖示和閱讀 PDF 的助手"
+			},
+			"modelAria": "{{slot}}模型",
+			"thinkingAria": "{{slot}}思考強度",
+			"footerNoModels": "尚無模型——請先在「供應商」中新增 API 金鑰",
+			"footer": "此層級的所有 Agent 都會使用這個模型"
+		},
+		"tools": {
+			"group": "工具",
+			"graphTools": {
+				"label": "圖譜工具",
+				"hint": "讓老師在不同對話之間查閱你的知識圖譜",
+				"disabledHint": "圖譜已關閉",
+				"toggle": "圖譜工具"
+			},
+			"quizzing": {
+				"label": "測驗",
+				"hint": "兩位老師檢查你理解程度的方式",
+				"aria": "測驗方式",
+				"choice": "選擇題",
+				"free": "自由回憶"
+			},
+			"tool": {
+				"label": "工具 · {{name}}",
+				"toggle": "{{name}}工具"
+			},
+			"names": {
+				"research": "研究",
+				"demo": "示範",
+				"visual": "圖示",
+				"pdf": "PDF"
+			},
+			"search": {
+				"label": "搜尋引擎",
+				"automatic": "自動",
+				"hasKey": "✓ 有金鑰",
+				"noKey": "· 無金鑰"
+			}
+		},
+		"context": {
+			"group": "上下文",
+			"threshold": {
+				"label": "壓縮門檻",
+				"hint": "{{tokens}} token",
+				"aria": "壓縮門檻"
+			}
+		},
+		"prompts": {
+			"group": "系統提示詞",
+			"loading": "提示詞片段載入中…",
+			"sections": {
+				"teacher": "老師",
+				"prober": "前測老師",
+				"shared": "共用",
+				"sharedHint": "兩位老師都會用到"
+			},
+			"inUse": "正在使用你的版本",
+			"toggle": "提示詞 {{path}}",
+			"showText": "顯示內容",
+			"hideText": "隱藏內容",
+			"source": "原始內容",
+			"override": "自訂內容",
+			"sourceAria": "原始指令",
+			"overrideAria": "你自訂的指令",
+			"overridePlaceholder": "加入你自己的指令…",
+			"saved": "已儲存",
+			"deleted": "已刪除",
+			"saveFailed": "儲存失敗：{{detail}}",
+			"deleteFailed": "刪除失敗：{{status}}"
+		},
+		"instructions": {
+			"group": "你的指示",
+			"hint": "附加在每個 Agent 指示的最後——老師、練習、研究、示範、圖示和知識圖譜都會遵循。從下一次回覆起生效。",
+			"aria": "給所有 Agent 的指示",
+			"placeholder": "例如：一律用繁體中文回覆。",
+			"save": "儲存",
+			"saved": "已儲存"
+		}
+	},
+	"appearance": {
+		"emptyEquals": "留空時為 {{value}}",
+		"emptySameAsText": "留空時與內文相同",
+		"sameAsText": "與內文相同",
+		"mode": {
+			"label": "模式",
+			"hint": "即將推出",
+			"aria": "模式",
+			"dark": "深色"
+		},
+		"background": {
+			"label": "背景",
+			"aria": "背景色碼"
+		},
+		"font": {
+			"label": "閱讀字型",
+			"tooltip": "從已安裝的字型中選擇",
+			"footerUnreadable": "常用字型——無法讀取已安裝的字型",
+			"footerBrowser": "常用字型——需使用桌面版應用程式才能列出已安裝的字型",
+			"footerInstalled": "你已安裝的字型"
+		},
+		"fontSize": {
+			"label": "閱讀字型大小",
+			"aria": "內文字型大小"
+		},
+		"sessionSerif": {
+			"label": "對話名稱使用襯線字型",
+			"toggle": "對話名稱使用襯線字型"
+		},
+		"headingWeight": {
+			"label": "標題字重",
+			"aria": "標題字重"
+		},
+		"boldColor": {
+			"label": "粗體顏色",
+			"aria": "粗體顏色"
+		},
+		"italicColor": {
+			"label": "斜體顏色",
+			"aria": "斜體顏色"
+		}
+	},
+	"graph": {
+		"extraction": {
+			"label": "擷取",
+			"hint": "關閉後圖譜不再成長",
+			"toggle": "啟用擷取"
+		},
+		"rendering": {
+			"label": "圖譜繪製",
+			"hint": "關閉後首頁改為顯示推理鏈檢視",
+			"toggle": "啟用圖譜繪製"
+		},
+		"chunkBudget": {
+			"label": "擷取分段預算",
+			"hint": "{{tokens}} token",
+			"aria": "擷取分段預算"
+		}
+	},
+	"keyboard": {
+		"storedHint": "僅儲存在這台裝置上",
+		"scopes": {
+			"global": "全域",
+			"chat": "對話",
+			"graph": "圖譜"
+		},
+		"fixed": "固定——屬於此畫面",
+		"pressKeys": "請按下按鍵…",
+		"rebind": "重新指定",
+		"reset": "重設",
+		"storageNote": "儲存在這台裝置上（lh:keymap），只記錄修改過的快速鍵。",
+		"resetAll": "全部還原為預設值"
+	},
+	"keys": {
+		"loading": "金鑰載入中…",
+		"groups": {
+			"providerKeys": "模型 API 金鑰",
+			"subscriptions": "訂閱",
+			"dictation": "語音輸入",
+			"search": "搜尋"
+		},
+		"pastePlaceholder": "貼上金鑰…",
+		"inputAria": "{{provider}} 金鑰",
+		"getKey": "取得金鑰 ↗",
+		"saveFailed": "儲存失敗（{{status}}）",
+		"addProvider": "+ 新增供應商金鑰",
+		"status": {
+			"notSet": "未設定",
+			"env": "環境變數"
+		}
+	},
+	"modelMenu": {
+		"searchModels": "搜尋模型…",
+		"loadingModels": "模型載入中…",
+		"noModels": "沒有符合的模型。",
+		"subscriptionTitle": "訂閱連線",
+		"priceTitle": "每 100 萬 token 的輸入/輸出價格（美元）",
+		"subscriptionProvider": "{{label}}（訂閱）",
+		"noThinkingLevels": "沒有可用的思考強度。",
+		"searchProviders": "搜尋供應商…",
+		"noProviders": "沒有符合的供應商。",
+		"searchFonts": "搜尋字型…",
+		"loadingFonts": "字型載入中…",
+		"fontDefault": "預設",
+		"useFamily": "使用「{{family}}」",
+		"custom": "自訂"
+	},
+	"connections": {
+		"connect": "連線",
+		"manage": "管理…",
+		"enableBackground": "啟用背景使用",
+		"desktopUnavailable": "桌面版連線無法使用，請在應用程式就緒後再試。"
+	},
+	"chatgpt": {
+		"notice": "LearnHarness 會將你的 ChatGPT 帳號資訊與憑證儲存在這台裝置上一個未加密的本機檔案中。使用此連線時，相關的對話上下文、學習資料和工具結果會直接傳送給 OpenAI。ChatGPT 方案的用量限制同樣適用；任何額外額度都在 ChatGPT 中授權與管理，而不是在 LearnHarness 中。",
+		"backgroundHint": "背景任務會計入你的 ChatGPT 方案用量。",
+		"backgroundLabel": "允許所有 ChatGPT 帳號在背景使用",
+		"revocationWarning": "帳號已在本機中斷連線，但無法確認遠端授權已撤銷。",
+		"disconnectTitle": "要中斷帳號連線嗎？",
+		"disconnectBody": "這會從這台裝置移除已儲存的帳號及其憑證。",
+		"controlError": "無法變更 ChatGPT 連線，請再試一次。",
+		"account": "ChatGPT 帳號",
+		"disconnectAccount": "中斷帳號連線",
+		"savedAccountAria": "已儲存的 ChatGPT 帳號",
+		"addAnother": "新增其他帳號或工作區",
+		"privacy": "OpenAI 隱私權政策",
+		"manageUsage": "管理用量",
+		"desktopOnly": "ChatGPT 登入僅能在桌面版應用程式中使用。這裡仍可使用 API 金鑰連線。",
+		"waiting": "正在等待瀏覽器登入…",
+		"manageAccountAria": "管理 ChatGPT 帳號",
+		"addAccounts": "新增帳號",
+		"continueWith": "使用 ChatGPT 繼續"
+	},
+	"subscriptions": {
+		"policyNotice": "Pi 的原生 Copilot 登入可能會啟用尚未設定政策的其他模型。被政策明確停用的模型不會被啟用。組織的限制仍然適用。",
+		"backgroundHint": "允許 LearnHarness 的輔助 Agent 與自動後續任務使用此連線。",
+		"notice": "你的提示詞、工具結果和相關的對話上下文會傳送給 {{label}}，用於執行你選擇的工作。憑證以僅限擁有者存取的明文檔案儲存在本機。供應商的條款、資料使用政策和方案限制皆適用。此連線絕不會改用 API 金鑰。",
+		"disconnectTitle": "要中斷 {{label}} 的連線嗎？",
+		"disconnectBody": "要將 {{label}} 與 LearnHarness 中斷連線嗎？這會停止使用此連線的工作，並從這台裝置移除已儲存的憑證。這不會取消你的訂閱，也不會在供應商端撤銷存取權。在你重新連線或變更之前，已儲存的模型選擇將無法使用。",
+		"controlError": "無法變更連線，請再試一次。",
+		"signInFailed": "登入未完成，請重新連線。",
+		"browserFailed": "無法開啟瀏覽器，請再試一次。",
+		"dialogAria": "{{label}} 連線",
+		"allowBackground": "允許背景使用",
+		"desktopRequired": "訂閱登入需要桌面版應用程式的私人伺服器連線。這裡仍可使用 API 金鑰連線。",
+		"deviceCode": "裝置代碼：<code>{{code}}</code>",
+		"openBrowser": "開啟瀏覽器",
+		"selectPlaceholder": "請選擇…"
+	},
+	"dictation": {
+		"engine": {
+			"group": "引擎",
+			"label": "辨識方式",
+			"aria": "語音輸入引擎",
+			"local": "本機",
+			"hintDeepgram": "用你的 Deepgram 金鑰在雲端辨識",
+			"hintLocal": "Standard ASR——在你的電腦上辨識"
+		},
+		"checking": "正在檢查語音環境…",
+		"step": {
+			"environment": "正在準備語音環境…",
+			"packages": "正在安裝套件…",
+			"model": "正在下載模型檔案…",
+			"removing": "正在移除…"
+		},
+		"phase": {
+			"resolving": "解析中",
+			"transferring": "傳輸中",
+			"extracting": "解壓縮中",
+			"converting": "轉換中",
+			"verifying": "驗證中",
+			"finalizing": "收尾中"
+		},
+		"progress": {
+			"bytes": "{{pct}}% · {{done}} / {{total}}"
+		},
+		"install": {
+			"intro": "用 Standard ASR 在你的電腦上辨識語音——不需要金鑰，音訊不會離開本機。第一次安裝會下載 Python 套件和模型檔案（約 1 GB）。",
+			"button": "安裝 {{label}}（{{runtime}}）",
+			"noUv": "本機語音輸入需要 uv，桌面版已內建。在瀏覽器中使用時，請先安裝 uv（docs.astral.sh/uv）。"
+		},
+		"model": {
+			"label": "模型",
+			"hint": "選擇語音輸入使用的模型",
+			"aria": "語音輸入模型",
+			"choose": "請選擇…"
+		},
+		"capability": {
+			"streamingLive": "串流辨識，即時顯示文字",
+			"streaming": "串流辨識",
+			"batch": "整段辨識",
+			"none": "無法錄音",
+			"vocabulary": "會參考這次對話的詞彙",
+			"languages_other": "{{count}} 種語言"
+		},
+		"files": {
+			"label": "檔案",
+			"checking": "正在檢查檔案…",
+			"none": "不需要下載檔案",
+			"ready": "檔案已就緒",
+			"readySize": "檔案已就緒 · {{size}}",
+			"missing": "尚未下載",
+			"missingSize": "尚未下載 · {{size}}",
+			"download": "下載"
+		},
+		"language": {
+			"label": "語言",
+			"hint": "自動辨識你說的語言",
+			"aria": "語音輸入語言",
+			"auto": "自動"
+		},
+		"engines": {
+			"label": "引擎",
+			"remove": "移除",
+			"cancel": "取消",
+			"removeAsk": "移除…",
+			"placeholder": "PyPI 套件名稱、Git URL 或資料夾",
+			"aria": "要安裝的引擎",
+			"install": "安裝",
+			"footnote": "任何 Standard ASR 引擎外掛都能使用——它的模型會出現在上方的清單中。"
+		}
+	}
+}

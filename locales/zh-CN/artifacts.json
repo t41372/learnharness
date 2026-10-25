@@ -1,0 +1,137 @@
+{
+	"shared": {
+		"failed": "失败",
+		"invertColors": "反转颜色"
+	},
+	"demoCard": {
+		"unreadable": "演示已完成，但无法显示结果。",
+		"failedTitle": "交互式演示",
+		"title": "交互式演示",
+		"buildFailed": "演示未能构建成功。",
+		"invert": "反转演示亮度",
+		"downloadAria": "将演示下载为 HTML",
+		"download": "下载为 HTML",
+		"error": {
+			"title": "演示运行出错",
+			"unknown": "未知错误",
+			"send": "发送给老师"
+		}
+	},
+	"dispatchCard": {
+		"kind": {
+			"research": "研究 Agent",
+			"demo": "演示 Agent",
+			"visual": "图示 Agent",
+			"pdf": "PDF 阅读器"
+		},
+		"refused": {
+			"modelsLine": "需要先设置模型",
+			"modelsButton": "设置模型",
+			"keyLine": "需要服务商密钥",
+			"keyButton": "添加密钥"
+		},
+		"delivered": "已送达",
+		"running": "{{label}} 运行中",
+		"elapsed": "{{seconds}} 秒",
+		"pending": "已派发…"
+	},
+	"jobCard": {
+		"pdf": {
+			"unreadable": "PDF 阅读已完成，但无法显示结果。",
+			"title": "PDF 摘要",
+			"pagesRead": "已读页面：{{pages}}",
+			"pagesConsulted": "查阅过的页面：{{pages}}"
+		},
+		"research": {
+			"unreadable": "研究已完成，但无法显示结果。",
+			"title": "研究摘要",
+			"sources": "来源"
+		}
+	},
+	"liveToolCard": {
+		"live": "{{activity}}（实时）",
+		"input": "输入（流式传输中）",
+		"activity": {
+			"read": "正在读取文件…",
+			"ls": "正在列出目录…",
+			"find": "正在查找文件…",
+			"grep": "正在搜索文件内容…",
+			"research": "正在派发研究任务…",
+			"demo": "正在构建演示…",
+			"visual": "正在制作图示…",
+			"pdf": "正在阅读 PDF…",
+			"planInit": "正在制定计划…",
+			"probeDone": "正在完成评估…",
+			"question": "正在出题…",
+			"working": "处理中…"
+		}
+	},
+	"probeDoneCard": {
+		"title": "摸底完成——你的评估",
+		"retried": "摸底 Agent 已重试：{{error}}",
+		"malformed": "评估格式有误——摸底 Agent 已用修正后的评估重试。",
+		"writing": "正在撰写评估…"
+	},
+	"steerCard": {
+		"unreadable": "一个子 Agent 已完成，但无法显示其结果。",
+		"kind": {
+			"research": "研究",
+			"demo": "演示",
+			"visual": "图示",
+			"pdf": "PDF",
+			"job": "任务"
+		},
+		"aborted": "已由你中止",
+		"pdfComplete": "阅读完成",
+		"pagesRead_other": "已读 {{count}} 页",
+		"research": "研究",
+		"researchComplete": "已完成",
+		"sources": "{{count}} 个来源",
+		"viewBrief": "查看摘要",
+		"hideBrief": "收起摘要"
+	},
+	"toolCallCard": {
+		"input": "输入",
+		"error": "错误",
+		"output": "输出",
+		"running": "运行中…",
+		"imagesAttached_other": "[已向模型附加 {{count}} 张图片]"
+	},
+	"visualCard": {
+		"unreadable": "图示已完成，但无法显示结果。",
+		"label": "图示",
+		"drawFailed": "图示未能绘制成功。",
+		"invert": "反转图示亮度",
+		"downloadAria": "将图示下载为 SVG",
+		"download": "下载为 SVG",
+		"openAria": "全屏打开图示",
+		"open": "全屏打开"
+	},
+	"mdBlocks": {
+		"copyDiagram": "复制图表源码",
+		"copyCode": "复制代码",
+		"copyTable": "复制表格",
+		"copyEquation": "复制公式源码",
+		"openFullScreen": "全屏打开",
+		"expandDiagram": "放大图表"
+	},
+	"dictation": {
+		"dictate": "语音输入",
+		"start": "开始语音输入",
+		"failedAria": "语音输入失败：{{reason}}",
+		"stopHint": "停止语音输入 (Esc)",
+		"stop": "停止语音输入",
+		"stopButton": "停止",
+		"error": {
+			"keyless": "语音输入需要 Deepgram 密钥",
+			"micDenied": "麦克风权限被拒绝",
+			"micUnavailable": "麦克风不可用",
+			"tokenUnavailable": "无法获取访问令牌",
+			"reconnectFailed": "Deepgram 重新连接失败",
+			"connectionLost": "Deepgram 连接已断开（{{code}}）",
+			"localUnset": "请先设置本机语音输入",
+			"localReconnectFailed": "本机语音输入重新连接失败",
+			"localConnectionLost": "本机语音输入连接已断开（{{code}}）"
+		}
+	}
+}
