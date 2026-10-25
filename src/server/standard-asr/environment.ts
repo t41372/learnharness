@@ -132,7 +132,10 @@ async function bridge<T>(command: string, request: object, onProgress?: (p: AsrP
 	const settled: { result?: { ok: true; value: T } | { ok: false; message: string } } = {};
 	const out = await run(venvPython(), ["-I", BRIDGE_SCRIPT, command], {
 		cwd: SPEECH_DIR,
-		env: pythonEnv(command === "acquire"),
+		// Status is read-only, but reports whether an explicit acquisition
+		// WOULD be allowed. Use the download policy here, not the recognizer's
+		// offline policy, or every missing artifact looks undownloadable.
+		env: pythonEnv(command === "status" || command === "acquire"),
 		input: JSON.stringify(request) + "\n",
 		onLine: (line) => {
 			let message: { kind?: string; value?: unknown };
@@ -178,22 +181,24 @@ export class AsrBusyError extends Error {
 /** Run one long step: claims the slot synchronously (a second request is
  *  refused, never queued), records progress, and keeps the failure as the
  *  status error. Fire-and-forget at the routes; awaited in tests. */
-async function step(name: AsrStep, task: string | null, body: () => Promise<void>): Promise<void> {
+function step(name: AsrStep, task: string | null, body: () => Promise<void>): Promise<void> {
 	const s = state();
 	if (s.step) throw new AsrBusyError();
 	s.step = name;
 	s.task = task;
 	s.progress = null;
 	s.error = null;
-	try {
-		await body();
-	} catch (error) {
-		s.error = error instanceof Error ? error.message : String(error);
-	} finally {
-		s.step = null;
-		s.task = null;
-		s.progress = null;
-	}
+	return (async () => {
+		try {
+			await body();
+		} catch (error) {
+			s.error = error instanceof Error ? error.message : String(error);
+		} finally {
+			s.step = null;
+			s.task = null;
+			s.progress = null;
+		}
+	})();
 }
 
 /** Claim-and-run for callers that chain several steps (the one-click
@@ -298,17 +303,15 @@ export async function modelStatus(key: string, fresh = false): Promise<AsrModelS
 	return status;
 }
 
-/** Hooks the routes wire in: the recognizer must stop while packages
- *  change (new entry points, Windows file locks) and the selection is a
- *  settings write — both live outside this module. */
+/** The recognizer must stop while packages change (new entry points,
+ *  Windows file locks), and can warm after a successful download. */
 export interface AsrHooks {
 	stopRecognizer: () => void;
-	select: (model: string) => void;
 	warm: (model: string) => void;
 }
 
-/** One click: environment, the core + the platform's recommended engine,
- *  select its model, download its files, warm it. */
+/** Install the environment, core and recommended plugin. Model selection
+ *  and artifact acquisition are separate, explicit user actions. */
 export function installRecommended(hooks: AsrHooks): Promise<void> {
 	const pick = recommendedEngine();
 	return step("environment", null, async () => {
@@ -319,10 +322,6 @@ export function installRecommended(hooks: AsrHooks): Promise<void> {
 		await pipInstall(Object.values(sources));
 		writeSources(sources);
 		await refreshInventory();
-		hooks.select(pick.model);
-		setStep("model", pick.model);
-		await acquireInto(pick.model);
-		hooks.warm(pick.model);
 	});
 }
 
@@ -356,11 +355,16 @@ export function uninstallEngine(name: string, hooks: AsrHooks): Promise<void> {
 
 async function acquireInto(key: string): Promise<void> {
 	const s = state();
-	await bridge("acquire", { model: key }, (progress) => {
-		s.progress = progress;
-	});
-	s.statuses.delete(key);
-	await modelStatus(key, true);
+	try {
+		await bridge("acquire", { model: key }, (progress) => {
+			s.progress = progress;
+		});
+	} finally {
+		// Failed transfers can still leave partial files. Reinspect on both
+		// paths so the next attempt sees the current artifact state.
+		s.statuses.delete(key);
+		await modelStatus(key, true);
+	}
 }
 
 /** Download a model's files (the dictation mode's artifacts). */
