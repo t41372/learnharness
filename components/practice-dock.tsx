@@ -1,5 +1,7 @@
 "use client";
 
+import { AttachmentDraftList, AttachmentPicker, useAttachmentDraft } from "@/components/attachments";
+import type { Attachment } from "@/src/core";
 import { useCallback, useRef, useState } from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { ToolContentResponse } from "@/components/ai-elements/message";
@@ -39,7 +41,7 @@ export interface PracticeDockProps {
 	expanded: boolean;
 	onExpand: () => void;
 	/** text — POST {type:"thinking"} (one lane; the register is read from the text). */
-	onSubmit: (text: string) => void;
+	onSubmit: (text: string, attachments?: Attachment[], accepted?: () => void) => void;
 	/** Escape in the thinking field stops dictation (threaded from the page). */
 	onEscape?: () => void;
 	/** Compaction is running for this chat (owner round 14): the thinking
@@ -52,6 +54,7 @@ export interface PracticeDockProps {
 export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmit, onEscape, compactionRunning = false }: PracticeDockProps) {
 	const { t } = useT("chat");
 	const [thinking, setThinking] = useState("");
+	const attachments = useAttachmentDraft();
 	// Ref MIRRORS the field ("nothing gets lost", the question-dock
 	// discipline): a submit resuming after `await finishDictation()` reads
 	// the tail, never a stale closure.
@@ -73,10 +76,11 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 	const submit = () => {
 		if (compactionRunning) return;
 		const text = thinkingRef.current.trim();
-		if (text.length === 0) return;
+		const files = attachments.current();
+		if ((text.length === 0 && !files.length) || attachments.pending || attachments.uploads.some((u) => u.failed)) return;
 		thinkingRef.current = "";
 		setThinking("");
-		onSubmit(text);
+		onSubmit(text, files, () => attachments.clear(files.map((a) => a.id)));
 	};
 
 	/* ENTER SUBMITS FROM ANYWHERE (owner round 6, 2026-10-05): dictation
@@ -103,7 +107,7 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 
 	/* ── the expanded form ── */
 	return (
-		<div data-testid="practice-dock" data-problem={problemCallId}>
+		<div data-testid="practice-dock" data-problem={problemCallId} {...attachments.bind}>
 			{/* The agent's half: the 'Problem' eyebrow (mirroring the quiz
 			    cards' label row — owner round, 2026-10-05) + the statement,
 			    markdown + LaTeX rendered, capped by the measured column
@@ -124,6 +128,7 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 				<div className="px-2.5 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 					{t("thinking.yours")}
 				</div>
+				<AttachmentDraftList draft={attachments} />
 				<DictationField value={thinking} preview={livePreview} layout="lh-input max-h-64 min-h-16 px-2.5 pb-2">
 				<textarea
 					value={thinking}
@@ -159,13 +164,14 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 				    one p-1 row. Corner radii concentric: shell 16 − m-1.5 (6) =
 				    field 10 − p-1 (4) = button 6. */}
 				<div className="flex items-center justify-between gap-2 p-1">
+					<AttachmentPicker draft={attachments} disabled={compactionRunning} />
 					<span aria-hidden className="pl-1.5 text-xs text-muted-foreground">
 						{compactionRunning ? t("dock.compacting") : t("dock.keys")}
 					</span>
 					<Button
 						type="button"
 						data-testid="practice-send"
-						disabled={thinking.trim().length === 0 || compactionRunning}
+						disabled={(thinking.trim().length === 0 && attachments.items.length === 0) || attachments.pending || attachments.uploads.some((u) => u.failed) || compactionRunning}
 						onClick={() => submit()}
 						className="ml-auto h-9 rounded-[6px] px-3.5 text-sm font-medium"
 					>

@@ -111,6 +111,8 @@ export interface AgentBuildOptions {
 	tools?: Record<string, AgentTool<any>>;
 	/** Composition-provided domain tools, available across conversation phases. */
 	extraTools?: Record<string, AgentTool<any>>;
+	/** Provider-boundary file hydration, supplied by the server composition. */
+	convertToLlm?: typeof toLlmMessages;
 	/** The resolved per-user tool toggles (core/pending EnabledTools — the
 	 *  2026-09-19 P2 bridge: Platform's chat-handler passes
 	 *  effective.agent.tools; the factories drop any tool explicitly false.
@@ -233,7 +235,7 @@ function baseAgentOptions(kind: AgentKind, opts: AgentBuildOptions, tools: Agent
 		// UI-only markers (plan-block) drop, the app's id fields strip, and
 		// an abort's dangling question call gets its INTERRUPTED result. It
 		// must never throw (pi's convertToLlm contract).
-		convertToLlm: toLlmMessages,
+		convertToLlm: opts.convertToLlm ?? toLlmMessages,
 		prepareRequest: (request) => {
 			if (opts.callPurpose) {
 				let learner = false, automatic = false;

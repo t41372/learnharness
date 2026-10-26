@@ -1,5 +1,6 @@
 "use client";
 
+import { AttachmentList } from "@/components/attachments";
 import { useState } from "react";
 import { ConfidenceRail } from "@/components/confidence-rail";
 import { GlyphMark } from "@/components/ui/glyph-mark";
@@ -99,6 +100,7 @@ export function AnsweredCard({ answer: savedAnswer, input }: { answer: QuestionA
 			<div className="mb-3 font-medium">
 				<ToolContentResponse>{answer.questionText}</ToolContentResponse>
 			</div>
+			<AttachmentList attachments={answer.attachments} />
 			{parsedDetails && (
 				// The details line, same paint as the pending dock (owner,
 				// 2026-10-12): full markdown, LaTeX included.

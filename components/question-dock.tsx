@@ -1,5 +1,6 @@
 "use client";
 
+import { AttachmentDraftList, AttachmentPicker, useAttachmentDraft } from "@/components/attachments";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownIcon, ChevronRightIcon, PlayIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -328,6 +329,7 @@ function QuestionDockForm({
 	// "Other…" row in a multi-select must never clear already-picked
 	// options, and picking an option must never clear a typed custom answer.
 	const [sel, setSel] = useState<DockSelection>(() => initialDraft?.selection ?? emptyDockSelection());
+	const attachments = useAttachmentDraft(initialDraft?.attachments);
 	// The learner's transfer channel — thinking, never "a note".
 	const [thinking, setThinking] = useState(initialDraft?.thinking ?? "");
 	const [other, setOther] = useState(initialDraft?.other ?? "");
@@ -382,11 +384,11 @@ function QuestionDockForm({
 
 	const canSubmit =
 		qd.mode === "text"
-			? text.trim().length > 0
+			? text.trim().length > 0 || attachments.items.length > 0
 			: sel.dontKnow || (sel.otherSelected && other.trim().length > 0) || sel.selected.size > 0;
 
 	const submit = () => {
-		if (!canSubmit || compactionRunning) return;
+		if (!canSubmit || compactionRunning || attachments.pending || attachments.uploads.some((u) => u.failed)) return;
 		/* FINISH DICTATION FIRST (owner, 2026-10-01): Enter may arrive while
 		 * a run is live with reasoning still in Deepgram's hands. Stop the
 		 * run, let the last finals land in the target field, and only then
@@ -419,8 +421,11 @@ function QuestionDockForm({
 			other,
 			text: answerTextRef.current,
 			confidenceIndex: confIdx,
+			...(attachments.current().length ? { attachments: attachments.current() } : {}),
 		});
-		onSubmit(buildAnswer(qd, req, toolName));
+		const output = buildAnswer(qd, req, toolName);
+		const files = attachments.current();
+		onSubmit(files.length ? { ...output, attachments: files } : output);
 	};
 
 	/* ENTER SUBMITS FROM ANYWHERE (owner round 6, 2026-10-05): the same
@@ -850,6 +855,7 @@ function QuestionDockForm({
 			    keeps "Your answer" with Enter-to-submit. */}
 			<form
 				className="border-t border-border/60 p-1.5"
+				{...attachments.bind}
 				onSubmit={(e) => {
 					e.preventDefault();
 					submit();
@@ -862,6 +868,7 @@ function QuestionDockForm({
 					<div className="px-2.5 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 						{qd.mode === "text" ? t("questionDock.yourAnswer") : t("thinking.yours")}
 					</div>
+					<AttachmentDraftList draft={attachments} />
 					{qd.mode === "text" ? (
 						<DictationField value={text} preview={livePreview} layout="lh-input max-h-48 min-h-10 px-2.5 py-2">
 						<textarea
@@ -934,9 +941,10 @@ function QuestionDockForm({
 						<span aria-hidden className="pl-1.5 text-xs text-muted-foreground">
 								{compactionRunning ? t("dock.compacting") : t("dock.keys")}
 						</span>
+						<AttachmentPicker draft={attachments} disabled={compactionRunning} />
 						<Button
 							type="submit"
-							disabled={!canSubmit || compactionRunning}
+							disabled={!canSubmit || compactionRunning || attachments.pending || attachments.uploads.some((u) => u.failed)}
 							className="ml-auto h-9 rounded-[6px] px-3.5 text-sm font-medium"
 						>
 							{t("questionDock.submit")}

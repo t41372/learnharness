@@ -26,6 +26,7 @@ Hold the architecture along two orthogonal axes:
 | System | Owns (sole writer) | Role |
 |---|---|---|
 | **Classroom** — session engine | `data/chats/*.json` | the turn pipeline, prober→teacher, plan tree, questions, phases |
+| **Attachments** — learner files | `data/attachments/*` | bounded uploads, immutable references, provider-time image hydration ([details](attachments.md)) |
 | **Workbench** — background labor | `data/jobs/*.json` | job runner, researcher/demo-builder/visual-maker, steer delivery |
 | **Library** — world model | `data/graph/*` ledgers | extraction pipeline (sole graph writer), derivation, birth-session clusters |
 | **Practice** — problem sets | `data/practice/*.json` | partitioner→generator→grader pipeline, self-contained sets (§7) |

@@ -6,6 +6,7 @@
  * file (and the adapter implementations in src/store/).
  */
 
+import { createAttachmentStore } from "../store/attachments.ts";
 import { chatStore } from "../store/chats.ts";
 import { graphStore as graphAdapter } from "../store/graph.ts";
 import { createReviewStore } from "../store/reviews.ts";
@@ -26,6 +27,7 @@ import { resolveSettings, type EffectiveSettings } from "../core/settings-resolu
 /** The wired adapters. Satisfies core/graph.ts's GraphDeps structurally. */
 export const stores = {
 	reviewStore,
+	attachmentStore: createAttachmentStore(),
 	chatStore,
 	graphStore,
 	jobStore,

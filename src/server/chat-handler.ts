@@ -1,6 +1,8 @@
 import { reviewTools } from "../agent/tools/reviews.ts";
 import { reviews } from "./reviews.ts";
 import { reviewContextOf } from "../core/review-session.ts";
+import { attachmentContent, attachmentErrorResponse, resolveInputAttachments } from "./attachments.ts";
+import { toLlmMessages } from "../core/native-messages.ts";
 import type { Usage } from "@earendil-works/pi-ai";
 import {
 	createPracticeAgent,
@@ -188,6 +190,8 @@ export async function handleChatInput(
 	input: TurnInput,
 	buildAgent?: (opts: AgentBuildOptions & { teaching: boolean }) => TeachingAgent,
 ): Promise<Response> {
+	try { input = resolveInputAttachments(input); }
+	catch (error) { return attachmentErrorResponse(error); }
 	let record = stores.chatStore.getChat(chatId);
 	if (!record) {
 		return Response.json({ error: "Unknown chat" }, { status: 404 });
@@ -316,6 +320,11 @@ export async function handleChatInput(
 		throw err;
 	}
 
+	const projected = toLlmMessages(asAgentMessages([...record.messages, ...appends]));
+	if (!conversationEngine.model.input.includes("image") && projected.some((m) => Array.isArray(m.content) && m.content.some((c) => c.type === "image"))) {
+		return Response.json({ error: "Choose a model that supports images before sending image attachments.", code: "image_input_not_supported" }, { status: 422 });
+	}
+
 	// THE PARALLEL-QUESTION GATE (owner, 2026-10-03 — the deepseek parallel
 	// batch incident): an answer that leaves a SIBLING question dangling
 	// defers its wake. The dock advances to the next question (the client's
@@ -430,6 +439,7 @@ export async function handleChatInput(
 	});
 	const agentOpts: AgentBuildOptions = {
 		extraTools: reviewTools((ids, reason) => reviews.enroll(ids, "agent", reason)),
+		convertToLlm: (messages) => toLlmMessages(messages, attachmentContent),
 		engine,
 		callPurpose,
 		requestCycle,

@@ -57,6 +57,8 @@ import { QuestionDock } from "@/components/question-dock";
 import { SessionFind } from "@/components/session-find";
 import { SessionMessageNavigation } from "@/components/session-navigation";
 import { ReviewRatingPanel } from "@/components/reviews";
+import { AttachmentList, useAttachmentDraft } from "@/components/attachments";
+import type { Attachment } from "@/src/core";
 import { PracticeDock } from "@/components/practice-dock";
 import { ThinkingCard, type PracticeThinkingData } from "@/components/practice-cards";
 import { GraphContextCard, type GraphContextData } from "@/components/graph-context-card";
@@ -247,6 +249,7 @@ export function Chat({
 	initialMessages,
 	initialError,
 	initialPrompt,
+	initialAttachments = [],
 	initiallyInFlight,
 	initiallyCompacting = false,
 	initialConfigured = false,
@@ -257,6 +260,7 @@ export function Chat({
 	initialMessages: LhMessage[];
 	/** Memory-only settlement notice supplied on reopening. */
 	initialError?: string;
+	initialAttachments?: Attachment[];
 	/** The session kind (practice sessions, owner 2026-10-04): practice
 	 *  renders no phase chip (no probe→teach arc applies) and a Practice
 	 *  tag rides the header instead. */
@@ -297,6 +301,7 @@ export function Chat({
 	// The reattach settled terminal → the sync-and-continue seam (below).
 	setReattachSettled(() => reattachSettledRef.current());
 
+	const composerAttachments = useAttachmentDraft();
 	// A turn running server-side, attached to no live view of ours (navigate
 	// away mid-turn, or a wake turn discovered mid-session): the reattach
 	// stream is the primary channel (resumeStream — the same rendering path
@@ -526,10 +531,10 @@ export function Chat({
 	// the dock stays mounted (the problem is still active until the agent
 	// concludes).
 	const submitThinking = useCallback(
-		(text: string) => {
+		(text: string, attachments?: Attachment[], accepted?: () => void) => {
 			const problem = activeProblemRef.current;
 			if (!problem) return;
-			void send({ type: "thinking", problemCallId: problem.toolCallId, text });
+			void send({ type: "thinking", problemCallId: problem.toolCallId, text, ...(attachments?.length ? { attachments } : {}) }, accepted);
 		},
 		[send],
 	);
@@ -606,6 +611,7 @@ export function Chat({
 	 *  opens recovery with no replay. */
 	const draftRef = useRef<string | null>(null);
 	const openingDraftRef = useRef<string | null>(null);
+	const openingAttachmentsRef = useRef<Attachment[]>([]);
 	const [openingError, setOpeningError] = useState(false);
 	const openingMountedRef = useRef(false);
 	useEffect(() => {
@@ -613,11 +619,13 @@ export function Chat({
 		return () => { openingMountedRef.current = false; };
 	}, []);
 
-	const deliverOpeningPrompt = useCallback((prompt: string) => {
+	const deliverOpeningPrompt = useCallback((prompt: string, files: Attachment[] = openingAttachmentsRef.current) => {
 		openingDraftRef.current = prompt;
+		openingAttachmentsRef.current = files;
+		composerAttachments.restore(files);
 		// Persist uncertainty BEFORE the POST: another mount must restore,
 		// not race the still-arriving request. No storage means no auto-send.
-		if (!stashOpeningPrompt(chatId, prompt, true)) {
+		if (!stashOpeningPrompt(chatId, prompt, true, files)) {
 			applyText(prompt);
 			setOpeningError(true);
 			return;
@@ -625,7 +633,9 @@ export function Chat({
 		setOpeningError(false);
 		draftRef.current = prompt; // The existing 503 flow must restore it too.
 		applyText("");
-		void send({ type: "text", text: prompt }, () => {
+		void send({ type: "text", text: prompt, ...(files.length ? { attachments: files } : {}) }, () => {
+			composerAttachments.clear(files.map(file => file.id));
+			openingAttachmentsRef.current = [];
 			clearOpeningPrompt(chatId);
 			openingDraftRef.current = null;
 			if (draftRef.current === prompt) draftRef.current = null;
@@ -634,25 +644,28 @@ export function Chat({
 				applyText(prompt);
 			}
 		});
-	}, [chatId, send, applyText]);
+	}, [chatId, send, applyText, composerAttachments]);
 
 	const sentInitial = useRef(false);
 	useEffect(() => {
 		if (sentInitial.current) return;
 		sentInitial.current = true;
 		const entry = readOpeningPromptEntry(chatId);
-		const prompt = initialPrompt || entry?.text; // Legacy links still work.
-		if (!initialPromptOwed(initialMessages, prompt)) {
+		const prompt = initialPrompt ?? entry?.text ?? ""; // Legacy links still work.
+		const files = initialAttachments.length ? initialAttachments : entry?.attachments ?? [];
+		if (!initialPromptOwed(initialMessages, prompt, files)) {
 			if (initialMessages.some(m => m.role === "user" || m.role === "assistant")) clearOpeningPrompt(chatId);
 			return;
 		}
-		openingDraftRef.current = prompt!;
+		openingDraftRef.current = prompt;
+		openingAttachmentsRef.current = files;
+		composerAttachments.restore(files);
 		if (entry?.attempted || initiallyInFlight) {
 			applyText(prompt!); // Interrupted start: the learner explicitly resends.
 			return;
 		}
-		deliverOpeningPrompt(prompt!);
-	}, [chatId, initialPrompt, initialMessages, initiallyInFlight, deliverOpeningPrompt, applyText]);
+		deliverOpeningPrompt(prompt, files);
+	}, [chatId, initialPrompt, initialAttachments, initialMessages, initiallyInFlight, deliverOpeningPrompt, applyText, composerAttachments]);
 
 	useEffect(() => {
 		if (!hasConfirmedConversation) return;
@@ -660,6 +673,8 @@ export function Chat({
 		// A later canonical read may confirm a lost acknowledgment. Clear
 		// only the unchanged recovered draft, never the learner's newer work.
 		const opening = openingDraftRef.current;
+		composerAttachments.clear(openingAttachmentsRef.current.map(file => file.id));
+		openingAttachmentsRef.current = [];
 		if (opening !== null && textRef.current === opening) applyText("");
 		if (draftRef.current === opening) draftRef.current = null;
 		openingDraftRef.current = null;
@@ -776,7 +791,7 @@ export function Chat({
 	const retryable = (status === "ready" || status === "error") && !busy && !compacting && endsInFailedTurn(nativeMessages);
 	const retryFailedTurn = () => retryFailedResponse(send, draftRef);
 	const canSend =
-		(text.trim().length > 0 || dictation.active) && !pending && !activeProblem && !compacting;
+		(text.trim().length > 0 || dictation.active || composerAttachments.items.length > 0) && !composerAttachments.pending && !pending && !activeProblem && !compacting;
 
 	/* THE PRACTICE PAUSE (owner round 16): between problems — practice
 	 * kind, nothing active, nothing in flight, and at least one problem
@@ -1242,7 +1257,8 @@ export function Chat({
 	const doSend = () => {
 		if (busy || pending || compacting) return;
 		const t = textRef.current.trim();
-		if (!t) return;
+		const attachments = composerAttachments.current();
+		if ((!t && !attachments.length) || composerAttachments.pending) return;
 		if (zeroKeys) {
 			setSetupOpen(true);
 			return;
@@ -1252,12 +1268,12 @@ export function Chat({
 			return; // No optimistic send and no change to the learner's draft.
 		}
 		if (openingDraftRef.current !== null) {
-			deliverOpeningPrompt(t);
+			deliverOpeningPrompt(t, attachments);
 			return;
 		}
 		draftRef.current = t; // the refusal flow's preserve-and-replay seam
 		applyText("");
-		void send({ type: "text", text: t });
+		void send({ type: "text", text: t, ...(attachments.length ? { attachments } : {}) }, () => composerAttachments.clear(attachments.map((a) => a.id)));
 	};
 
 	/* STEER VS SEND (owner arc 2026-10-03): a send while a turn runs steers
@@ -1272,10 +1288,11 @@ export function Chat({
 	const doSteerOrSend = () => {
 		if (pending || compacting) return;
 		const t = textRef.current.trim();
-		if (!t) return;
+		const attachments = composerAttachments.current();
+		if ((!t && !attachments.length) || composerAttachments.pending) return;
 		if (busy) {
 			applyText("");
-			void steer(t);
+			void steer(t, attachments, () => composerAttachments.clear(attachments.map((a) => a.id)));
 			return;
 		}
 		doSend();
@@ -1467,6 +1484,8 @@ export function Chat({
 								<Fragment key={m.id || `m-${mi}`}>
 									{m.parts.map((part, pi) => {
 										switch (part.type) {
+											case "data-attachments":
+												return <AttachmentList key={pi} attachments={part.data as Attachment[]} />;
 											case "data-graph-context":
 												return <GraphContextCard key={pi} data={part.data as GraphContextData} />;
 											case "data-compaction":
@@ -1547,6 +1566,7 @@ export function Chat({
 												<div className="font-medium uppercase tracking-wide text-muted-foreground">{t("session.you")}</div>
 												<div className="lh-prose whitespace-pre-wrap text-foreground">
 													{m.parts.filter((p) => p.type === "text").map((p) => p.text).join("\n")}
+													{m.parts.filter((p) => p.type === "data-attachments").map((p, i) => <AttachmentList key={i} attachments={p.data as Attachment[]} />)}
 												</div>
 											</div>
 									) : (
@@ -1760,6 +1780,7 @@ export function Chat({
 							// abort channel kills it server-side; stop() alone would
 							// only detach our view.
 							busy={busy}
+							attachmentDraft={composerAttachments}
 							value={text}
 							onChange={applyText}
 							inputRef={composerInputRef}
@@ -1883,8 +1904,8 @@ export type EscAbortTarget = "mermaid" | "plan" | "setup" | "question" | "proble
  * (owner report, 2026-10-04: the turn went dead behind it — the old
  * `length === 0` check saw the marker and refused to fire).
  */
-export function initialPromptOwed(messages: readonly { role: string }[], prompt: string | undefined): boolean {
-	if (!prompt) return false;
+export function initialPromptOwed(messages: readonly { role: string }[], prompt: string | undefined, attachments: readonly Attachment[] = []): boolean {
+	if (!prompt && !attachments.length) return false;
 	return !messages.some((m) => m.role === "user" || m.role === "assistant");
 }
 
@@ -1980,7 +2001,7 @@ function DockOverlay({
 	 *  question (the composer is replaced); null in teaching sessions. */
 	practice: { toolCallId: string; input: unknown } | null;
 	/** (commit, text) — the practice dock's two submit lanes. */
-	onSubmitThinking: (text: string) => void;
+	onSubmitThinking: (text: string, attachments?: Attachment[], accepted?: () => void) => void;
 	/** Teach-phase pending question: arrives collapsed behind the reveal button (W5). */
 	requiresReveal: boolean;
 	/** The reading-thinking draft (owner 2026-10-03) — owned by ChatView so
