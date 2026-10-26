@@ -1,5 +1,8 @@
 import { attachmentContent, attachmentErrorResponse, resolveInputAttachments } from "./attachments.ts";
 import { toLlmMessages } from "../core/native-messages.ts";
+import { reviewTools } from "../agent/tools/reviews.ts";
+import { reviews } from "./reviews.ts";
+import { reviewContextOf } from "../core/review-session.ts";
 import type { Usage } from "@earendil-works/pi-ai";
 import {
 	createPracticeAgent,
@@ -391,6 +394,7 @@ export async function handleChatInput(
 	});
 	const agentOpts: AgentBuildOptions = {
 		convertToLlm: (messages) => toLlmMessages(messages, attachmentContent),
+		extraTools: reviewTools((ids, reason) => reviews.enroll(ids, "agent", reason)),
 		engine,
 		callPurpose,
 		requestCycle,
@@ -422,6 +426,7 @@ export async function handleChatInput(
 						// proposition, not just the session's picks (pickless sessions
 						// and future graph-tools poses stay valid).
 						graphNodes: () => stores.graphStore.readNodes(),
+						reviewTarget: reviewContextOf(record.messages)?.nodeId,
 						// THE RARELY-NEEDED SET (owner round 10): research + pdf jobs
 						// (same runner/gating as the teacher's — research honestly
 						// absent when no engine is live) and the map readers behind

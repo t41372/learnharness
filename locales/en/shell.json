@@ -225,5 +225,33 @@
 		"unpriced": "Unpriced turns",
 		"turns": "Turns",
 		"steps": "{{n}} steps"
+	},
+	"reviews": {
+		"title": "Reviews",
+		"description": "Review knowledge when it is due. New knowledge is added automatically; add existing propositions from the knowledge map.",
+		"dueCount": "{{count}} due",
+		"loadError": "Could not load reviews. Try again.",
+		"saveError": "Could not save your review. Your rating has not been discarded; try again.",
+		"startError": "Could not start this review. Check your model settings and try again.",
+		"retry": "Try again",
+		"loading": "Loading reviews…",
+		"empty": "No knowledge is enrolled yet. Select propositions in the knowledge map and choose Add to review.",
+		"dueNow": "Due now",
+		"retention": "Estimated recall: {{percent}}%",
+		"history": "Review history",
+		"sourceAutomatic": "Added automatically when first learned.",
+		"sourceManual": "Added by you.",
+		"resume": "Resume",
+		"start": "Start review",
+		"add": "Add to review",
+		"added": "Added to review",
+		"beginPrompt": "Start this spaced review with a fresh retrieval problem.",
+		"again": "Forgot",
+		"hard": "Hard",
+		"good": "Good",
+		"easy": "Easy",
+		"scheduled": "Next review scheduled.",
+		"back": "Back to reviews",
+		"ratePrompt": "How well could you recall this before seeing the solution?"
 	}
 }

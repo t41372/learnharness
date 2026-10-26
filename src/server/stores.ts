@@ -8,13 +8,26 @@
 
 import { createAttachmentStore } from "../store/attachments.ts";
 import { chatStore } from "../store/chats.ts";
-import { graphStore } from "../store/graph.ts";
+import { graphStore as graphAdapter } from "../store/graph.ts";
+import { createReviewStore } from "../store/reviews.ts";
+import { observeKnowledge } from "../core/reviews.ts";
+
+const reviewStore = createReviewStore();
+const graphStore = {
+	...graphAdapter,
+	appendNode(node: Parameters<typeof graphAdapter.appendNode>[0]) {
+		observeKnowledge(reviewStore, graphAdapter.readNodes());
+		graphAdapter.appendNode(node);
+		observeKnowledge(reviewStore, graphAdapter.readNodes());
+	},
+};
 import { jobStore } from "../store/jobs.ts";
 import { settingsStore } from "../store/settings.ts";
 import { resolveSettings, type EffectiveSettings } from "../core/settings-resolution.ts";
 /** The wired adapters. Satisfies core/graph.ts's GraphDeps structurally. */
 export const stores = {
 	attachmentStore: createAttachmentStore(),
+	reviewStore,
 	chatStore,
 	graphStore,
 	jobStore,

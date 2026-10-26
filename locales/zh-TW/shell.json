@@ -220,5 +220,33 @@
 		"unpriced": "未計價輪次",
 		"turns": "輪次",
 		"steps": "{{n}} 步"
+	},
+	"reviews": {
+		"title": "待複習",
+		"description": "在到期時複習知識。新知識會自動加入；既有知識可從知識圖譜選取加入。",
+		"dueCount": "{{count}} 項到期",
+		"loadError": "無法載入複習清單，請再試一次。",
+		"saveError": "無法儲存複習結果，請再試一次。",
+		"startError": "無法開始複習，請檢查模型設定後再試一次。",
+		"retry": "再試一次",
+		"loading": "正在載入複習清單…",
+		"empty": "目前沒有待複習的知識。請在知識圖譜選取知識，按「加入複習」。",
+		"dueNow": "現在可複習",
+		"retention": "預估回憶率：{{percent}}%",
+		"history": "複習紀錄",
+		"sourceAutomatic": "首次學到時自動加入。",
+		"sourceManual": "由你加入。",
+		"resume": "繼續複習",
+		"start": "開始複習",
+		"add": "加入複習",
+		"added": "已加入複習",
+		"beginPrompt": "請用一道新的提取練習題開始這次複習。",
+		"again": "忘記",
+		"hard": "困難",
+		"good": "良好",
+		"easy": "容易",
+		"scheduled": "已安排下次複習。",
+		"back": "回到複習清單",
+		"ratePrompt": "在看到解答之前，你能多順利地回想起來？"
 	}
 }
