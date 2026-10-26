@@ -15,6 +15,7 @@ import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { SettingsDialogProvider, useSettingsDialog } from "@/components/settings/settings-dialog.tsx";
 import { Hint } from "@/components/ui/hint";
 import { Button } from "@/components/ui/button";
+import { ReviewNavigation } from "@/components/reviews";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { fuzzyScore } from "@/src/core";
@@ -725,6 +726,7 @@ function SessionsSidebar() {
 						{t("sidebar.kind.practice")}
 						<span className="sr-only">{t("sidebar.newPracticeSr")}</span>
 					</button>
+					<ReviewNavigation />
 				</div>
 
 				<div className="mx-3 mb-2 flex items-center gap-2">
