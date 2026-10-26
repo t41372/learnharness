@@ -59,6 +59,7 @@ import { SessionMessageNavigation } from "@/components/session-navigation";
 import { ReviewRatingPanel } from "@/components/reviews";
 import { AttachmentList, useAttachmentDraft } from "@/components/attachments";
 import type { Attachment } from "@/src/core";
+import { ReviewRatingPanel } from "@/components/reviews";
 import { PracticeDock } from "@/components/practice-dock";
 import { ThinkingCard, type PracticeThinkingData } from "@/components/practice-cards";
 import { GraphContextCard, type GraphContextData } from "@/components/graph-context-card";

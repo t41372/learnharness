@@ -3,6 +3,9 @@ import { reviews } from "./reviews.ts";
 import { reviewContextOf } from "../core/review-session.ts";
 import { attachmentContent, attachmentErrorResponse, resolveInputAttachments } from "./attachments.ts";
 import { toLlmMessages } from "../core/native-messages.ts";
+import { reviewTools } from "../agent/tools/reviews.ts";
+import { reviews } from "./reviews.ts";
+import { reviewContextOf } from "../core/review-session.ts";
 import type { Usage } from "@earendil-works/pi-ai";
 import {
 	createPracticeAgent,
@@ -440,6 +443,7 @@ export async function handleChatInput(
 	const agentOpts: AgentBuildOptions = {
 		extraTools: reviewTools((ids, reason) => reviews.enroll(ids, "agent", reason)),
 		convertToLlm: (messages) => toLlmMessages(messages, attachmentContent),
+		extraTools: reviewTools((ids, reason) => reviews.enroll(ids, "agent", reason)),
 		engine,
 		callPurpose,
 		requestCycle,

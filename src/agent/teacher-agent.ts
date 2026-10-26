@@ -113,6 +113,8 @@ export interface AgentBuildOptions {
 	extraTools?: Record<string, AgentTool<any>>;
 	/** Provider-boundary file hydration, supplied by the server composition. */
 	convertToLlm?: typeof toLlmMessages;
+	/** Composition-provided domain tools, available across conversation phases. */
+	extraTools?: Record<string, AgentTool<any>>;
 	/** The resolved per-user tool toggles (core/pending EnabledTools — the
 	 *  2026-09-19 P2 bridge: Platform's chat-handler passes
 	 *  effective.agent.tools; the factories drop any tool explicitly false.
