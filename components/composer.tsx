@@ -1,5 +1,6 @@
 "use client";
 
+import { AttachmentDraftList, AttachmentPicker, useAttachmentDraft, type AttachmentDraft } from "@/components/attachments";
 import { ArrowRightIcon, CornerDownLeftIcon, SquareIcon } from "lucide-react";
 import { DictationField, useDictationPreview } from "@/components/dictation";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,9 @@ export function Composer({
 	placeholder,
 	nextProblem = false,
 	onNext,
+	attachmentDraft,
 }: {
+	attachmentDraft?: AttachmentDraft;
 	busy: boolean;
 	value: string;
 	onChange: (v: string) => void;
@@ -77,6 +80,10 @@ export function Composer({
 	 *  empty-Enter share it. */
 	onNext?: () => void;
 }) {
+	const ownDraft = useAttachmentDraft();
+	const draft = attachmentDraft ?? ownDraft;
+	canSend = (canSend || draft.items.length > 0) && !draft.pending && !draft.uploads.some((u) => u.failed);
+	nextProblem = nextProblem && draft.uploads.length === 0;
 	const livePreview = useDictationPreview("page");
 	const { t } = useT("chat");
 	const act = () => {
@@ -86,6 +93,8 @@ export function Composer({
 		else if (action === "next") onNext?.();
 	};
 	return (
+		<div {...draft.bind}>
+		<AttachmentDraftList draft={draft} />
 		<form
 			data-testid="composer"
 			className="flex items-end gap-1.5 p-1.5"
@@ -94,6 +103,7 @@ export function Composer({
 				act();
 			}}
 		>
+			<AttachmentPicker draft={draft} />
 			{/* The page's dictation fallback target: the local engine's live
 			    words show here while no question claims the run. */}
 			<DictationField value={value} preview={livePreview} layout="lh-input max-h-48 min-h-10 px-2.5 py-2" className="min-w-0 flex-1">
@@ -166,5 +176,6 @@ export function Composer({
 					</button>
 				)}
 		</form>
+		</div>
 	);
 }
