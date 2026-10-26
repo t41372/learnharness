@@ -13,6 +13,7 @@ import { useFieldCycle } from "@/components/field-cycle";
 import { SidebarToggle } from "@/components/sidebar";
 import { StatsBar } from "@/components/stats-bar";
 import type { TurnUsage } from "@/src/core";
+import { AttachmentDraftList, AttachmentPicker, useAttachmentDraft } from "@/components/attachments";
 import { useT } from "@/components/i18n";
 
 /**
@@ -66,6 +67,7 @@ export function Home({
 	});
 	const livePreview = useDictationPreview("page");
 	const [busy, setBusy] = useState(false);
+	const attachments = useAttachmentDraft();
 	/* Run end focuses the topic input (owner, 2026-10-01): the hands are on
 	 * the keyboard from the stop. Falling edge only; this surface's only
 	 * dictation target IS this textarea, so no case-split is needed. */
@@ -115,7 +117,8 @@ export function Home({
 	};
 	const begin = async () => {
 		const title = topicRef.current.trim();
-		if (!title || busy) return;
+		const files = attachments.current();
+		if ((!title && !files.length) || busy || attachments.pending || attachments.uploads.some((u) => u.failed)) return;
 		// Unconfigured: the send INTERCEPTS into the setup flow (the draft
 		// stays in the textarea; the learner sends it after Save).
 		if (!configured) {
@@ -144,7 +147,7 @@ export function Home({
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					title,
+					title: title || files[0]?.name,
 					...(mode === "practice" ? { kind: "practice" } : {}),
 					...(practiceProps.length > 0 ? { graphContext: { propositions: practiceProps } } : {}),
 				}),
@@ -153,7 +156,7 @@ export function Home({
 			// No settings PUT on create (per-session models, owner
 			// 2026-09-28): the SERVER stamps the newborn from the strong
 			// slot — the same default this surface's model control edits.
-			router.push(`/chat/${id}?prompt=${encodeURIComponent(title)}`);
+			router.push(`/chat/${id}?prompt=${encodeURIComponent(title)}${files.length ? `&attachments=${files.map((a) => a.id).join(",")}` : ""}`);
 		} catch {
 			setBusy(false);
 		}
@@ -244,13 +247,16 @@ export function Home({
 							)
 						)}
 					/>
+					<div className="rounded-2xl border bg-card shadow-lg" {...attachments.bind}>
+					<AttachmentDraftList draft={attachments} />
 					<form
-						className="flex items-end gap-1.5 rounded-2xl border bg-card p-1.5 shadow-lg"
+						className="flex items-end gap-1.5 p-1.5"
 					onSubmit={(e) => {
 						e.preventDefault();
 						void start();
 					}}
 				>
+					<AttachmentPicker draft={attachments} disabled={busy} />
 					<DictationField value={topic} preview={livePreview} layout="lh-input max-h-48 min-h-10 px-2.5 py-2" className="min-w-0 flex-1">
 					<textarea
 						ref={topicInputRef}
@@ -285,12 +291,13 @@ export function Home({
 					<button
 						type="submit"
 						aria-label={t("home.start")}
-						disabled={(!topic.trim() && !dictation.active) || busy}
+						disabled={(!topic.trim() && !dictation.active && attachments.items.length === 0) || busy || attachments.pending || attachments.uploads.some((u) => u.failed)}
 						className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-primary text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-40"
 					>
 						<CornerDownLeftIcon className="size-5" />
 					</button>
 					</form>
+					</div>
 					{/* Same as the chat view's under-composer stats bar (owner) — no
 					    session yet, so the LEFT side renders nothing (wave 7 sweep)
 					    while the RIGHT keeps the strong-slot control (fix wave: the

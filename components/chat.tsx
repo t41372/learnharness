@@ -55,6 +55,8 @@ import type { PlanBlockData } from "@/src/core";
 import { QuestionDock } from "@/components/question-dock";
 import { SessionFind } from "@/components/session-find";
 import { SessionMessageNavigation } from "@/components/session-navigation";
+import { AttachmentList, useAttachmentDraft } from "@/components/attachments";
+import type { Attachment } from "@/src/core";
 import { ReviewRatingPanel } from "@/components/reviews";
 import { PracticeDock } from "@/components/practice-dock";
 import { ThinkingCard, type PracticeThinkingData } from "@/components/practice-cards";
@@ -233,6 +235,7 @@ export function Chat({
 	title,
 	initialMessages,
 	initialPrompt,
+	initialAttachments = [],
 	initiallyInFlight,
 	initiallyCompacting = false,
 	initialConfigured = false,
@@ -241,6 +244,7 @@ export function Chat({
 	chatId: string;
 	title: string;
 	initialMessages: LhMessage[];
+	initialAttachments?: Attachment[];
 	/** The session kind (practice sessions, owner 2026-10-04): practice
 	 *  renders no phase chip (no probe→teach arc applies) and a Practice
 	 *  tag rides the header instead. */
@@ -283,11 +287,12 @@ export function Chat({
 
 	// New chat with a topic: send the first message exactly once
 	// (initialPromptOwed — the pure gate, pinned in the test suite).
+	const composerAttachments = useAttachmentDraft();
 	const sentInitial = useRef(false);
 	useEffect(() => {
-		if (!sentInitial.current && initialPromptOwed(initialMessages, initialPrompt)) {
+		if (!sentInitial.current && initialPromptOwed(initialMessages, initialPrompt || (initialAttachments.length ? "attachments" : undefined))) {
 			sentInitial.current = true;
-			void send({ type: "text", text: initialPrompt! });
+			void send({ type: "text", text: initialPrompt ?? "", ...(initialAttachments.length ? { attachments: initialAttachments } : {}) });
 		}
 	}, [initialPrompt, initialMessages, send]);
 
@@ -523,10 +528,10 @@ export function Chat({
 	// the dock stays mounted (the problem is still active until the agent
 	// concludes).
 	const submitThinking = useCallback(
-		(text: string) => {
+		(text: string, attachments?: Attachment[], accepted?: () => void) => {
 			const problem = activeProblemRef.current;
 			if (!problem) return;
-			void send({ type: "thinking", problemCallId: problem.toolCallId, text });
+			void send({ type: "thinking", problemCallId: problem.toolCallId, text, ...(attachments?.length ? { attachments } : {}) }, accepted);
 		},
 		[send],
 	);
@@ -715,7 +720,7 @@ export function Chat({
 	// affordance).
 	const [compacting, setCompacting] = useState(initiallyCompacting);
 	const canSend =
-		(text.trim().length > 0 || dictation.active) && !pending && !activeProblem && !compacting;
+		(text.trim().length > 0 || dictation.active || composerAttachments.items.length > 0) && !composerAttachments.pending && !pending && !activeProblem && !compacting;
 
 	/* THE PRACTICE PAUSE (owner round 16): between problems — practice
 	 * kind, nothing active, nothing in flight, and at least one problem
@@ -1181,10 +1186,11 @@ export function Chat({
 	const doSend = () => {
 		if (busy || pending || compacting) return;
 		const t = textRef.current.trim();
-		if (!t) return;
+		const attachments = composerAttachments.current();
+		if ((!t && !attachments.length) || composerAttachments.pending) return;
 		draftRef.current = t; // the refusal flow's preserve-and-replay seam
 		applyText("");
-		void send({ type: "text", text: t });
+		void send({ type: "text", text: t, ...(attachments.length ? { attachments } : {}) }, () => composerAttachments.clear(attachments.map((a) => a.id)));
 	};
 
 	/* STEER VS SEND (owner arc 2026-10-03): a send while a turn runs steers
@@ -1199,10 +1205,11 @@ export function Chat({
 	const doSteerOrSend = () => {
 		if (pending || compacting) return;
 		const t = textRef.current.trim();
-		if (!t) return;
+		const attachments = composerAttachments.current();
+		if ((!t && !attachments.length) || composerAttachments.pending) return;
 		if (busy) {
 			applyText("");
-			void steer(t);
+			void steer(t, attachments, () => composerAttachments.clear(attachments.map((a) => a.id)));
 			return;
 		}
 		doSend();
@@ -1394,6 +1401,8 @@ export function Chat({
 								<Fragment key={m.id || `m-${mi}`}>
 									{m.parts.map((part, pi) => {
 										switch (part.type) {
+											case "data-attachments":
+												return <AttachmentList key={pi} attachments={part.data as Attachment[]} />;
 											case "data-graph-context":
 												return <GraphContextCard key={pi} data={part.data as GraphContextData} />;
 											case "data-compaction":
@@ -1474,6 +1483,7 @@ export function Chat({
 												<div className="font-medium uppercase tracking-wide text-muted-foreground">{t("session.you")}</div>
 												<div className="lh-prose whitespace-pre-wrap text-foreground">
 													{m.parts.filter((p) => p.type === "text").map((p) => p.text).join("\n")}
+													{m.parts.filter((p) => p.type === "data-attachments").map((p, i) => <AttachmentList key={i} attachments={p.data as Attachment[]} />)}
 												</div>
 											</div>
 									) : (
@@ -1678,6 +1688,7 @@ export function Chat({
 							// abort channel kills it server-side; stop() alone would
 							// only detach our view.
 							busy={busy}
+							attachmentDraft={composerAttachments}
 							value={text}
 							onChange={applyText}
 							inputRef={composerInputRef}
@@ -1891,7 +1902,7 @@ function DockOverlay({
 	 *  question (the composer is replaced); null in teaching sessions. */
 	practice: { toolCallId: string; input: unknown } | null;
 	/** (commit, text) — the practice dock's two submit lanes. */
-	onSubmitThinking: (text: string) => void;
+	onSubmitThinking: (text: string, attachments?: Attachment[], accepted?: () => void) => void;
 	/** Teach-phase pending question: arrives collapsed behind the reveal button (W5). */
 	requiresReveal: boolean;
 	/** The reading-thinking draft (owner 2026-10-03) — owned by ChatView so

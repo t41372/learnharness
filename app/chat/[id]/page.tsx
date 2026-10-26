@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Chat } from "@/components/chat";
 import { slotsConfigured } from "@/src/core";
+import { stores } from "@/src/server";
 import { compactionInFlight, getChat, isTurnRunning, readSettingsRecord } from "@/src/server";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +11,9 @@ export default async function ChatPage({
 	searchParams,
 }: {
 	params: Promise<{ id: string }>;
-	searchParams: Promise<{ prompt?: string }>;
+	searchParams: Promise<{ prompt?: string; attachments?: string }>;
 }) {
-	const [{ id }, { prompt }] = await Promise.all([params, searchParams]);
+	const [{ id }, { prompt, attachments }] = await Promise.all([params, searchParams]);
 	const chat = getChat(id);
 	if (!chat) notFound();
 	// The persistent setup CTA's seed (BYOK, owner 2026-09-22): slotsConfigured
@@ -31,6 +32,7 @@ export default async function ChatPage({
 				initialMessages={chat.messages}
 			initialConfigured={slotsConfigured(record?.models)}
 			initialPrompt={prompt}
+			initialAttachments={typeof attachments === "string" ? attachments.split(",").filter(Boolean).slice(0, 10).map((id) => stores.attachmentStore.get(id)) : []}
 			// A teacher turn that outlived its client: the remounted view must
 			// attach (busy shimmer + poll), never resurrect the stale record.
 			initiallyInFlight={isTurnRunning(chat.id)}

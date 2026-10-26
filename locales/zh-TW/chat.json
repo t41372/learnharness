@@ -163,5 +163,20 @@
 		"previousBranch": "上一個分支",
 		"nextBranch": "下一個分支",
 		"branchPage": "{{current}} / {{total}}"
+	},
+	"attachments": {
+		"choose": "加入附件",
+		"supported": "圖片、PDF、文字或程式碼 · 最多 10 個檔案 · 每檔 20 MB",
+		"tooMany": "每則訊息最多可附加 10 個檔案。",
+		"tooLarge": "每個附件必須小於或等於 20 MB。",
+		"failed": "上傳失敗，請檢查檔案類型後再試一次。",
+		"retry": "再試一次",
+		"uploading": "正在上傳…",
+		"remove": "移除 {{name}}",
+		"download": "下載",
+		"close": "關閉預覽",
+		"loading": "正在載入預覽…",
+		"previewError": "無法預覽此檔案，你仍可下載檔案。",
+		"previewTruncated": "預覽已縮短，下載檔案可查看完整內容。"
 	}
 }
