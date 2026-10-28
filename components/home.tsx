@@ -8,7 +8,7 @@ import { MinimalHome } from "@/components/minimal-home";
 import { SetupDialog } from "@/components/setup-dialog";
 import { ComposerActions, NodePickerControl } from "@/components/composer-actions";
 import { useModelSetup, selectedModelUnavailable, openModelPicker, ZeroKeysPill } from "@/components/setup-cta";
-import { DictationBar, joinDictation, useDictation } from "@/components/dictation";
+import { DictationBar, DictationField, joinDictation, useDictation, useDictationPreview } from "@/components/dictation";
 import { useFieldCycle } from "@/components/field-cycle";
 import { SidebarToggle } from "@/components/sidebar";
 import { StatsBar } from "@/components/stats-bar";
@@ -57,6 +57,7 @@ export function Home({
 			setTopic(v);
 		},
 	});
+	const livePreview = useDictationPreview("page");
 	const [busy, setBusy] = useState(false);
 	const startingRef = useRef(false);
 	const starterRef = useRef(new SessionStarter());
@@ -248,6 +249,7 @@ export function Home({
 						void start();
 					}}
 				>
+					<DictationField value={topic} preview={livePreview} layout="lh-input max-h-48 min-h-10 px-2.5 py-2" className="min-w-0 flex-1">
 					<textarea
 						ref={topicInputRef}
 						value={topic}
@@ -273,8 +275,9 @@ export function Home({
 						placeholder={mode === "practice" ? "What do you want to practice?" : "What do you want to learn?"}
 						autoFocus
 						rows={1}
-						className="field-sizing-content lh-input max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
+						className="field-sizing-content lh-input max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
 					/>
+					</DictationField>
 					{/* No tooltip on the start square — the ↵ glyph is the
 					    affordance (owner, subtlety round 2026-09-25). */}
 					<button

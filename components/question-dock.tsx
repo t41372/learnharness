@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownIcon, ChevronRightIcon, PlayIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { finishDictation, isDictationActive, joinDictation, useDictationTarget } from "@/components/dictation";
+import { DictationField, finishDictation, isDictationActive, joinDictation, useDictationPreview, useDictationTarget, useDictationTerms } from "@/components/dictation";
 import { useEnterSubmits } from "@/components/enter-submits";
 import { ToolContentResponse } from "@/components/ai-elements/message";
 import { cn } from "@/lib/utils";
@@ -367,6 +367,11 @@ function QuestionDockForm({
 		// the reading-thinking field owns dictated speech during the reading.
 		dictationClaim,
 	);
+	// The local engine's live words, shown in whichever field the claim
+	// flushes into (the answer in text mode, else "Your thinking").
+	const livePreview = useDictationPreview("question", dictationClaim);
+	// The question on screen is the likeliest vocabulary of the answer.
+	useDictationTerms(useMemo(() => (qd.mode === "text" ? [] : qd.options.map((o) => o.label)), [qd]));
 
 	const toggle = (idx: number) => setSel(toggleOption(selectMode, sel, idx));
 
@@ -851,6 +856,7 @@ function QuestionDockForm({
 						{qd.mode === "text" ? "Your answer" : "YOUR THINKING"}
 					</div>
 					{qd.mode === "text" ? (
+						<DictationField value={text} preview={livePreview} layout="lh-input max-h-48 min-h-10 px-2.5 py-2">
 						<textarea
 							value={text}
 							onChange={(e) => {
@@ -878,7 +884,9 @@ function QuestionDockForm({
 							rows={1}
 							className="field-sizing-content lh-input max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
 						/>
+						</DictationField>
 					) : (
+						<DictationField value={thinking} preview={livePreview} layout={cn("lh-input max-h-48 px-2.5 py-2", phase === "teach" ? "min-h-[4.5rem]" : "min-h-10")}>
 						<textarea
 							ref={thinkingRef}
 							value={thinking}
@@ -913,6 +921,7 @@ function QuestionDockForm({
 								phase === "teach" ? "min-h-[4.5rem]" : "min-h-10",
 							)}
 						/>
+						</DictationField>
 					)}
 					<div className="flex items-center justify-between gap-2 p-1">
 						<span aria-hidden className="pl-1.5 text-xs text-muted-foreground">
