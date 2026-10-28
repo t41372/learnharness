@@ -27,7 +27,8 @@
 		"steerFailed": "The steer failed ({{status}}).",
 		"dismissFailed": "The dismissal failed ({{status}}).",
 		"modelsNotConfigured": "No model configured — set up your models first",
-		"providerKeyMissing": "No {{provider}} key is set — add one in Settings → Keys"
+		"providerKeyMissing": "No {{provider}} key is set — add one in Settings → Keys",
+		"retry": "Retry"
 	},
 	"composer": {
 		"placeholder": "Ask, answer, or steer the lesson…",

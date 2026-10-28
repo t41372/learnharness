@@ -84,7 +84,7 @@ describe("artifacts in Chinese", () => {
 		assert.ok(cn.includes("已派发…"));
 		const tw = inLanguage("zh-TW", dispatch([]));
 		assert.ok(tw.includes("已派出…"));
-		assert.ok(inLanguage("zh-TW", dispatch([job({ status: "done" })])).includes("已送達"));
+		assert.ok(inLanguage("zh-TW", dispatch([job({ status: "done" })])).includes("已完成"));
 		assert.ok(renderToStaticMarkup(dispatch([])).includes("Dispatched…"), "English without a provider");
 	});
 

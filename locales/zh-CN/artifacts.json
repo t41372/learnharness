@@ -33,7 +33,8 @@
 		"delivered": "已送达",
 		"running": "{{label}} 运行中",
 		"elapsed": "{{seconds}} 秒",
-		"pending": "已派发…"
+		"pending": "已派发…",
+		"finished": "已完成"
 	},
 	"jobCard": {
 		"pdf": {

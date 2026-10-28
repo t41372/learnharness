@@ -227,7 +227,9 @@
 		"loadingFonts": "Loading fonts…",
 		"fontDefault": "default",
 		"useFamily": "Use “{{family}}”",
-		"custom": "custom"
+		"custom": "custom",
+		"retry": "Retry",
+		"catalogFailed": "Model catalog could not be loaded. Check the connection and retry."
 	},
 	"connections": {
 		"connect": "Connect",
@@ -253,7 +255,9 @@
 		"waiting": "Waiting for browser sign-in…",
 		"manageAccountAria": "Manage ChatGPT account",
 		"addAccounts": "Add accounts",
-		"continueWith": "Continue with ChatGPT"
+		"continueWith": "Continue with ChatGPT",
+		"webNotice": "LearnHarness stores your ChatGPT account details and credentials in an unencrypted local file on the machine running LearnHarness. When this connection is used, relevant conversation context, learning material, and tool results are sent directly to OpenAI. ChatGPT plan limits apply; any additional credits are authorized and managed in ChatGPT, not LearnHarness. Complete ChatGPT sign-in in a browser on that same machine.",
+		"disconnectWebBody": "This removes the saved account and its credentials from the machine running LearnHarness."
 	},
 	"subscriptions": {
 		"policyNotice": "Pi's native Copilot sign-in may enable additional models whose policy is not yet configured. Models explicitly disabled by policy are not enabled. Organization restrictions still apply.",
@@ -269,6 +273,8 @@
 		"desktopRequired": "Subscription sign-in requires the desktop app's private server connection. API-key connections remain available here.",
 		"deviceCode": "Device code: <code>{{code}}</code>",
 		"openBrowser": "Open browser",
-		"selectPlaceholder": "Select…"
+		"selectPlaceholder": "Select…",
+		"webNotice": "Your prompts, tool results, and relevant session context are sent to {{label}} to run the work you select. Credentials are stored on the machine running LearnHarness in an owner-only plaintext file. Provider terms, data-use policies, and plan limits apply. This connection never falls back to an API key.",
+		"disconnectWebBody": "Disconnect {{label}} from LearnHarness? This stops work using this connection and removes its saved credentials from the machine running LearnHarness. It does not cancel your subscription or revoke access at the provider. Saved model choices will remain unavailable until you reconnect or change them."
 	}
 }

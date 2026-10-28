@@ -202,7 +202,9 @@
 				"label": "Vision",
 				"roster": "Visual maker + PDF reader"
 			}
-		}
+		},
+		"retry": "Retry",
+		"loadingModels": "Loading models…"
 	},
 	"modelPicker": {
 		"thinking": "Thinking",

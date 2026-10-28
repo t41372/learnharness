@@ -33,7 +33,8 @@
 		"delivered": "delivered",
 		"running": "{{label}} running",
 		"elapsed": "{{seconds}}s",
-		"pending": "Dispatched…"
+		"pending": "Dispatched…",
+		"finished": "finished"
 	},
 	"jobCard": {
 		"pdf": {

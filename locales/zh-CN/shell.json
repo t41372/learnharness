@@ -197,7 +197,9 @@
 				"label": "视觉",
 				"roster": "图示制作者 + PDF 阅读者"
 			}
-		}
+		},
+		"retry": "重试",
+		"loadingModels": "正在加载模型…"
 	},
 	"modelPicker": {
 		"thinking": "思考强度",

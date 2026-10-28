@@ -27,7 +27,8 @@
 		"steerFailed": "引导消息发送失败（{{status}}）。",
 		"dismissFailed": "跳过/舍弃失败（{{status}}）。",
 		"modelsNotConfigured": "尚未配置模型，请先完成模型设置",
-		"providerKeyMissing": "尚未设置 {{provider}} 密钥，请在“设置 → 服务商”中添加"
+		"providerKeyMissing": "尚未设置 {{provider}} 密钥，请在“设置 → 服务商”中添加",
+		"retry": "重试"
 	},
 	"composer": {
 		"placeholder": "提问、回答，或引导这节课的方向…",

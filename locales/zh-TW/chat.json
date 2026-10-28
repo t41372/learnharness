@@ -27,7 +27,8 @@
 		"steerFailed": "引導訊息傳送失敗（{{status}}）。",
 		"dismissFailed": "略過/捨棄失敗（{{status}}）。",
 		"modelsNotConfigured": "尚未設定模型，請先完成模型設定",
-		"providerKeyMissing": "尚未設定 {{provider}} 金鑰，請在「設定 → 供應商」中新增"
+		"providerKeyMissing": "尚未設定 {{provider}} 金鑰，請在「設定 → 供應商」中新增",
+		"retry": "重試"
 	},
 	"composer": {
 		"placeholder": "提問、回答，或引導這堂課的方向…",

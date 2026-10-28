@@ -227,7 +227,9 @@
 		"loadingFonts": "字体加载中…",
 		"fontDefault": "默认",
 		"useFamily": "使用“{{family}}”",
-		"custom": "自定义"
+		"custom": "自定义",
+		"retry": "重试",
+		"catalogFailed": "无法加载模型列表。请检查连接后重试。"
 	},
 	"connections": {
 		"connect": "连接",
@@ -253,7 +255,9 @@
 		"waiting": "正在等待浏览器登录…",
 		"manageAccountAria": "管理 ChatGPT 账户",
 		"addAccounts": "添加账户",
-		"continueWith": "使用 ChatGPT 继续"
+		"continueWith": "使用 ChatGPT 继续",
+		"webNotice": "LearnHarness 会把你的 ChatGPT 账户信息和凭据保存在运行 LearnHarness 的计算机上一个未加密的运行 LearnHarness 的计算机上文件中。使用此连接时，相关的会话上下文、学习材料和工具结果会直接发送给 OpenAI。ChatGPT 套餐的用量限制同样适用；任何额外额度都在 ChatGPT 中授权和管理，而不是在 LearnHarness 中。 请在同一台计算机上的浏览器中完成 ChatGPT 登录。",
+		"disconnectWebBody": "这会从运行 LearnHarness 的计算机上移除已保存的账户及其凭据。"
 	},
 	"subscriptions": {
 		"policyNotice": "Pi 的原生 Copilot 登录可能会启用尚未配置策略的其他模型。被策略明确禁用的模型不会被启用。组织的限制仍然适用。",
@@ -269,6 +273,8 @@
 		"desktopRequired": "订阅登录需要桌面应用的私有服务器连接。这里仍可使用 API 密钥连接。",
 		"deviceCode": "设备代码：<code>{{code}}</code>",
 		"openBrowser": "打开浏览器",
-		"selectPlaceholder": "请选择…"
+		"selectPlaceholder": "请选择…",
+		"webNotice": "你的提示词、工具结果和相关的会话上下文会发送给 {{label}}，用于执行你选择的工作。凭据以仅限本人访问的明文文件保存在运行 LearnHarness 的计算机上。服务商的条款、数据使用政策和套餐限制均适用。此连接绝不会改用 API 密钥。",
+		"disconnectWebBody": "要将 {{label}} 与 LearnHarness 断开连接吗？这会停止使用此连接的工作，并从运行 LearnHarness 的计算机上移除已保存的凭据。这不会取消你的订阅，也不会在服务商处撤销访问权限。在你重新连接或更改之前，已保存的模型选择将无法使用。"
 	}
 }

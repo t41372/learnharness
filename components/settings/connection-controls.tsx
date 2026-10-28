@@ -7,11 +7,11 @@ import { useT } from "@/components/i18n";
 
 /** `action` is the row's kind, not its copy (i18n wave): Connect is the
  *  outlined call to action, Manage… the quiet one. */
-export function ConnectionRow({ label, action, disabled, onAction, children, testid, actionTestid }: { label: string; action: "connect" | "manage"; disabled: boolean; onAction: () => void; children?: React.ReactNode; testid?: string; actionTestid?: string }) {
+export function ConnectionRow({ label, action, disabled, onAction, children, testid, actionTestid, labelClassName }: { label: string; action: "connect" | "manage"; disabled: boolean; onAction: () => void; children?: React.ReactNode; testid?: string; actionTestid?: string; labelClassName?: string }) {
 	const { t } = useT("settings");
 	const connect = action === "connect";
 	return <div className="flex flex-wrap items-center gap-3" data-testid={testid}>
-		<span className="font-ui text-xs text-foreground">{label}</span>
+		<span className={labelClassName ?? "font-ui text-xs text-foreground"}>{label}</span>
 		{children}
 		<Button type="button" size="xs" variant={connect ? "outline" : "ghost"} className={`cursor-pointer disabled:cursor-not-allowed ${connect ? "" : "text-muted-foreground hover:text-foreground"}`} data-testid={actionTestid} disabled={disabled} onClick={onAction}>{connect ? t("connections.connect") : t("connections.manage")}</Button>
 	</div>;

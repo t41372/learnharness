@@ -45,7 +45,8 @@ import {
 import { useLanguage, useT } from "@/components/i18n";
 import { cn } from "@/lib/utils";
 import { useAppearance } from "./appearance.tsx";
-import { SettingsSection, SettingsRow, Toggle } from "./controls.tsx";
+import { SettingsSection, SettingsRow } from "./controls.tsx";
+import { UpdateSettings } from "./update-settings.tsx";
 import { AgentSection } from "./agent-section.tsx";
 import type { ModelsSettings } from "@/src/core";
 import { MENU_CLOSE_EVENT, MENU_OPEN_EVENT } from "@/components/menu-shell";
@@ -81,10 +82,6 @@ const DialogContext = createContext<{ open: (section?: string, row?: string) => 
 /** AppShell-level mount: the sidebar row and the mod+, chord call this.
  *  `open(section)` lands the dialog on a specific section (the first-run
  *  setup flow deep-links to Keys when no provider key exists yet). */
-/** The auto-update row's hint (tooltip wave): honest user language — no
- *  stream vocabulary. Exported for the copy pin (tooltip-mechanism test). */
-export const AUTO_UPDATE_HINT = "Automatic updates arrive in an upcoming release";
-
 export function SettingsDialogProvider({
 	children,
 }: {
@@ -98,6 +95,7 @@ export function SettingsDialogProvider({
 		setLandOnRow(row ?? null);
 		setShow(true);
 	}, []);
+	useEffect(() => window.lh?.onOpenSettings?.((section) => open(section)), [open]);
 	return (
 		<ChatGPTUIProvider><NativeSubscriptionUIProvider><DialogContext.Provider value={{ open }}>
 			{children}
@@ -375,23 +373,12 @@ export function SettingsDialogBody({
 											void write("general", { ...record.general, language })
 										}
 									/>
-									<SettingsRow
-										label={t("general.autoUpdate.label")}
-										// AUTO_UPDATE_HINT's copy, translated at display.
-										hint={t("general.autoUpdate.hint")}
-										testid="row-auto-update"
-									>
-										<Toggle
-											checked={record.general?.autoUpdate ?? true}
-											label={t("general.autoUpdate.toggle")}
-											testid="toggle-auto-update"
-											onChange={(on) =>
-												// The PUT replaces the whole section — carry the
-												// sibling keys (the language choice) along.
-												void write("general", { ...record.general, autoUpdate: on })
-											}
-										/>
-									</SettingsRow>
+									<UpdateSettings
+										autoUpdate={record.general?.autoUpdate ?? true}
+										onAutoUpdateChange={(on) =>
+											void write("general", { ...record.general, autoUpdate: on })
+										}
+									/>
 								</SettingsSection>
 							)}
 							{active === "keys" && (
