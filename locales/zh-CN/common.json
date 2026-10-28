@@ -1,0 +1,21 @@
+{
+	"shortcuts": {
+		"toggle-dictation": "开关语音输入",
+		"open-settings": "打开设置",
+		"open-model-picker": "模型选择器",
+		"cycle-thinking": "切换思考强度",
+		"toggle-sidebar": "显示或隐藏会话侧栏",
+		"sessions-search": "搜索会话",
+		"jump-graph": "图谱视图",
+		"new-session": "新建会话",
+		"rename-session": "重命名会话",
+		"toggle-user-thinking": "展开或收起你的全部思路",
+		"find": "查找",
+		"cheat-sheet": "快捷键速查表",
+		"question-focus": "题目 · 在思路与选项之间切换",
+		"question-next-row": "题目 · 下一项",
+		"question-prev-row": "题目 · 上一项",
+		"question-pick-row": "题目 · 选中此项",
+		"question-submit": "题目 · 提交"
+	}
+}
