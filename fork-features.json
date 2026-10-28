@@ -1,0 +1,42 @@
+{
+  "repository": "t41372/learnharness",
+  "upstream": "amosblomqvist/learnharness",
+  "baseline": "main",
+  "preview": "fork-preview",
+  "features": [
+    {
+      "branch": "feat/fork-workflow",
+      "dependsOn": []
+    },
+    {
+      "branch": "feat/desktop-build",
+      "dependsOn": [
+        "feat/fork-workflow"
+      ]
+    },
+    {
+      "branch": "feat/agent-instructions",
+      "dependsOn": []
+    },
+    {
+      "branch": "feat/standard-asr-dictation",
+      "dependsOn": []
+    },
+    {
+      "branch": "feat/i18n",
+      "dependsOn": []
+    },
+    {
+      "branch": "feat/spaced-repetition",
+      "dependsOn": [
+        "feat/i18n"
+      ]
+    },
+    {
+      "branch": "feat/message-attachments",
+      "dependsOn": [
+        "feat/spaced-repetition"
+      ]
+    }
+  ]
+}
