@@ -4,6 +4,7 @@ import { cloneElement, useCallback, useEffect, useRef, useState, useSyncExternal
 import type React from "react";
 import { Loader2Icon, MicIcon } from "lucide-react";
 import { useSettingsDialog } from "@/components/settings/settings-dialog";
+import { useSettingsSaved } from "@/components/settings-signal";
 import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 import {
@@ -223,8 +224,10 @@ export function createWarmMinter<T>(
 	const m: WarmMinter<T> = {
 		mint: () => {
 			if (!warm || now() - warm.at > ttlMs) {
-				const p = mint().catch((e: unknown) => {
-					warm = null; // failed mint: next call re-mints
+				const p: Promise<T> = mint().catch((e: unknown) => {
+					// A previous selection's late failure must not discard the
+					// session already refreshed for the new engine or model.
+					if (warm?.p === p) warm = null;
 					throw e;
 				});
 				warm = { p, at: now() };
@@ -832,6 +835,11 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		// first press doesn't wait on the model.
 		warmTokens.refresh();
 	}, []);
+	useSettingsSaved((section) => {
+		// Engine, model and language are all part of the cached session.
+		// A saved choice must apply to the next run, without waiting for TTL.
+		if (section === "dictation") warmTokens.refresh();
+	});
 	useEffect(() => {
 		window.addEventListener("lh:kbd-toggle-dictation", toggle);
 		return () => window.removeEventListener("lh:kbd-toggle-dictation", toggle);

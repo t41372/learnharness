@@ -186,6 +186,9 @@ export function messageMarkdown(
 		parts.push(`### ${heading}${anchor}\n\n${body.join("\n\n")}`);
 	}
 
+	const attachments = (message as { attachments?: Array<{ name: string; mimeType: string; size: number }> }).attachments;
+	if (attachments?.length) parts.push("Attachments:\n" + attachments.map((a) => `- ${JSON.stringify(a.name)} (${a.mimeType}, ${a.size} bytes)`).join("\n"));
+
 	// custom markers are invisible, same as the extraction view.
 	return parts.length > 0 ? parts.join("\n\n") : null;
 }

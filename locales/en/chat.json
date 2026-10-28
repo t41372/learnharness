@@ -165,5 +165,20 @@
 		"previousBranch": "Previous branch",
 		"nextBranch": "Next branch",
 		"branchPage": "{{current}} of {{total}}"
+	},
+	"attachments": {
+		"choose": "Attach files",
+		"supported": "Images, PDF, text, or code · up to 10 files · 20 MB each",
+		"tooMany": "A message can contain at most 10 attachments.",
+		"tooLarge": "Each attachment must be 20 MB or smaller.",
+		"failed": "Upload failed. Check the file type and try again.",
+		"retry": "Try again",
+		"uploading": "Uploading…",
+		"remove": "Remove {{name}}",
+		"download": "Download",
+		"close": "Close preview",
+		"loading": "Loading preview…",
+		"previewError": "Could not preview this file. You can still download it.",
+		"previewTruncated": "Preview shortened. Download the file to see its full contents."
 	}
 }

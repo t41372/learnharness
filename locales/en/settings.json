@@ -307,7 +307,7 @@
 			"bytes": "{{pct}}% · {{done}} of {{total}}"
 		},
 		"install": {
-			"intro": "Recognize speech on your computer with Standard ASR — no key, and audio never leaves the device. The first install downloads Python packages and the model files (about a gigabyte).",
+			"intro": "Install the recommended engine plugin or specify your own below. Then choose a model and download its files.",
 			"button": "Install {{label}} ({{runtime}})",
 			"noUv": "Local dictation needs uv, which the desktop app includes. In a browser session, install uv first (docs.astral.sh/uv)."
 		},
@@ -343,14 +343,16 @@
 			"auto": "Auto"
 		},
 		"engines": {
-			"label": "Installed engines",
+			"label": "Engine plugins",
 			"remove": "Remove",
 			"cancel": "Cancel",
 			"removeAsk": "Remove…",
 			"placeholder": "PyPI name, Git URL or folder",
 			"aria": "Engine to install",
 			"install": "Install",
-			"footnote": "Any Standard ASR engine plugin works — its models join the list above."
-		}
+			"footnote": "Any Standard ASR engine plugin works — its models appear below."
+		},
+		"retry": "Retry",
+		"unreachable": "The speech environment is unreachable"
 	}
 }

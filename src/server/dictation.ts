@@ -14,7 +14,7 @@
 
 import type { DictationSession } from "../core/standard-asr.ts";
 import { keyValue } from "./keys.ts";
-import { effectiveSettings, stores } from "./stores.ts";
+import { effectiveSettings } from "./stores.ts";
 import {
 	downloadModel,
 	installEngine,
@@ -89,13 +89,7 @@ export async function dictationSession(): Promise<DictationSession | DictationRe
 	}
 }
 
-/** Make a model the dictation model — and Standard ASR the engine. */
-function selectModel(model: string): void {
-	const record = stores.settingsStore.readSettings() ?? { version: 1 };
-	stores.settingsStore.writeSettings({ ...record, dictation: { ...record.dictation, engine: "standard-asr", model } });
-}
-
-const hooks: AsrHooks = { stopRecognizer, select: selectModel, warm: warmRecognizer };
+const hooks: AsrHooks = { stopRecognizer, warm: warmRecognizer };
 
 /** GET /api/stt/standard-asr. */
 export function standardAsrOverview() {

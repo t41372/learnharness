@@ -100,8 +100,8 @@ export function useChatSession({ chatId, initialMessages, initiallyInFlight }: U
 		[model],
 	);
 
-	const send = useCallback((input: ChatInput) => void model.send(input), [model]);
-	const steer = useCallback((text: string) => void model.steer(text), [model]);
+	const send = useCallback((input: ChatInput, accepted?: () => void) => void model.send(input, accepted), [model]);
+	const steer = useCallback((text: string, attachments?: import("@/src/core").Attachment[], accepted?: () => void) => void model.steer(text, attachments, accepted), [model]);
 	const submitAnswer = useCallback(
 		(tool: string, toolCallId: string, output: QuestionAnswerData) =>
 			void model.submitAnswer(tool, toolCallId, output),

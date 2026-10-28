@@ -33,6 +33,8 @@
  * question gate holds steers; a POST would 409).
  */
 
+import type { Attachment } from "./attachments.ts";
+import type { ImageContent, TextContent } from "@earendil-works/pi-ai";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, Message, ToolResultMessage, UserMessage } from "@earendil-works/pi-ai";
 import { QUESTION_TOOLS } from "./pending.ts";
@@ -62,6 +64,7 @@ export const INTERRUPTED_TEXT =
  * keys rendering on customType; the flag documents intent).
  */
 export interface LhMarkerMessage {
+	attachments?: Attachment[];
 	/** Record identity (pi messages carry no id — see the file header). */
 	id: string;
 	role: "custom";
@@ -90,7 +93,7 @@ declare module "@earendil-works/pi-agent-core" {
 }
 
 /** A record message: a native pi message (or our marker) plus the record id. */
-export type LhMessage = (UserMessage | AssistantMessage | ToolResultMessage | LhMarkerMessage) & { id: string };
+export type LhMessage = (UserMessage | AssistantMessage | ToolResultMessage | LhMarkerMessage) & { id: string; attachments?: Attachment[] };
 
 /** A record message list is assignable to the agent's context — that IS
  *  the replay (ui-stream/chat-handler assign it to initialState.messages). */
@@ -109,11 +112,12 @@ export function newMessageId(): string {
 //     core/input-events.ts; steers in core/contracts/jobs.ts) ─────────────────
 
 /** A learner-authored user message (text input, verdict note). */
-export function newUserMessage(text: string): LhMessage & UserMessage {
+export function newUserMessage(text: string, attachments?: Attachment[]): LhMessage & UserMessage {
 	return {
 		id: newMessageId(),
 		role: "user",
 		content: text,
+		...(attachments?.length ? { attachments } : {}),
 		timestamp: Date.now(),
 	};
 }
@@ -123,8 +127,8 @@ export function newUserMessage(text: string): LhMessage & UserMessage {
  *  rides agent.steer(), the live stream's message events, and the settled
  *  record, so the optimistic queued indicator and the transcript card
  *  upsert by one identity. */
-export function newUserSteer(text: string, id: string): LhMessage & UserMessage {
-	return { id, role: "user", content: text, timestamp: Date.now() };
+export function newUserSteer(text: string, id: string, attachments?: Attachment[]): LhMessage & UserMessage {
+	return { id, role: "user", content: text, timestamp: Date.now(), ...(attachments?.length ? { attachments } : {}) };
 }
 
 /** The learner's answer — the question call's tool result (fork 1).
@@ -143,6 +147,7 @@ export function newAnswerResult(
 		role: "toolResult",
 		toolCallId,
 		toolName,
+		...((answer as QuestionAnswerData).attachments?.length ? { attachments: (answer as QuestionAnswerData).attachments } : {}),
 		content: [{ type: "text", text: JSON.stringify(compactAnswerForModel(answer as QuestionAnswerData)) }],
 		// 0.87.1 narrowed ToolResultMessage.details to JsonRepresentation —
 		// our payloads are JSON-safe answer structures, so the cast is honest.
@@ -243,14 +248,15 @@ export function newGraphContextMessage(picks: readonly GraphContextPick[], chain
  *  content label is the single "Your thinking"; `details` keeps the raw
  *  payload for the transcript card. One problem may carry many
  *  submissions. */
-export function newThinkingMessage(problemCallId: string, text: string): LhMarkerMessage {
+export function newThinkingMessage(problemCallId: string, text: string, attachments?: Attachment[]): LhMarkerMessage {
 	return {
 		id: newMessageId(),
 		role: "custom",
 		customType: "practice-thinking",
 		content: `${THINKING_LABEL}:\n${text}`,
 		display: true,
-		details: { problemCallId, text },
+		details: { problemCallId, text, ...(attachments?.length ? { attachments } : {}) },
+		...(attachments?.length ? { attachments } : {}),
 		timestamp: Date.now(),
 	};
 }
@@ -509,7 +515,15 @@ function resultIdsFrom(messages: readonly AgentMessage[]): Set<string> {
  * Contract (pi-agent-core): never throws — an unknown shape passes
  * through untouched rather than killing the loop.
  */
-export function toLlmMessages(messages: readonly AgentMessage[]): Message[] {
+export type AttachmentContent = (attachments: readonly Attachment[]) => Array<TextContent | ImageContent>;
+
+/** Reference-only projection also accounts for image context in the token estimator. */
+const referenceContent: AttachmentContent = (refs) => refs.flatMap((a): Array<TextContent | ImageContent> => [
+	{ type: "text", text: a.kind === "image" ? `[Attached image: ${a.name}]` : `[Attachment: ${a.name}; ${a.mimeType}; ${a.size} bytes]` },
+	...(a.kind === "image" ? [{ type: "image" as const, mimeType: a.mimeType, data: "" }] : []),
+]);
+
+export function toLlmMessages(messages: readonly AgentMessage[], attachments: AttachmentContent = referenceContent): Message[] {
 	// THE COMPACTION CUT (owner round 14, 2026-10-05): the ACTIVE marker
 	// (the newest — chained compactions rule last) names the first kept
 	// message; everything before it is replaced by the marker's content
@@ -562,14 +576,17 @@ export function toLlmMessages(messages: readonly AgentMessage[]): Message[] {
 			if (marker.customType === "compaction" && head !== null && marker.id === active!.id) continue;
 			out.push({
 				role: "user",
-				content: [{ type: "text", text: marker.content }],
+				content: [{ type: "text", text: marker.content }, ...attachments(marker.attachments ?? [])],
 			timestamp: marker.timestamp,
 			});
 			continue;
 		}
 		// Strip the record id: the wire carries the native shape only.
-		const { id: _id, ...native } = m as LhMessage;
-		out.push(native as Message);
+		const { id: _id, attachments: refs, ...native } = m as LhMessage;
+		if (refs?.length && (native.role === "user" || native.role === "toolResult")) {
+			const content = typeof native.content === "string" ? [{ type: "text" as const, text: native.content }] : native.content;
+			out.push({ ...native, content: [...content, ...attachments(refs)] } as Message);
+		} else out.push(native as Message);
 		// Dangling-call synthesis: an assistant message whose toolCalls have
 		// no results in the remaining tail (abort mid-question) — the
 		// provider rejects unanswered calls outright.

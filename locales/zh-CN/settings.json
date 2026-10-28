@@ -307,7 +307,7 @@
 			"bytes": "{{pct}}% · {{done}} / {{total}}"
 		},
 		"install": {
-			"intro": "用 Standard ASR 在你的电脑上识别语音——不需要密钥，音频不会离开本机。首次安装会下载 Python 软件包和模型文件（约 1 GB）。",
+			"intro": "安装推荐的引擎插件，或在下方指定其他插件。然后选择模型并下载其文件。",
 			"button": "安装 {{label}}（{{runtime}}）",
 			"noUv": "本机语音输入需要 uv，桌面版已内置。在浏览器中使用时，请先安装 uv（docs.astral.sh/uv）。"
 		},
@@ -342,14 +342,16 @@
 			"auto": "自动"
 		},
 		"engines": {
-			"label": "已安装的引擎",
+			"label": "引擎插件",
 			"remove": "移除",
 			"cancel": "取消",
 			"removeAsk": "移除…",
 			"placeholder": "PyPI 包名、Git URL 或文件夹",
 			"aria": "要安装的引擎",
 			"install": "安装",
-			"footnote": "任何 Standard ASR 引擎插件都可以使用——它的模型会出现在上面的列表中。"
-		}
+			"footnote": "任何 Standard ASR 引擎插件都可以使用——它的模型会出现在下方的列表中。"
+		},
+		"retry": "重试",
+		"unreachable": "无法连接语音环境"
 	}
 }

@@ -307,7 +307,7 @@
 			"bytes": "{{pct}}% · {{done}} / {{total}}"
 		},
 		"install": {
-			"intro": "用 Standard ASR 在你的電腦上辨識語音——不需要金鑰，音訊不會離開本機。第一次安裝會下載 Python 套件和模型檔案（約 1 GB）。",
+			"intro": "安裝推薦的引擎外掛，或在下方指定其他外掛。接著選擇模型並下載其檔案。",
 			"button": "安裝 {{label}}（{{runtime}}）",
 			"noUv": "本機語音輸入需要 uv，桌面版已內建。在瀏覽器中使用時，請先安裝 uv（docs.astral.sh/uv）。"
 		},
@@ -342,14 +342,16 @@
 			"auto": "自動"
 		},
 		"engines": {
-			"label": "已安裝的引擎",
+			"label": "引擎外掛",
 			"remove": "移除",
 			"cancel": "取消",
 			"removeAsk": "移除…",
 			"placeholder": "PyPI 套件名稱、Git URL 或資料夾",
 			"aria": "要安裝的引擎",
 			"install": "安裝",
-			"footnote": "任何 Standard ASR 引擎外掛都能使用——它的模型會出現在上方的清單中。"
-		}
+			"footnote": "任何 Standard ASR 引擎外掛都能使用——它的模型會出現在下方的清單中。"
+		},
+		"retry": "重試",
+		"unreachable": "無法連線至語音環境"
 	}
 }
