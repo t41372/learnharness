@@ -1,4 +1,6 @@
 "use client";
+
+import { DictationLanguageSetting } from "@/components/dictation-language";
 /**
  * The Dictation section (local dictation, 2026-10-25): which engine the
  * Dictate button runs, and everything each engine needs.
@@ -235,6 +237,12 @@ export function DictationSection({
 
 			<SettingsGroup label="Deepgram" testid="group-dictation">
 				<KeysSection scope="dictation" initialRow={initialRow} />
+				{engine === "deepgram" && <>
+					<DictationLanguageSetting />
+					<p data-testid="dictation-setup-hint" className="px-1 text-[11px] leading-relaxed text-muted-foreground/70">
+						Create a <a href="https://console.deepgram.com/" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-foreground">Deepgram API key</a> with the Member role or higher, then add it above.
+					</p>
+				</>}
 			</SettingsGroup>
 
 			<SettingsGroup label="On this device" testid="group-standard-asr">

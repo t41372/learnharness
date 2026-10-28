@@ -19,13 +19,14 @@ import type {
 	BackgroundModelRole,
 	CompactionSettings,
 	GeneralSettings,
+	DictationSettings,
 	GraphSettings,
 	ModelsSettings,
 	RoleModelOverride,
 } from "../core/settings.ts";
 import { BACKGROUND_MODEL_ROLES, COMPACTION_THRESHOLD_FLOOR, EXTRACTION_CHUNK_TOKENS_FLOOR, MODEL_SLOTS } from "../core/settings.ts";
 import { WRITABLE_TOOL_KEYS } from "../core/pending.ts";
-import { DICTATION_ENGINES, isAsrLanguage, isAsrModelKey, type DictationEngine, type DictationSettings } from "../core/settings.ts";
+import { DICTATION_ENGINES, isDictationSettingLanguage, isAsrModelKey, type DictationEngine } from "../core/settings.ts";
 
 /** Parsed-or-rejected — `ok: false` carries the 400's error message. */
 export type SettingsBodyResult<T> =
@@ -396,7 +397,7 @@ export function parseDictationSettingsBody(body: unknown): SettingsBodyResult<Di
 		settings.model = raw.model;
 	}
 	if (raw.language !== undefined) {
-		if (!isAsrLanguage(raw.language)) return { ok: false, error: "language must be a language tag or \"auto\"" };
+		if (!isDictationSettingLanguage(raw.language, raw.engine)) return { ok: false, error: "language must be a language tag or \"auto\"" };
 		settings.language = raw.language;
 	}
 	return { ok: true, settings };

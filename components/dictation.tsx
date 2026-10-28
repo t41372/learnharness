@@ -15,6 +15,10 @@ import {
 	type AsrTranscript,
 	type DictationSession,
 } from "@/src/core";
+import { deepgramListenUrl, type DictationLanguage } from "@/src/core";
+import { useDictationLanguage } from "@/components/dictation-preference";
+import { setDictationActive } from "@/components/dictation-state";
+export { isDictationActive } from "@/components/dictation-state";
 
 /**
  * Voice dictation — the cloud engine (STT wave 1, 2026-09-17).
@@ -111,15 +115,7 @@ import {
  * endpointing=300, no interims. Silence streams too (the worklet never
  * pauses), so the socket never idles — no KeepAlive needed.
  */
-const DG_URL =
-	"wss://api.deepgram.com/v1/listen" +
-	"?model=nova-3" +
-	"&encoding=linear16" +
-	"&sample_rate=16000" +
-	"&channels=1" +
-	"&smart_format=true" +
-	"&punctuate=true" +
-	"&endpointing=300";
+// URL construction lives in the browser-safe core; only language varies.
 
 /** Meter tuning — the owner's tested values, see the file header. */
 const METER_FLOOR_DB = -50;
@@ -246,16 +242,6 @@ export function rmsToMeter(rms: number): number {
  * window, one pending question, one target at a time.
  */
 let questionTarget: ((text: string) => void) | null = null;
-
-/* Is a dictation run live on this page? The Esc chain (keyboard wave A,
- * components/keyboard-shortcuts.tsx) needs a SYNCHRONOUS answer — the
- * stop handler can't report back through a CustomEvent. Set at start(),
- * cleared in cleanup() (every terminal path runs through cleanup). */
-let dictationActiveFlag = false;
-
-export function isDictationActive(): boolean {
-	return dictationActiveFlag;
-}
 
 /* The finisher registry: submit paths FAR from the hook's owner (the
  * pending question's dock) need finish() without a prop bridge. Same
@@ -396,6 +382,7 @@ export type Dictation = {
  * question waits.
  */
 export function useDictation({ append }: { append: (text: string) => void }): Dictation {
+	const { getLanguage } = useDictationLanguage();
 	const [phase, setPhase] = useState<DictationPhase>("idle");
 	const [error, setError] = useState<string | null>(null);
 	/** The engine's own words behind a short error line (the tooltip). */
@@ -458,9 +445,9 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 	}, []);
 
 	/** Full teardown of one run's machinery. Idempotent; generation-guarded by callers. */
-	const cleanup = useCallback(() => {
+	const cleanup = useCallback((warmNext = true) => {
 		genRef.current++;
-		dictationActiveFlag = false;
+		setDictationActive(false);
 		setPreview(""); // the live words give way to the flushed text
 		flush(); // the deferred transcript appears when the run ends (owner round 2)
 		if (safetyRef.current) {
@@ -491,7 +478,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		for (const w of waitersRef.current.splice(0)) w();
 		// Pre-mint for the next run (mitigation D) — best-effort; a keyless
 		// page just doesn't warm.
-		warmTokens.refresh();
+		if (warmNext) warmTokens.refresh();
 	}, [flush]);
 
 	/** Everything captured while the socket couldn't take audio goes out now,
@@ -505,7 +492,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 
 	/** Open the run's socket and wire its messages. `gen` guards staleness. */
 	const openSocket = useCallback(
-		(gen: number, session: DictationSession) => {
+		(gen: number, session: DictationSession, language: DictationLanguage) => {
 			sessionRef.current = session;
 			acceptingRef.current = false;
 			const ws =
@@ -514,7 +501,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 						// ["token", jwt] is rejected at the handshake (verified live;
 						// "token" is for raw API keys only, as in the owner's pi
 						// dictate extension).
-						new WebSocket(DG_URL, ["bearer", session.token])
+						new WebSocket(deepgramListenUrl(language), ["bearer", session.token])
 					: new WebSocket(session.url);
 			ws.binaryType = "arraybuffer";
 			wsRef.current = ws;
@@ -602,7 +589,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 					reconnectsRef.current++;
 					mintFreshSession() // always FRESH — a stale warm session is the likely culprit
 						.then((s) => {
-							if (gen === genRef.current) openSocket(gen, s);
+							if (gen === genRef.current) openSocket(gen, s, language);
 						})
 						.catch(() => {
 							if (gen === genRef.current) {
@@ -620,7 +607,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 	);
 
 	const start = useCallback(async () => {
-		dictationActiveFlag = true;
+		setDictationActive(true);
 		setError(null);
 		setErrorDetail(null);
 		setPhase("connecting");
@@ -629,6 +616,16 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		pendingRef.current = []; // fresh run, fresh queue (mitigation A)
 		transcriptRef.current = EMPTY_ASR_TRANSCRIPT;
 		const gen = ++genRef.current;
+		let language: DictationLanguage;
+		try {
+			language = await getLanguage();
+		} catch (e) {
+			if (gen !== genRef.current) return;
+			setError(e instanceof Error ? e.message : "Dictation language unavailable");
+			cleanup();
+			return;
+		}
+		if (gen !== genRef.current) return;
 
 		// Mitigation D: the warm session (pre-minted at mount / after the last
 		// run) resolves ~instantly; a cold/keyless mint surfaces below. The
@@ -706,8 +703,8 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		if (gen !== genRef.current) return;
 		// Mitigation B: the handshake fires the moment the graph is live,
 		// overlapping any remaining token wait — mic-gated, never before it.
-		openSocket(gen, session);
-	}, [openSocket, cleanup]);
+		openSocket(gen, session, language);
+	}, [openSocket, cleanup, getLanguage]);
 
 	const stop = useCallback(() => {
 		const gen = genRef.current;
@@ -793,7 +790,11 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		// engine this also starts the bridge and loads the model, so the
 		// first press doesn't wait on the model.
 		warmTokens.refresh();
-	}, []);
+		return () => {
+			bufferRef.current = [];
+			cleanup(false);
+		};
+	}, [cleanup]);
 	useSettingsSaved((section) => {
 		// Engine, model and language are all part of the cached session.
 		// A saved choice must apply to the next run, without waiting for TTL.
@@ -849,7 +850,6 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 	 *  Dictation section, where the engine is installed and chosen. */
 	const localUnset = error === DICTATION_LOCAL_UNSET || error === DICTATION_LOCAL_NOT_READY;
 	const [levels, setLevels] = useState<number[]>(() => new Array(METER_CELLS).fill(0));
-	const recording = phase === "recording" || phase === "stopping";
 	/** Adaptive cell count (owner round 2): derived from the meter's
 	 *  measured width — narrow rows show fewer bars instead of
 	 *  overflowing under neighbors. */
@@ -915,10 +915,8 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 					}}
 					aria-label={error ? `Dictation failed: ${error}` : "Start dictation"}
 					data-testid="dictation-toggle"
-				// Same blurring as the floating chrome (owner, fix wave round 3),
-			// but lower opacity — the mic stays quieter than the model pills.
-			className="flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/50 bg-card/50 text-xs text-muted-foreground/70 shadow-lg backdrop-blur transition-colors hover:border-border hover:text-muted-foreground"
-			>
+					className="flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/50 bg-card/50 text-xs text-muted-foreground/70 shadow-lg backdrop-blur transition-colors hover:border-border hover:text-muted-foreground"
+				>
 					<MicIcon className="size-3.5" />
 					<span className="max-w-full truncate">{error ?? "Dictate"}</span>
 				</button>
@@ -928,32 +926,20 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 
 	return (
 		<div className="flex w-full min-w-0 items-center gap-2" data-testid="dictation-bar">
-			<Hint
-				// The owner flagged this copy good ("Stop dictation (Esc)") —
-				// kept verbatim; only the machinery moved to the styled tooltip.
-				label="Stop dictation (Esc)"
-				side="top"
-			>
+			<Hint label="Stop dictation (Esc)" side="top">
 				<button
 					type="button"
 					onClick={toggle}
 					disabled={phase === "stopping"}
 					aria-label="Stop dictation"
-				data-testid="dictation-toggle"
-				className="flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/10 px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
-			>
-				{phase === "stopping" ? (
-					<Loader2Icon className="size-3.5 animate-spin" />
-				) : (
-					<MicIcon className="size-3.5" />
-				)}
+					data-testid="dictation-toggle"
+					className="flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/10 px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
+				>
+					{phase === "stopping" ? <Loader2Icon className="size-3.5 animate-spin" /> : <MicIcon className="size-3.5" />}
 					Stop
 				</button>
 			</Hint>
 			<span className="size-1.5 shrink-0 animate-pulse rounded-full bg-destructive" aria-hidden />
-			{/* Fixed width while recording — nothing ever appends text beside it
-			    (no interims, owner round 1). Cells carry no minimum width; the
-			    COUNT adapts to the measured row space (owner round 2). */}
 			<div ref={meterRef} className="flex h-4 min-w-0 flex-1 items-center gap-[2px]" data-testid="dictation-meter">
 				{levels.slice(-cellCount).map((v, i) => (
 					<span

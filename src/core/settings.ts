@@ -32,6 +32,7 @@ import { AUTH_PROVIDER_KEYS } from "./auth-keys.ts";
 import type { ModelRole } from "../../config.ts";
 import type { ChatSettings } from "./contracts/chat.ts";
 import type { SearchEngineId } from "./search.ts";
+import { isDictationLanguage, type DictationLanguage } from "./dictation.ts";
 
 /** The schema version this code understands. Bump ONLY for breaking shape
  *  changes (a field renamed/meaning changed); pure additions never bump. */
@@ -231,7 +232,7 @@ export const ROLE_SLOT: Readonly<Record<ModelRole, ModelSlotName>> = {
 /** General settings — app-level behavior. Version DISPLAY and plans login
  *  live outside the record (package.json / auth.json) by owner decision. */
 export interface GeneralSettings {
-	/** Auto-update the app (default ON). Mechanism ships in a later wave. */
+	/** Automatic startup/24h update checks (default ON). Manual checks bypass this. */
 	autoUpdate?: boolean;
 }
 
@@ -291,6 +292,12 @@ export function isAsrModelKey(value: unknown): value is string {
 /** A language tag as Standard ASR declares them ("auto", "en", "zh-Hant"…). */
 export function isAsrLanguage(value: unknown): value is string {
 	return typeof value === "string" && /^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/.test(value);
+}
+
+/** Cloud choices use Nova-3's catalog; local plugins may declare language tags.
+ * Preserve the fork's legacy "auto" choice when reading existing records. */
+export function isDictationSettingLanguage(value: unknown, engine: unknown): value is string {
+	return engine === "standard-asr" || value === "auto" ? isAsrLanguage(value) : isDictationLanguage(value);
 }
 
 /** Markdown-rendering knobs — the bare-bones set (owner decision). */
@@ -390,13 +397,13 @@ export interface CompactionSettings {
 export interface UserSettings {
 	version: number;
 	general?: GeneralSettings;
+	dictation?: DictationSettings;
 	agent?: AgentSettings;
 	/** The strong/cheap/vision model slots (model slots wave, 2026-09-20). */
 	models?: ModelsSettings;
 	appearance?: AppearanceSettings;
 	graph?: GraphSettings;
 	compaction?: CompactionSettings;
-	dictation?: DictationSettings;
 	[key: string]: unknown;
 }
 
@@ -408,6 +415,7 @@ export interface UserSettings {
 export interface FactorySettings {
 	version: number;
 	general: Required<GeneralSettings>;
+	dictation: { language: DictationLanguage };
 	appearance: {
 		mode: "dark" | "light";
 		background: string | null;
@@ -427,6 +435,7 @@ export interface FactorySettings {
 export const FACTORY_SETTINGS: FactorySettings = {
 	version: CURRENT_SETTINGS_VERSION,
 	general: { autoUpdate: true },
+	dictation: { language: "en" },
 	appearance: {
 		mode: "dark",
 		background: null, // the dark default (#141414) lives in the mode's derivation curve
@@ -595,7 +604,7 @@ function sanitizeDictation(raw: Record<string, unknown>): DictationSettings {
 	const out: DictationSettings = {};
 	if ((DICTATION_ENGINES as readonly unknown[]).includes(raw.engine)) out.engine = raw.engine as DictationEngine;
 	if (isAsrModelKey(raw.model)) out.model = raw.model;
-	if (isAsrLanguage(raw.language)) out.language = raw.language;
+	if (isDictationSettingLanguage(raw.language, raw.engine)) out.language = raw.language;
 	return out;
 }
 

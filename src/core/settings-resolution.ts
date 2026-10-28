@@ -36,6 +36,7 @@ import {
 	type DictationEngine,
 	type FactorySettings,
 	type GeneralSettings,
+	type DictationSettings,
 	type CompactionSettings,
 	type GraphSettings,
 	type ModelSlot,
@@ -220,7 +221,7 @@ export function resolveSettings(record: UserSettings | null): EffectiveSettings 
 		dictation: {
 			engine: record?.dictation?.engine ?? "deepgram",
 			model: record?.dictation?.model ?? null,
-			language: record?.dictation?.language ?? "auto",
+			language: record?.dictation?.language ?? (record?.dictation?.engine === "standard-asr" ? "auto" : FACTORY_SETTINGS.dictation.language),
 		},
 		compaction: {
 			thresholdTokens: record?.compaction?.thresholdTokens ?? FACTORY_SETTINGS.compaction.thresholdTokens,

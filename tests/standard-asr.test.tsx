@@ -74,8 +74,8 @@ describe("the transcript reducer (streaming §5.2)", () => {
 });
 
 describe("the dictation settings section", () => {
-	it("resolves to Deepgram, no model, auto", () => {
-		assert.deepEqual(resolveSettings(null).dictation, { engine: "deepgram", model: null, language: "auto" });
+	it("resolves to Deepgram, no model, and the upstream English default", () => {
+		assert.deepEqual(resolveSettings(null).dictation, { engine: "deepgram", model: null, language: "en" });
 		assert.deepEqual(
 			resolveSettings({ version: 1, dictation: { engine: "standard-asr", model: "mlx-audio/qwen3-asr-0.6b", language: "zh" } }).dictation,
 			{ engine: "standard-asr", model: "mlx-audio/qwen3-asr-0.6b", language: "zh" },
