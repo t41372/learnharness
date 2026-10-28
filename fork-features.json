@@ -40,6 +40,10 @@
       "dependsOn": [
         "feat/spaced-repetition"
       ]
+    },
+    {
+      "branch": "feat/fork-readme",
+      "dependsOn": []
     }
   ]
 }

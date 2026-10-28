@@ -28,6 +28,8 @@ function verify() {
 	if (branch !== config.preview && !(process.env.CI && branch === "HEAD")) failures.push(`build from ${config.preview}, currently ${branch}`);
 	if (git("status", "--porcelain")) failures.push("commit or preserve working tree changes before building a preview");
 	const head = sha("HEAD");
+	const trackedOutputs = git("ls-tree", "-r", "--name-only", head, "--", "node_modules", "dist", ".next");
+	if (trackedOutputs) failures.push("preview must not track dependencies or build outputs");
 	const upstream = sha("refs/remotes/upstream/main");
 	const baseline = sha(`refs/remotes/origin/${config.baseline}`);
 	if (baseline !== upstream) failures.push(`origin/${config.baseline} must equal upstream/main`);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -70,5 +70,17 @@ test("preview verifier refuses uncommitted source changes", () => {
 	try {
 		writeFileSync(path.join(repo.cwd, "uncommitted.txt"), "uncommitted");
 		assert.match(repo.verify().stderr, /commit or preserve working tree changes/);
+	} finally { repo.cleanup(); }
+});
+
+test("preview verifier refuses a tracked local dependency link", () => {
+	const repo = repository();
+	try {
+		symlinkSync("/local/dependencies", path.join(repo.cwd, "node_modules"));
+		repo.git("add", "node_modules");
+		repo.git("commit", "-m", "test: accidentally track dependencies");
+		const result = repo.verify();
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /must not track dependencies or build outputs/);
 	} finally { repo.cleanup(); }
 });
