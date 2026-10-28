@@ -434,6 +434,7 @@ export interface QuestionData {
  *  NO questionId (owner, tool-result diet 2026-10-02): it was the
  *  toolCallId restated — the toolResult message already carries it. */
 export interface QuestionAnswerData {
+	attachments?: import("./attachments.ts").Attachment[];
 	kind: QuestionKind;
 	/** The persisted call's tool NAME (owner, 2026-10-09): probe-phase
 	 *  calls are `probe`/`recall`, teach calls `quiz`/`explain` — the
@@ -514,6 +515,7 @@ export const emptyDockSelection = (): DockSelection => ({ selected: new Set(), o
 /** In-memory submission snapshot: survives the question form's optimistic
  * unmount, never written to storage. Indices use the call's stable shuffle. */
 export interface QuestionFormDraft {
+	attachments?: import("./attachments.ts").Attachment[];
 	selection: DockSelection;
 	thinking: string;
 	other: string;

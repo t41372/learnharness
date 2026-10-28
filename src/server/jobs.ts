@@ -315,6 +315,10 @@ export interface UserSteerEntry {
  *  is the stranding safety net: if this agent dies undelivered (question
  *  termination, abort), reconcileUserSteers keeps it parked for the
  *  chat's next run. */
+export function liveChatSupportsImages(chatId: string): boolean | undefined {
+	return state().liveAgents.get(chatId)?.state.model?.input.includes("image");
+}
+
 export function steerLiveChat(chatId: string, message: LhMessage): boolean {
 	const agent = state().liveAgents.get(chatId);
 	if (!agent) return false;
