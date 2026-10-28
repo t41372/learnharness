@@ -55,6 +55,11 @@ function verify() {
 		}
 		features.push({ ...feature, commit });
 	}
+	const previewOnly = git("rev-list", "--parents", head, "--not", upstream, ...features.map(({ commit }) => commit)).split("\n").filter(Boolean);
+	for (const commit of previewOnly) {
+		const [id, ...parents] = commit.split(" ");
+		if (parents.length < 2) failures.push(`preview-only commit ${id.slice(0, 12)} must belong to a feature branch`);
+	}
 	if (failures.length) throw new Error([...new Set(failures)].map(message => `- ${message}`).join("\n"));
 	const manifest = { repository: config.repository, branch: config.preview, commit: head, upstream, features };
 	const outputIndex = process.argv.indexOf("--write");
