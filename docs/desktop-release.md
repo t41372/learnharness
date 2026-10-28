@@ -1,6 +1,23 @@
 # Desktop builds and releases
 
-## Platforms
+## Fork update source
+
+This fork's packaged app reads updates from GitHub Releases in `t41372/learnharness`, as configured by `publish` in `electron-builder.yml`. Update assets must be built from the personal integration/preview branch (currently `integration/i18n-instructions-asr`) so they preserve the fork's features. The updater reads published Releases; it does not download a Git branch directly.
+
+The feed configuration is embedded in `Contents/Resources/app-update.yml` on macOS (the packaged `resources/app-update.yml` on Windows/Linux). Existing installed apps keep their embedded source until replaced with a new build. Changing the repository configuration does not update installed apps or existing build artifacts.
+
+Local builds and previews remain the fork's delivery method. Configuring the fork's update source does not publish a release; any future release process requires a separate decision. The release workflow and runbook below describe the inherited tooling.
+
+## Local macOS build
+
+Run `npm run desktop:dist` from the integration checkout. It builds and checks the standalone server, then packages a macOS arm64 app and ZIP using `electron-builder.local.yml`:
+
+- `dist/mac-arm64/LearnHarness.app`
+- `dist/LearnHarness-<version>-arm64-mac.zip`
+
+The local configuration uses ad hoc signing, skips notarization, and uses the existing full-resolution `build/icon.icns`. No Developer ID certificate, notary keychain profile, or Icon Composer compilation is needed. The dedicated `build/entitlements.adhoc.mac.plist` allows the ad hoc app to load Electron frameworks and native modules under hardened runtime. The command explicitly passes `--publish never` and does not create a DMG. Existing build artifacts are kept; rebuilding replaces outputs at the same paths.
+
+## Inherited release platforms
 
 | Platform | Build runner | Packages | In-app update |
 |---|---|---|---|
@@ -12,7 +29,7 @@ Windows signing is deliberately disabled for this first release. SmartScreen may
 
 The custom app bar stays on all three platforms. macOS keeps its left-side traffic lights; Windows/Linux use Electron's native right-side Window Controls Overlay, with CSS space reserved from the overlay's actual geometry. Windows/Linux hide the native menu until Alt is pressed. macOS keeps its system menu.
 
-Icons are per-platform (2026-10-13): macOS compiles the Icon Composer document `build/icon.icon` via actool into `Assets.car` (macOS 26 Liquid Glass) plus a fallback icns that `scripts/after-pack.cjs` replaces with the hand-packed full-res `build/icon.icns` (actool's caps at 256px); Windows embeds `build/icon.ico` and Linux uses `build/icon.png`, both generated from the flat design (`build/icon-flat.svg`) by `node scripts/make-icons.mjs`. Building the mac icon needs **macOS 26+ and Xcode 26+** (`actool`): Xcode 26's asset compiler crashes on macOS 15 because its host frameworks lack required symbols. `desktop:dist` injects `DEVELOPER_DIR` locally; release packaging uses `macos-26` and selects Xcode via setup-xcode. The older-OS fallback icon remains included. Linux's desktop identity is `learnharness.desktop`. Public package-maintainer metadata uses the owner's GitHub no-reply address; support goes through [GitHub Issues](https://github.com/amosblomqvist/learnharness/issues).
+Release icons are per-platform (2026-10-13): macOS compiles the Icon Composer document `build/icon.icon` via actool into `Assets.car` (macOS 26 Liquid Glass) plus a fallback icns that `scripts/after-pack.cjs` replaces with the hand-packed full-res `build/icon.icns` (actool's caps at 256px); Windows embeds `build/icon.ico` and Linux uses `build/icon.png`, both generated from the flat design (`build/icon-flat.svg`) by `node scripts/make-icons.mjs`. Building the mac release icon needs **macOS 26+ and Xcode 26+** (`actool`): Xcode 26's asset compiler crashes on macOS 15 because its host frameworks lack required symbols. Release packaging uses `macos-26` and selects Xcode via setup-xcode. The older-OS fallback icon remains included. Linux's desktop identity is `learnharness.desktop`. Public package-maintainer metadata uses the owner's GitHub no-reply address; support goes through [GitHub Issues](https://github.com/amosblomqvist/learnharness/issues).
 
 ## Build pipeline
 
@@ -27,7 +44,7 @@ Each OS installs its own dependencies and builds its own Next standalone tree:
 
 The shell/updater live in `app.asar`; the standalone server and native renderer binaries ship unpacked as `extraResources`. **Do not cross-build the server payload.** Next traces the build machine's native binaries, so a macOS-built standalone tree is not a Windows/Linux payload.
 
-`npm run desktop:dist` remains the local macOS signing path, using the `LH_NOTARY` keychain profile. For a local Windows/Linux build, run steps 1–5 above, then:
+For a local Windows/Linux build, run steps 1–5 above, then:
 
 ```sh
 # On Windows:

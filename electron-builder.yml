@@ -6,9 +6,8 @@
 #     because native .node/dylib can't dlopen from a read-only archive and
 #     server.js process.chdir()s into its own dir;
 #   - the asar holds only the shell (electron/main.cjs + package.json);
-#   - signed + notarized since 2026-10-08 (Developer ID Application cert in
-#     the login keychain; notary credentials in the LH_NOTARY keychain
-#     profile; the profile + team env vars are baked into desktop:dist).
+#   - the inherited release configuration signs + notarizes with Developer ID;
+#     desktop:dist uses electron-builder.local.yml for ad hoc local builds.
 appId: com.learnharness.LearnHarness
 productName: LearnHarness
 directories:
@@ -19,8 +18,8 @@ directories:
 #         macOS 26+ renders the true layered icon) + an actool fallback icns
 #         capped at 256px, which scripts/after-pack.cjs swaps for the
 #         hand-packed full-res build/icon.icns (pre-Tahoe keeps 16→1024).
-#         Requires actool ≥ 26: desktop:dist injects DEVELOPER_DIR locally;
-#         the release workflow's mac job runs setup-xcode.
+#         Requires actool ≥ 26; the release workflow's mac job runs setup-xcode.
+#         Local builds use the existing build/icon.icns without actool.
 #   win   build/icon.ico  — generated (16→256) from the flat design by
 #         scripts/make-icons.mjs.
 #   linux build/icon.png  — 512×512, same script. Rounded squircle with
@@ -143,7 +142,7 @@ mac:
   # Developer ID Application certificate from the login keychain;
   # notarize: true makes electron-builder sign → submit to Apple's notary
   # service → staple the ticket, all inside this one build (credentials
-  # via the LH_NOTARY keychain profile, env baked into desktop:dist).
+  # supplied by the release workflow). Local builds override notarize to false.
   # Adds minutes per build (Apple's scan queue). Verification battery:
   # codesign --verify --deep / spctl --assess / stapler validate.
   notarize: true
@@ -192,14 +191,15 @@ linux:
   # Both targets update via electron-updater 6.8.9. AppImage replaces its
   # own file; deb uses dpkg/apt and may request administrator permission.
 publish:
-  # Update feed = GitHub Releases (decided 2026-10-08): latest-mac.yml +
-  # zip/blockmap live on releases; electron-updater reads them anonymously.
-  # REQUIRES THE REPO TO BE PUBLIC before 0.3.0 ships — anonymous downloads
+  # This fork reads updates only from t41372/learnharness GitHub Releases.
+  # Release assets must be built from the personal integration/preview branch.
+  # latest-mac.yml + zip/blockmap live on releases; electron-updater reads
+  # them anonymously. REQUIRES THE REPO TO BE PUBLIC — anonymous downloads
   # from a private repo are impossible, and a token baked into the app
-  # would be a leak. desktop:dist passes no --publish flag, so builds never
-  # upload; publishing happens at release time (GH_TOKEN + --publish).
+  # would be a leak. desktop:dist passes --publish never; publishing happens
+  # at release time (GH_TOKEN + --publish).
   - provider: github
-    owner: amosblomqvist
+    owner: t41372
     repo: learnharness
     # All three CI jobs contribute assets; only the owner publishes it.
     releaseType: draft
