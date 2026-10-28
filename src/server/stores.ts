@@ -28,7 +28,6 @@ import { resolveSettings, type EffectiveSettings } from "../core/settings-resolu
 export const stores = {
 	reviewStore,
 	attachmentStore: createAttachmentStore(),
-	reviewStore,
 	chatStore,
 	graphStore,
 	jobStore,

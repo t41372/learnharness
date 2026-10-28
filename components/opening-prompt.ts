@@ -1,4 +1,4 @@
-import { parseAttachments, type Attachment } from "../src/core/attachments";
+import { parseAttachments, type Attachment } from "@/src/core";
 
 /**
  * Same-tab handover of a new session's full opening text. Never put the
