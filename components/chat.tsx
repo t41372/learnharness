@@ -30,7 +30,7 @@ import { dockStateKey } from "@/components/dock-state-key";
 import { clearOpeningPrompt, readOpeningPromptEntry, stashOpeningPrompt, OPENING_PROMPT_FAILURE } from "@/components/opening-prompt";
 import { forwardDockWheel, useDockHeight } from "@/components/dock-height";
 import { QueuedSteersBody, type QueuedSteerLine } from "@/components/queued-steers";
-import { DictationBar, finishDictation, joinDictation, useDictation } from "@/components/dictation";
+import { DictationBar, finishDictation, joinDictation, useDictation, useDictationTerms } from "@/components/dictation";
 import { useFieldCycle } from "@/components/field-cycle";
 import { JobsContext } from "@/components/jobs-context";
 import { StatsBar } from "@/components/stats-bar";
@@ -939,6 +939,10 @@ export function Chat({
 	// The session's live plan (drives the top-bar chip; the marginalia
 	// derives its own from the same transcript).
 	const planTree = useMemo(() => latestTree(messages), [messages]);
+	// The session's vocabulary for the local dictation engine: its title and
+	// the plan's step names (the words a learner is likely to say here).
+	const dictationTerms = useMemo(() => [titleText, ...(planTree?.nodes.map((n) => n.title) ?? [])], [titleText, planTree]);
+	useDictationTerms(dictationTerms);
 
 	// ── Session usage (wave-4 stats bar) ──
 	// The money channel: the record's turns log and read-time server Pi

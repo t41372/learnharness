@@ -31,7 +31,6 @@ import { SubscriptionConnections } from "./subscription-connections.tsx";
 import { ProviderMenuList } from "./model-menu.tsx";
 import { MenuShell } from "@/components/menu-shell";
 import { notifySettingsSaved } from "@/components/settings-signal";
-import { DictationLanguageSetting } from "@/components/dictation-language";
 
 /** One pi-ai provider with plain API-key auth (the Platform seam —
  *  derived from pi-ai's own env-key table; no drift possible). */
@@ -337,8 +336,13 @@ export function KeysSection({
 	 *  while mounted too — the settings dialog's while-open retarget
 	 *  pattern. undefined = nothing seeded. */
 	initialRow,
+	scope = "providers",
 }: {
 	initialRow?: string;
+	/** Which rows render (local dictation, 2026-10-25): the Providers
+	 *  section shows every key but Deepgram's; the Dictation section shows
+	 *  only Deepgram's, beside the engine choice it serves. */
+	scope?: "providers" | "dictation";
 }) {
 	const { t } = useT("settings");
 	const [statuses, setStatuses] = useState<AuthKeyStatus[] | null>(null);
@@ -421,6 +425,25 @@ export function KeysSection({
 	}
 
 	const { providerRows, toolRows, unknownRows, addable } = classifyKeys(statuses, providers);
+	const keyRow = (status: AuthKeyStatus) => (
+		<KeyTableRow
+			key={status.id}
+			label={status.info?.label ?? status.id}
+			docsUrl={status.info?.docsUrl}
+			status={status}
+			expanded={openRow === status.id}
+			onToggle={() => setOpenRow(openRow === status.id ? null : status.id)}
+			onSave={async (v) => {
+				const err = await saveKey(status.id, v);
+				if (!err) setOpenRow(null);
+				return err;
+			}}
+			onCancel={() => setOpenRow(null)}
+			onDelete={() => deleteKey(status.id)}
+			testid={`key-${status.id.toLowerCase()}`}
+		/>
+	);
+	if (scope === "dictation") return <>{toolRows.filter((status) => status.id === "DEEPGRAM_API_KEY").map(keyRow)}</>;
 
 	async function saveNewProvider(p: ProviderKeyInfo, value: string) {
 		const err = await saveKey(p.envVar, value);
@@ -479,37 +502,11 @@ export function KeysSection({
 				<SubscriptionConnections />
 			</SettingsGroup>
 
-			{(["dictation", "search"] as const).map((group) => <SettingsGroup key={group} label={t(`keys.groups.${group}`)} testid={`group-${group}`}>
-				{toolRows.filter((status) => group === "dictation" ? status.id === "DEEPGRAM_API_KEY" : status.id !== "DEEPGRAM_API_KEY").map((status) => (
-					<KeyTableRow
-						key={status.id}
-						label={status.info?.label ?? status.id}
-						docsUrl={status.info?.docsUrl}
-						status={status}
-						expanded={openRow === status.id}
-						onToggle={() => setOpenRow(openRow === status.id ? null : status.id)}
-						onSave={async (v) => {
-							const err = await saveKey(status.id, v);
-							if (!err) setOpenRow(null);
-							return err;
-						}}
-						onCancel={() => setOpenRow(null)}
-						onDelete={() => deleteKey(status.id)}
-						testid={`key-${status.id.toLowerCase()}`}
-					/>
-				))}
-				{group === "dictation" && <>
-					<DictationLanguageSetting />
-					<p data-testid="dictation-setup-hint" className="px-1 text-[11px] leading-relaxed text-muted-foreground/70">
-						Create a <a
-							href="https://console.deepgram.com/"
-							target="_blank"
-							rel="noreferrer"
-							className="underline underline-offset-2 hover:text-foreground"
-						>Deepgram API key</a> with the Member role or higher, then add it above.
-					</p>
-				</>}
-			</SettingsGroup>)}
+			{/* The Deepgram key lives in Settings → Dictation (local dictation,
+			    2026-10-25). */}
+			<SettingsGroup label={t("keys.groups.search")} testid="group-search">
+				{toolRows.filter((status) => status.id !== "DEEPGRAM_API_KEY").map(keyRow)}
+			</SettingsGroup>
 
 		</>
 	);

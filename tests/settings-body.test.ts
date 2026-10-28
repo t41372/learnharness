@@ -236,7 +236,8 @@ describe("parseCompactionSettingsBody (owner round 14)", () => {
 describe("SETTINGS_SECTIONS (the route's section map)", () => {
 	it("maps exactly the eight record sections", () => {
 		// compaction joined (owner round 14): its own section PUT — the
-		// threshold is engine behavior, not an agent-section key.
+		// threshold is engine behavior, not an agent-section key. dictation
+		// joined with local dictation (2026-10-25).
 		assert.deepEqual(
 			Object.keys(SETTINGS_SECTIONS),
 			["general", "chat", "agent", "appearance", "graph", "compaction", "models", "dictation"],

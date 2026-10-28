@@ -5,7 +5,8 @@
 		"appearance": "Appearance",
 		"graph": "Graph",
 		"keyboard": "Keyboard",
-		"general": "General"
+		"general": "General",
+		"dictation": "Dictation"
 	},
 	"dialog": {
 		"title": "Settings",
@@ -120,6 +121,14 @@
 			"deleted": "Deleted",
 			"saveFailed": "Save failed: {{detail}}",
 			"deleteFailed": "Delete failed: {{status}}"
+		},
+		"instructions": {
+			"group": "Your instructions",
+			"hint": "Added to the end of every agent's instructions — the teacher, practice, research, demos, visuals and the knowledge graph. Applies from the next reply.",
+			"aria": "Your instructions for every agent",
+			"placeholder": "For example: Always reply in Traditional Chinese.",
+			"save": "Save",
+			"saved": "Saved"
 		}
 	},
 	"appearance": {
@@ -276,5 +285,84 @@
 		"selectPlaceholder": "Select…",
 		"webNotice": "Your prompts, tool results, and relevant session context are sent to {{label}} to run the work you select. Credentials are stored on the machine running LearnHarness in an owner-only plaintext file. Provider terms, data-use policies, and plan limits apply. This connection never falls back to an API key.",
 		"disconnectWebBody": "Disconnect {{label}} from LearnHarness? This stops work using this connection and removes its saved credentials from the machine running LearnHarness. It does not cancel your subscription or revoke access at the provider. Saved model choices will remain unavailable until you reconnect or change them."
+	},
+	"dictation": {
+		"engine": {
+			"group": "Engine",
+			"label": "Recognition",
+			"aria": "Dictation engine",
+			"local": "On this device",
+			"hintDeepgram": "Cloud recognition with your Deepgram key",
+			"hintLocal": "Standard ASR — recognition runs on your computer"
+		},
+		"checking": "Checking the speech environment…",
+		"step": {
+			"environment": "Preparing the speech environment…",
+			"packages": "Installing packages…",
+			"model": "Downloading model files…",
+			"removing": "Removing…"
+		},
+		"phase": {
+			"resolving": "Resolving",
+			"transferring": "Transferring",
+			"extracting": "Extracting",
+			"converting": "Converting",
+			"verifying": "Verifying",
+			"finalizing": "Finalizing"
+		},
+		"progress": {
+			"bytes": "{{pct}}% · {{done}} of {{total}}"
+		},
+		"install": {
+			"intro": "Install the recommended engine plugin or specify your own below. Then choose a model and download its files.",
+			"button": "Install {{label}} ({{runtime}})",
+			"noUv": "Local dictation needs uv, which the desktop app includes. In a browser session, install uv first (docs.astral.sh/uv)."
+		},
+		"model": {
+			"label": "Model",
+			"hint": "Choose the model dictation uses",
+			"aria": "Dictation model",
+			"choose": "Choose…"
+		},
+		"capability": {
+			"streamingLive": "Streaming, live words",
+			"streaming": "Streaming",
+			"batch": "Whole recording",
+			"none": "Can't record",
+			"vocabulary": "uses session vocabulary",
+			"languages_one": "{{count}} language",
+			"languages_other": "{{count}} languages"
+		},
+		"files": {
+			"label": "Files",
+			"checking": "Checking files…",
+			"none": "No files to download",
+			"ready": "Files ready",
+			"readySize": "Files ready · {{size}}",
+			"missing": "Not downloaded",
+			"missingSize": "Not downloaded · {{size}}",
+			"download": "Download"
+		},
+		"language": {
+			"label": "Language",
+			"hint": "Auto detects the language you speak",
+			"aria": "Dictation language",
+			"auto": "Auto"
+		},
+		"engines": {
+			"label": "Engine plugins",
+			"remove": "Remove",
+			"cancel": "Cancel",
+			"removeAsk": "Remove…",
+			"placeholder": "PyPI name, Git URL or folder",
+			"aria": "Engine to install",
+			"install": "Install",
+			"footnote": "Any Standard ASR engine plugin works — its models appear below."
+		},
+		"retry": "Retry",
+		"unreachable": "The speech environment is unreachable"
+	},
+	"deepgramLanguage": {
+		"setupHint": "Create a <key>Deepgram API key</key> with the Member role or higher, then add it above."
 	}
 }

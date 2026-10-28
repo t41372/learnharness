@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { joinDictation, useDictationTarget } from "@/components/dictation";
+import { DictationField, joinDictation, useDictationPreview, useDictationTarget } from "@/components/dictation";
 import { useT } from "@/components/i18n";
 
 /**
@@ -48,6 +48,7 @@ export function ReadingThinkingField({
 		),
 		claim,
 	);
+	const livePreview = useDictationPreview("question", claim);
 	return (
 		<div
 			data-testid="reading-thinking-field"
@@ -56,6 +57,7 @@ export function ReadingThinkingField({
 			<div className="pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 				{t("readingThinking.label")}
 			</div>
+			<DictationField value={value} preview={livePreview} layout="lh-input max-h-40 py-0.5">
 			<textarea
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
@@ -100,6 +102,7 @@ export function ReadingThinkingField({
 				rows={1}
 				className="field-sizing-content lh-input max-h-40 w-full resize-none bg-transparent py-0.5 outline-none placeholder:text-muted-foreground/70"
 			/>
+			</DictationField>
 		</div>
 	);
 }

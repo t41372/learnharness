@@ -222,5 +222,33 @@
 		"unpriced": "未计价轮次",
 		"turns": "轮次",
 		"steps": "{{n}} 步"
+	},
+	"reviews": {
+		"title": "待复习",
+		"description": "在到期时复习知识。新知识会自动加入；已有知识可从知识图谱选择加入。",
+		"dueCount": "{{count}} 项到期",
+		"loadError": "无法加载复习列表，请重试。",
+		"saveError": "无法保存复习结果，请重试。",
+		"startError": "无法开始复习，请检查模型设置后重试。",
+		"retry": "重试",
+		"loading": "正在加载复习列表…",
+		"empty": "目前没有待复习的知识。请在知识图谱选择知识，点击“加入复习”。",
+		"dueNow": "现在可复习",
+		"retention": "预计回忆率：{{percent}}%",
+		"history": "复习记录",
+		"sourceAutomatic": "首次学到时自动加入。",
+		"sourceManual": "由你加入。",
+		"resume": "继续复习",
+		"start": "开始复习",
+		"add": "加入复习",
+		"added": "已加入复习",
+		"beginPrompt": "请用一道新的提取练习题开始这次复习。",
+		"again": "忘记",
+		"hard": "困难",
+		"good": "良好",
+		"easy": "容易",
+		"scheduled": "已安排下次复习。",
+		"back": "返回复习列表",
+		"ratePrompt": "在看到答案之前，你能多顺利地回想起来？"
 	}
 }

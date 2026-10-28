@@ -93,6 +93,9 @@ const nextConfig: NextConfig = {
 			// its private runtime chain. Includes are applied after traversal.
 			// This is the verified GoogleAuth closure, not a general dep copy;
 			// the offline native Pi gate must catch future SDK closure changes.
+			// Local dictation's Python bridge (src/server/standard-asr): run by
+			// path from the server, never imported — invisible to the tracer.
+			"src/server/standard-asr/bridge.py",
 			"node_modules/gcp-metadata/**/*",
 			"node_modules/json-bigint/**/*",
 			"node_modules/bignumber.js/**/*",

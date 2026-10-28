@@ -131,7 +131,11 @@
 			"micUnavailable": "mic unavailable",
 			"tokenUnavailable": "token unavailable",
 			"reconnectFailed": "Deepgram reconnect failed",
-			"connectionLost": "Deepgram connection lost ({{code}})"
+			"connectionLost": "Deepgram connection lost ({{code}})",
+			"localUnset": "Set up local dictation",
+			"localReconnectFailed": "Local dictation reconnect failed",
+			"localConnectionLost": "Local dictation connection lost ({{code}})",
+			"localNotReady": "The dictation model isn't ready"
 		}
 	}
 }

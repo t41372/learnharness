@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRightIcon, CornerDownLeftIcon, SquareIcon } from "lucide-react";
+import { DictationField, useDictationPreview } from "@/components/dictation";
 import { cn } from "@/lib/utils";
 import { Hint } from "@/components/ui/hint";
 import { useT } from "@/components/i18n";
@@ -77,6 +78,7 @@ export function Composer({
 	onNext?: () => void;
 }) {
 	const { t } = useT("chat");
+	const livePreview = useDictationPreview("page");
 	const act = () => {
 		const action = enterAction({ busy, canSend, nextProblem });
 		if (action === "stop") onStop();
@@ -92,6 +94,9 @@ export function Composer({
 				act();
 			}}
 		>
+			{/* The page's dictation fallback target: the local engine's live
+			    words show here while no question claims the run. */}
+			<DictationField value={value} preview={livePreview} layout="lh-input max-h-48 min-h-10 px-2.5 py-2" className="min-w-0 flex-1">
 			<textarea
 				ref={inputRef}
 				value={value}
@@ -118,8 +123,9 @@ export function Composer({
 				placeholder={placeholder ?? t("composer.placeholder")}
 				autoFocus={autoFocus}
 				rows={1}
-				className="field-sizing-content lh-input max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
+				className="field-sizing-content lh-input max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
 			/>
+			</DictationField>
 			{/* The button follows the text (owner report 2026-10-03): while
 				 a turn runs WITH text typed it stays the SEND affordance
 				 (click = steer — steering must be clickable, not Enter-only);

@@ -5,7 +5,8 @@
 		"appearance": "外觀",
 		"graph": "圖譜",
 		"keyboard": "快速鍵",
-		"general": "一般"
+		"general": "一般",
+		"dictation": "語音輸入"
 	},
 	"dialog": {
 		"title": "設定",
@@ -120,6 +121,14 @@
 			"deleted": "已刪除",
 			"saveFailed": "儲存失敗：{{detail}}",
 			"deleteFailed": "刪除失敗：{{status}}"
+		},
+		"instructions": {
+			"group": "你的指示",
+			"hint": "附加在每個 Agent 指示的最後——老師、練習、研究、示範、圖示和知識圖譜都會遵循。從下一次回覆起生效。",
+			"aria": "給所有 Agent 的指示",
+			"placeholder": "例如：一律用繁體中文回覆。",
+			"save": "儲存",
+			"saved": "已儲存"
 		}
 	},
 	"appearance": {
@@ -276,5 +285,83 @@
 		"selectPlaceholder": "請選擇…",
 		"webNotice": "你的提示詞、工具結果和相關的對話上下文會傳送給 {{label}}，用於執行你選擇的工作。憑證以僅限擁有者存取的明文檔案儲存在執行 LearnHarness 的電腦。供應商的條款、資料使用政策和方案限制皆適用。此連線絕不會改用 API 金鑰。",
 		"disconnectWebBody": "要將 {{label}} 與 LearnHarness 中斷連線嗎？這會停止使用此連線的工作，並從這台裝置移除已儲存的憑證。這不會取消你的訂閱，也不會在供應商端撤銷存取權。在你重新連線或變更之前，已儲存的模型選擇將無法使用。"
+	},
+	"dictation": {
+		"engine": {
+			"group": "引擎",
+			"label": "辨識方式",
+			"aria": "語音輸入引擎",
+			"local": "本機",
+			"hintDeepgram": "用你的 Deepgram 金鑰在雲端辨識",
+			"hintLocal": "Standard ASR——在你的電腦上辨識"
+		},
+		"checking": "正在檢查語音環境…",
+		"step": {
+			"environment": "正在準備語音環境…",
+			"packages": "正在安裝套件…",
+			"model": "正在下載模型檔案…",
+			"removing": "正在移除…"
+		},
+		"phase": {
+			"resolving": "解析中",
+			"transferring": "傳輸中",
+			"extracting": "解壓縮中",
+			"converting": "轉換中",
+			"verifying": "驗證中",
+			"finalizing": "收尾中"
+		},
+		"progress": {
+			"bytes": "{{pct}}% · {{done}} / {{total}}"
+		},
+		"install": {
+			"intro": "安裝推薦的引擎外掛，或在下方指定其他外掛。接著選擇模型並下載其檔案。",
+			"button": "安裝 {{label}}（{{runtime}}）",
+			"noUv": "本機語音輸入需要 uv，桌面版已內建。在瀏覽器中使用時，請先安裝 uv（docs.astral.sh/uv）。"
+		},
+		"model": {
+			"label": "模型",
+			"hint": "選擇語音輸入使用的模型",
+			"aria": "語音輸入模型",
+			"choose": "請選擇…"
+		},
+		"capability": {
+			"streamingLive": "串流辨識，即時顯示文字",
+			"streaming": "串流辨識",
+			"batch": "整段辨識",
+			"none": "無法錄音",
+			"vocabulary": "會參考這次對話的詞彙",
+			"languages_other": "{{count}} 種語言"
+		},
+		"files": {
+			"label": "檔案",
+			"checking": "正在檢查檔案…",
+			"none": "不需要下載檔案",
+			"ready": "檔案已就緒",
+			"readySize": "檔案已就緒 · {{size}}",
+			"missing": "尚未下載",
+			"missingSize": "尚未下載 · {{size}}",
+			"download": "下載"
+		},
+		"language": {
+			"label": "語言",
+			"hint": "自動辨識你說的語言",
+			"aria": "語音輸入語言",
+			"auto": "自動"
+		},
+		"engines": {
+			"label": "引擎外掛",
+			"remove": "移除",
+			"cancel": "取消",
+			"removeAsk": "移除…",
+			"placeholder": "PyPI 套件名稱、Git URL 或資料夾",
+			"aria": "要安裝的引擎",
+			"install": "安裝",
+			"footnote": "任何 Standard ASR 引擎外掛都能使用——它的模型會出現在下方的清單中。"
+		},
+		"retry": "重試",
+		"unreachable": "無法連線至語音環境"
+	},
+	"deepgramLanguage": {
+		"setupHint": "建立具有 Member 或更高權限的 <key>Deepgram API 金鑰</key>，然後新增到上方。"
 	}
 }

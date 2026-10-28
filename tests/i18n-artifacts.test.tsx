@@ -68,6 +68,7 @@ const researchSteer = {
 const dictation = (error: DictationError | null): Dictation => ({
 	phase: "idle",
 	error,
+	errorDetail: null,
 	levelRef: { current: 0 },
 	active: false,
 	toggle: () => {},
@@ -106,7 +107,7 @@ describe("artifacts in Chinese", () => {
 		assert.ok(inLanguage("zh-TW", <DictationBar dictation={dictation(null)} />).includes("語音輸入"));
 		const keyless = inLanguage("zh-CN", <DictationBar dictation={dictation({ kind: "keyless" })} />);
 		assert.ok(keyless.includes("语音输入需要 Deepgram 密钥"));
-		const lost = inLanguage("zh-TW", <DictationBar dictation={dictation({ kind: "connectionLost", code: 1006 })} />);
+		const lost = inLanguage("zh-TW", <DictationBar dictation={dictation({ kind: "connectionLost", engine: "deepgram", code: 1006 })} />);
 		assert.ok(lost.includes("Deepgram 連線中斷（1006）"));
 		// Text the browser wrote is shown as given.
 		const raw = inLanguage("zh-CN", <DictationBar dictation={dictation({ kind: "message", text: "Requested device not found" })} />);

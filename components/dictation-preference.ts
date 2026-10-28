@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import {
 	FACTORY_SETTINGS, isDictationLanguage, sanitizeUserSettings,
-	type DictationLanguage, type UserSettings,
+	type DictationLanguage, type DictationSettings, type UserSettings,
 } from "@/src/core";
 import { notifySettingsSaved, onSettingsSaved } from "@/components/settings-signal";
 
@@ -14,6 +14,7 @@ const INITIAL = { language: undefined as DictationLanguage | undefined, saving: 
  */
 export function createDictationLanguageStore(request: typeof fetch, saved: () => void = () => {}) {
 	let snapshot = INITIAL;
+	let settings: DictationSettings = {};
 	let reading: Promise<DictationLanguage> | null = null;
 	let writing: Promise<boolean> | null = null;
 	let revision = 0;
@@ -39,7 +40,9 @@ export function createDictationLanguageStore(request: typeof fetch, saved: () =>
 				const record = sanitizeUserSettings(body.settings);
 				if (body.settings !== null && record === null) throw new Error();
 				if (version !== revision) return getLanguage();
-				const language = record?.dictation?.language ?? FACTORY_SETTINGS.dictation.language;
+				settings = record?.dictation ?? {};
+				const selected = settings.language;
+				const language = isDictationLanguage(selected) ? selected : selected === "auto" ? "multi" : FACTORY_SETTINGS.dictation.language;
 				needsRead = false;
 				publish({ language, error: null });
 				return language;
@@ -64,12 +67,13 @@ export function createDictationLanguageStore(request: typeof fetch, saved: () =>
 			try {
 				const res = await request("/api/settings/dictation", {
 					method: "PUT", headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ language }),
+					body: JSON.stringify({ ...settings, language }),
 				});
 				if (!res.ok) throw new Error();
 				const body = await res.json() as { settings: UserSettings };
 				const confirmed = body.settings?.dictation?.language;
 				if (!isDictationLanguage(confirmed)) throw new Error();
+				settings = body.settings.dictation ?? {};
 				needsRead = false;
 				publish({ language: confirmed, error: null });
 				saved();
