@@ -10,6 +10,8 @@ SCOPE.md
 # raw real-data import sources (user directive 2026-09-13: never commit)
 real-data-extraction/
 dist/
+# the uv the desktop app ships (scripts/fetch-uv.mjs)
+vendor/
 
 # dev auth/keys store (auth-keys wave): repo-root auth.json — secrets never committed
 auth.json
@@ -19,3 +21,5 @@ xai-credentials.json*
 
 # dev-fresh launcher scratch (fresh-user sim): disposable per launch
 .fresh-data/
+# Python bytecode (the dictation bridge)
+__pycache__/

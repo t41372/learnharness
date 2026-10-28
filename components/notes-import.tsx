@@ -1,6 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { i18n, useT, type TFunction } from "@/components/i18n";
+import {
+	AUTH_PROVIDER_KEYS,
+	MODELS_NOT_CONFIGURED_CODE,
+	PROVIDER_KEY_MISSING_CODE,
+	modelsNotConfigured,
+	providerKeyMissing,
+} from "@/src/core";
 
 // Transport-only types: never import the server's extraction/agent module here.
 export interface NotesImportResult {
@@ -16,10 +24,14 @@ export interface NotesImportResult {
 	slots?: string[];
 }
 
+/** The English copy for callers without the hook's `t` (tests, the
+ * reference) — the running language arrives from useNotesImport. */
+const EN = i18n.getFixedT("en", "graph");
+
 /** Validate the entire response before applying any row: a malformed index
  * must never attribute another file's success to this file (same names included). */
-export function parseNotesImportResults(body: unknown, files: readonly File[]): NotesImportResult[] {
-	const invalid = () => new Error("Invalid import response. Please retry the file.");
+export function parseNotesImportResults(body: unknown, files: readonly File[], t: TFunction<"graph"> = EN): NotesImportResult[] {
+	const invalid = () => new Error(t("notesImport.invalidResponse"));
 	if (!body || typeof body !== "object" || !("results" in body) || !Array.isArray(body.results) || body.results.length !== files.length) throw invalid();
 	const seen = new Set<number>();
 	for (const raw of body.results) {
@@ -37,22 +49,40 @@ export function parseNotesImportResults(body: unknown, files: readonly File[]): 
 	return body.results as NotesImportResult[];
 }
 
-export async function postNotesImport(files: readonly File[]): Promise<NotesImportResult[]> {
+export async function postNotesImport(files: readonly File[], t: TFunction<"graph"> = EN): Promise<NotesImportResult[]> {
 	const form = new FormData();
 	for (const file of files) form.append("files", file);
 	const response = await fetch("/api/graph/import", { method: "POST", body: form });
 	let body: unknown;
 	try { body = await response.json(); }
-	catch { throw new Error("Invalid import response. Please retry the file."); }
+	catch { throw new Error(t("notesImport.invalidResponse")); }
 	if (!response.ok) {
-		const detail = body && typeof body === "object" && "error" in body && typeof body.error === "string" ? `: ${body.error}` : "";
-		throw new Error(`Import request failed (HTTP ${response.status})${detail}. Please retry the file.`);
+		const detail = body && typeof body === "object" && "error" in body && typeof body.error === "string" ? body.error : null;
+		throw new Error(detail === null
+			? t("notesImport.requestFailed", { status: response.status })
+			: t("notesImport.requestFailedDetail", { status: response.status, detail }));
 	}
-	return parseNotesImportResults(body, files);
+	return parseNotesImportResults(body, files, t);
+}
+
+/** A refusal's human line in the interface language: the two config
+ * refusals carry a machine code AND their envelope's exact English line
+ * (src/core/settings.ts) — matched on both, so any other text (a
+ * reworded server line, free-form failures) still renders as received. */
+function failureLine(r: NotesImportResult, t: TFunction<"graph">): string | undefined {
+	if (r.code === MODELS_NOT_CONFIGURED_CODE && r.error === modelsNotConfigured([]).error) {
+		return t("notesImport.modelsNotConfigured");
+	}
+	if (r.code === PROVIDER_KEY_MISSING_CODE && r.provider && r.error === providerKeyMissing(r.provider, []).error) {
+		const provider = AUTH_PROVIDER_KEYS.find((p) => p.id === r.provider)?.label ?? r.provider;
+		return t("notesImport.providerKeyMissing", { provider });
+	}
+	return r.error;
 }
 
 /** Only error text survives a request; selected Files stay request-local. */
 export function useNotesImport(callbacks: { onStart?: () => void; onFinish?: () => void } = {}) {
+	const { t } = useT("graph");
 	const [errors, setErrors] = useState<string[]>([]);
 	const [importing, setImporting] = useState(false);
 	const pending = useRef(false);
@@ -63,11 +93,11 @@ export function useNotesImport(callbacks: { onStart?: () => void; onFinish?: () 
 		setErrors([]);
 		try {
 			callbacks.onStart?.();
-			const results = await postNotesImport(files);
+			const results = await postNotesImport(files, t);
 			setErrors(results
 				.filter((result) => !result.ok)
 				.sort((a, b) => a.requestIndex - b.requestIndex)
-				.map((r) => `${r.filePath}: ${r.error}${r.code ? `\n${r.code}${r.provider ? ` — ${r.provider}` : ""}${r.missing?.length ? ` — ${r.missing.join(", ")}` : ""}${r.slots?.length ? ` — ${r.slots.join(", ")}` : ""}` : ""}`));
+				.map((r) => `${r.filePath}: ${failureLine(r, t)}${r.code ? `\n${r.code}${r.provider ? ` — ${r.provider}` : ""}${r.missing?.length ? ` — ${r.missing.join(", ")}` : ""}${r.slots?.length ? ` — ${r.slots.join(", ")}` : ""}` : ""}`));
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			setErrors(files.map((file) => `${file.name}: ${message}`));

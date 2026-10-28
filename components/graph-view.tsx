@@ -77,6 +77,7 @@ import { MenuShell } from "@/components/menu-shell.tsx";
 import { DeleteNodeDialog } from "@/components/delete-node-dialog.tsx";
 import { ChainTableOverlay } from "@/components/chain-table.tsx";
 import { Hint } from "@/components/ui/hint";
+import { useT, type TFunction } from "@/components/i18n";
 import {
 	ARROW_LENGTH_LADDER,
 	CHARGE_RANGE,
@@ -284,13 +285,28 @@ function fmtTokens(n: number | undefined): string {
 }
 
 /** Relative time for run rows: "now", "12m", "3h", "2d". */
-function timeAgo(startedAt: number): string {
+function timeAgo(t: TFunction<"graph">, startedAt: number): string {
 	const mins = Math.round((Date.now() - startedAt) / 60_000);
-	if (mins < 1) return "now";
-	if (mins < 60) return `${mins}m`;
+	if (mins < 1) return t("graphCosts.ago.now");
+	if (mins < 60) return t("graphCosts.ago.minutes", { count: mins });
 	const hours = Math.round(mins / 60);
-	if (hours < 24) return `${hours}h`;
-	return `${Math.round(hours / 24)}d`;
+	if (hours < 24) return t("graphCosts.ago.hours", { count: hours });
+	return t("graphCosts.ago.days", { count: Math.round(hours / 24) });
+}
+
+/** The pipeline phases the status feed reports (ExtractionPhase,
+ *  src/agent/subagents/extraction.ts) → their display keys; an unknown
+ *  phase renders raw. */
+const PHASE_KEYS = {
+	queued: "graphView.pipeline.phase.queued",
+	extracting: "graphView.pipeline.phase.extracting",
+	waiting: "graphView.pipeline.phase.waiting",
+	auditing: "graphView.pipeline.phase.auditing",
+	merging: "graphView.pipeline.phase.merging",
+} as const;
+function phaseLabel(t: TFunction<"graph">, phase: string): string {
+	const key = PHASE_KEYS[phase as keyof typeof PHASE_KEYS];
+	return key ? t(key) : phase;
 }
 
 /** Run/stage cost at 3 decimals (pipeline pennies are real money at this
@@ -340,6 +356,7 @@ export function displayCostTotals(costs: Pick<GraphCostSummary, "stages">): {
 /** Exported for the chains home (graph rendering off, owner
  * 2026-10-06): the same bare cumulative-dollars pill + panel. */
 export function GraphCostControl({ costs }: { costs: GraphCostSummary }) {
+	const { t } = useT("graph");
 	const [open, setOpen] = useState(false);
 	// Click anywhere outside (or Escape) closes the panel — the root
 	// wraps button + panel, so the toggle itself keeps working.
@@ -349,7 +366,7 @@ export function GraphCostControl({ costs }: { costs: GraphCostSummary }) {
 		<div ref={rootRef} className="relative">
 			<Hint
 				// Trimmed (owner, subtlety round 2026-09-25).
-				label="Graph costs — click for details"
+				label={t("graphCosts.hint")}
 				side="bottom"
 			>
 				<button
@@ -383,9 +400,10 @@ export function GraphCostControl({ costs }: { costs: GraphCostSummary }) {
  * naming-kind runs never reach the list.
  */
 function GraphCostPanel({ costs }: { costs: GraphCostSummary }) {
+	const { t } = useT("graph");
 	const stageRows: [string, GraphCostSummary["stages"]["extraction"]][] = [
-		["Extraction", costs.stages.extraction],
-		["Audit", costs.stages.audit],
+		[t("graphCosts.stage.extraction"), costs.stages.extraction],
+		[t("graphCosts.stage.audit"), costs.stages.audit],
 	];
 	// The displayed figures come from displayCostTotals (naming excluded —
 	// the pill and this panel must agree).
@@ -394,12 +412,12 @@ function GraphCostPanel({ costs }: { costs: GraphCostSummary }) {
 		<div className="w-80 max-w-[calc(100vw-1.5rem)] rounded-xl border bg-card/95 p-3 text-xs shadow-lg backdrop-blur">
 			<div className="mb-2 flex items-baseline justify-between">
 				<span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-					Graph pipeline costs
+					{t("graphCosts.title")}
 				</span>
 				<span className="text-foreground tabular-nums">
 					{graphUsageLabel(costs)}
 					{unpricedRuns > 0 && (
-						<span className="text-muted-foreground"> · {unpricedRuns} unpriced</span>
+						<span className="text-muted-foreground"> · {t("graphCosts.unpriced", { count: unpricedRuns })}</span>
 					)}
 				</span>
 			</div>
@@ -410,11 +428,11 @@ function GraphCostPanel({ costs }: { costs: GraphCostSummary }) {
 						<span className="min-w-0 text-right tabular-nums">
 							{fmtRunCost(stage.runs - stage.unpricedRuns - (stage.subscriptionRuns ?? 0) <= 0 ? null : stage.dollars, graphProviders(stage))}
 							{stage.unpricedRuns > 0 && (stage.runs - stage.unpricedRuns - (stage.subscriptionRuns ?? 0) > 0 || (stage.subscriptionRuns ?? 0) > 0) && (
-								<span className="text-muted-foreground"> +{stage.unpricedRuns} unpriced</span>
+								<span className="text-muted-foreground"> {t("graphCosts.plusUnpriced", { count: stage.unpricedRuns })}</span>
 							)}
 							<span className="text-muted-foreground">
 								{" "}
-								· {fmtTokens(stage.tokens.inputTokens)} in / {fmtTokens(stage.tokens.outputTokens)} out
+								· {t("graphCosts.tokens", { input: fmtTokens(stage.tokens.inputTokens), output: fmtTokens(stage.tokens.outputTokens) })}
 							</span>
 						</span>
 					</div>
@@ -424,16 +442,16 @@ function GraphCostPanel({ costs }: { costs: GraphCostSummary }) {
 				{costs.runs.map((run) => (
 						<div key={run.startedAt} className="flex items-baseline justify-between gap-2 text-[11px]">
 							<span className="min-w-0 flex-1 truncate text-muted-foreground">
-								<span className="text-foreground/70">{timeAgo(run.startedAt)}</span>{" "}
+								<span className="text-foreground/70">{timeAgo(t, run.startedAt)}</span>{" "}
 								{run.title}
 								{run.merged && (
 									<span className="text-muted-foreground">
 										{" "}
-										+{run.merged.nodes}n
+										{t("graphCosts.merged", { count: run.merged.nodes })}
 									</span>
 								)}
 							</span>
-							<span className="shrink-0 tabular-nums">{fmtRunCost(run.dollars, graphProviders(run))}{run.dollars === null && run.subscriptionRuns === 1 ? " +1 unpriced" : ""}</span>
+							<span className="shrink-0 tabular-nums">{fmtRunCost(run.dollars, graphProviders(run))}{run.dollars === null && run.subscriptionRuns === 1 ? ` ${t("graphCosts.plusUnpriced", { count: 1 })}` : ""}</span>
 						</div>
 					))}
 			</div>
@@ -454,6 +472,7 @@ function GraphSettingsControl({
 	settings: GraphRenderSettings;
 	changeSettings: (update: (cur: RenderSettings) => RenderSettings) => void;
 }) {
+	const { t } = useT("graph");
 	const [open, setOpen] = useState(false);
 	// Click anywhere outside (or Escape) closes the panel (2026-09-17) —
 	// the root wraps button + panel, so the toggle itself keeps working.
@@ -465,7 +484,7 @@ function GraphSettingsControl({
 		<div ref={rootRef} className="relative">
 			<Hint
 				// User language (tooltip wave) — "rendering" is internal.
-				label="Graph display settings"
+				label={t("graphSettings.hint")}
 				side="bottom"
 			>
 				<button
@@ -498,7 +517,7 @@ function GraphSettingsControl({
 							    number — src/core/render-settings.ts). Physics keeps the
 							    fine-grained log sliders (step 5). */}
 							<SettingSlider
-								label="Node size"
+								label={t("graphSettings.nodeSize")}
 								min={0}
 								max={100}
 								step={10}
@@ -508,7 +527,7 @@ function GraphSettingsControl({
 									changeSettings((cur) => ({ ...cur, nodeSize: fromLadderPosition(p, NODE_SIZE_LADDER) }))}
 							/>
 							<SettingSlider
-								label="Edge width"
+								label={t("graphSettings.edgeWidth")}
 								min={0}
 								max={100}
 								step={10}
@@ -518,7 +537,7 @@ function GraphSettingsControl({
 									changeSettings((cur) => ({ ...cur, edgeWidth: fromLadderPosition(p, EDGE_WIDTH_LADDER) }))}
 							/>
 							<SettingSlider
-								label="Arrowhead size"
+								label={t("graphSettings.arrowSize")}
 								min={0}
 								max={100}
 								step={10}
@@ -528,7 +547,7 @@ function GraphSettingsControl({
 									changeSettings((cur) => ({ ...cur, arrowLength: fromLadderPosition(p, ARROW_LENGTH_LADDER) }))}
 							/>
 							<SettingSlider
-								label="Label size"
+								label={t("graphSettings.labelSize")}
 								min={0}
 								max={100}
 								step={10}
@@ -539,7 +558,7 @@ function GraphSettingsControl({
 							/>
 							{/* Display is absolute (ratio / 0.5): "1×" is the default, dead-center (owner, 2026-10-07). */}
 							<SettingSlider
-								label="Labels until zoom"
+								label={t("graphSettings.labelZoom")}
 								min={0}
 								max={100}
 								step={10}
@@ -557,10 +576,10 @@ function GraphSettingsControl({
 						    the paint. */}
 						<div className="mt-1.5 flex flex-col gap-1.5 border-t pt-1.5">
 							<span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-								Regions
+								{t("graphSettings.regions.title")}
 							</span>
 							<label className="flex cursor-pointer items-center justify-between text-[11px] text-muted-foreground">
-								<span>Background colors</span>
+								<span>{t("graphSettings.regions.background")}</span>
 								<input
 									type="checkbox"
 									checked={settings.regions.enabled}
@@ -573,7 +592,7 @@ function GraphSettingsControl({
 								/>
 							</label>
 							<SettingSlider
-								label="Dilation"
+								label={t("graphSettings.regions.dilation")}
 								disabled={!regionTuning.enabled}
 								min={0}
 								max={100}
@@ -587,7 +606,7 @@ function GraphSettingsControl({
 									}))}
 							/>
 							<SettingSlider
-								label="Blur"
+								label={t("graphSettings.regions.blur")}
 								disabled={!regionTuning.enabled}
 								min={0}
 								max={100}
@@ -602,7 +621,7 @@ function GraphSettingsControl({
 								}
 							/>
 							<SettingSlider
-								label="Edge alpha"
+								label={t("graphSettings.regions.edgeAlpha")}
 								disabled={!regionTuning.enabled}
 								min={0}
 								max={100}
@@ -618,7 +637,7 @@ function GraphSettingsControl({
 							<label
 								className={`flex items-center justify-between gap-2 text-[11px] text-muted-foreground${!regionTuning.enabled ? " opacity-40" : ""}`}
 							>
-								<span>Bitmap resolution</span>
+								<span>{t("graphSettings.regions.bitmap")}</span>
 								<select
 									disabled={!regionTuning.enabled}
 									className="rounded-md border bg-background px-1.5 py-0.5 text-xs tabular-nums text-foreground"
@@ -643,7 +662,7 @@ function GraphSettingsControl({
 							    their own clusterLabels toggle. Size is screen px
 							    (constant at any zoom, unlike node labels). */}
 							<label className="flex cursor-pointer items-center justify-between text-[11px] text-muted-foreground">
-								<span>Cluster labels</span>
+								<span>{t("graphSettings.regions.clusterLabels")}</span>
 								<input
 									type="checkbox"
 									checked={settings.clusterLabels}
@@ -652,7 +671,7 @@ function GraphSettingsControl({
 								/>
 							</label>
 							<SettingSlider
-								label="Cluster label size"
+								label={t("graphSettings.regions.clusterLabelSize")}
 								disabled={!settings.clusterLabels}
 								min={0}
 								max={100}
@@ -678,10 +697,10 @@ function GraphSettingsControl({
 						    anchor + its gray-out-able controls last. */}
 						<div className="mt-1.5 flex flex-col gap-1.5 border-t pt-1.5">
 							<span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-								Physics
+								{t("graphSettings.physics.title")}
 							</span>
 							<SettingSlider
-								label="Node repulsion"
+								label={t("graphSettings.physics.repulsion")}
 								min={0}
 								max={100}
 								step={5}
@@ -694,7 +713,7 @@ function GraphSettingsControl({
 									}))}
 							/>
 							<SettingSlider
-								label="Edge attraction"
+								label={t("graphSettings.physics.edgeAttraction")}
 								min={0}
 								max={100}
 								step={5}
@@ -707,7 +726,7 @@ function GraphSettingsControl({
 									}))}
 							/>
 							<SettingSlider
-								label="Edge length"
+								label={t("graphSettings.physics.edgeLength")}
 								min={0}
 								max={100}
 								step={5}
@@ -720,7 +739,7 @@ function GraphSettingsControl({
 									}))}
 							/>
 							<SettingSlider
-								label="Central pull"
+								label={t("graphSettings.physics.centralPull")}
 								min={0}
 								max={100}
 								step={5}
@@ -733,12 +752,12 @@ function GraphSettingsControl({
 									}))}
 							/>
 							<SettingSlider
-								label="Cluster pull"
+								label={t("graphSettings.physics.clusterPull")}
 								min={0}
 								max={100}
 								step={5}
 								value={toOffSliderPosition(physicsTuning.clusterPull, CLUSTER_PULL_RANGE.min, CLUSTER_PULL_RANGE.max)}
-								display={physicsTuning.clusterPull <= 0 ? "off" : sizeDisplay(physicsTuning.clusterPull)}
+								display={physicsTuning.clusterPull <= 0 ? t("graphSettings.physics.off") : sizeDisplay(physicsTuning.clusterPull)}
 								onChange={(p) =>
 									changeSettings((cur) => ({
 										...cur,
@@ -746,7 +765,7 @@ function GraphSettingsControl({
 									}))}
 							/>
 							<SettingSlider
-								label="Friction"
+								label={t("graphSettings.physics.friction")}
 								min={0}
 								max={100}
 								step={5}
@@ -763,7 +782,7 @@ function GraphSettingsControl({
 							    controls at the very bottom — the grayed group reads
 							    as a self-contained sub-section. */}
 							<label className="flex items-center justify-between gap-2 text-xs">
-								Depth anchor
+								{t("graphSettings.physics.depthAnchor")}
 								<select
 									className="rounded border bg-background px-1 py-0.5 text-xs"
 									value={physicsTuning.depthMode}
@@ -774,13 +793,13 @@ function GraphSettingsControl({
 										}))
 									}
 								>
-									<option value="off">Off</option>
-									<option value="vertical">Vertical (up)</option>
-									<option value="radial">Radial (outward)</option>
+									<option value="off">{t("graphSettings.physics.depthMode.off")}</option>
+									<option value="vertical">{t("graphSettings.physics.depthMode.vertical")}</option>
+									<option value="radial">{t("graphSettings.physics.depthMode.radial")}</option>
 								</select>
 							</label>
 							<SettingSlider
-								label="Depth strength"
+								label={t("graphSettings.physics.depthStrength")}
 								disabled={physicsTuning.depthMode === "off"}
 								min={0}
 								max={100}
@@ -794,7 +813,7 @@ function GraphSettingsControl({
 									}))}
 							/>
 							<SettingSlider
-								label="Depth spacing"
+								label={t("graphSettings.physics.depthSpacing")}
 								disabled={physicsTuning.depthMode === "off"}
 								min={0}
 								max={100}
@@ -808,7 +827,7 @@ function GraphSettingsControl({
 									}))}
 							/>
 							<SettingSlider
-								label="Base ring radius"
+								label={t("graphSettings.physics.baseRadius")}
 								disabled={physicsTuning.depthMode !== "radial"}
 								min={0}
 								max={100}
@@ -866,13 +885,14 @@ export function GraphChromeRow({
 	 *  2026-09-29). */
 	onOpenChains: () => void;
 }) {
+	const { t } = useT("graph");
 	return (
 		<>
 			{!isEmpty && (
 				<div className="graph-chrome-fade-in w-56 min-w-0 shrink rounded-xl border bg-card/85 px-1 py-[3px] shadow-lg backdrop-blur">
 					<Hint
 						// ⌘F focuses node search (surface-scoped registry action).
-						label="Search nodes"
+						label={t("graphView.search.label")}
 						action="find"
 						side="bottom"
 					>
@@ -882,15 +902,15 @@ export function GraphChromeRow({
 							ref={searchInputRef}
 							value={query}
 							onChange={(e) => onQuery(e.target.value)}
-							placeholder="Search nodes…"
-							aria-label="Search nodes"
+							placeholder={t("graphView.search.placeholder")}
+							aria-label={t("graphView.search.label")}
 							spellCheck={false}
 							className="h-7 w-full rounded-lg border bg-background pl-8 text-xs outline-none placeholder:text-muted-foreground focus:border-ring"
 						/>
 					</div>
 					</Hint>
 					{noMatch && (
-						<div className="px-1.5 pt-1 text-[11px] text-muted-foreground">No matching nodes.</div>
+						<div className="px-1.5 pt-1 text-[11px] text-muted-foreground">{t("graphView.search.noMatch")}</div>
 					)}
 				</div>
 			)}
@@ -898,7 +918,7 @@ export function GraphChromeRow({
 			    container (36px band), between the search and Import. */}
 			{!isEmpty && (
 				<div className="graph-chrome-fade-in shrink-0 rounded-xl border bg-card/85 px-1 py-[3px] shadow-lg backdrop-blur">
-					<Hint label="Every reasoning chain" side="bottom">
+					<Hint label={t("graphView.chains.hint")} side="bottom">
 						<button
 							type="button"
 							onClick={onOpenChains}
@@ -906,7 +926,7 @@ export function GraphChromeRow({
 							className="flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent"
 						>
 							<ListTreeIcon className="size-3" />
-							Chains
+							{t("graphView.chains.button")}
 						</button>
 					</Hint>
 				</div>
@@ -929,7 +949,7 @@ export function GraphChromeRow({
 					// The one button whose action isn't obvious from its label:
 					// the missing fact is where imports go (owner, subtlety
 					// round 2026-09-25).
-					label="Import notes into the graph"
+					label={t("graphView.import.hint")}
 					side="bottom"
 				>
 					<button
@@ -940,7 +960,7 @@ export function GraphChromeRow({
 					className="flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
 				>
 						<UploadIcon className="size-3" />
-						{importing ? "Importing…" : "Import notes…"}
+						{importing ? t("graphView.import.importing") : t("graphView.import.button")}
 					</button>
 				</Hint>
 			</div>
@@ -974,6 +994,7 @@ export function GraphView({
 	onPracticeSelectionChange?: (nodes: { id: string; name: string; statement: string }[]) => void;
 	onChainSelectClose?: () => void;
 }) {
+	const { t } = useT("graph");
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const cardRef = useRef<HTMLDivElement | null>(null);
@@ -1498,9 +1519,9 @@ export function GraphView({
 				<div className="flex h-full w-full items-center justify-center px-4">
 					<div className="flex flex-col items-center gap-3 text-center text-muted-foreground">
 						<WaypointsIcon className="size-10 opacity-40" strokeWidth={1.25} />
-						<div className="text-lg font-medium text-foreground">Knowledge graph</div>
+						<div className="text-lg font-medium text-foreground">{t("graphView.empty.title")}</div>
 						<p className="max-w-sm text-sm">
-							Start a session or import notes to build your graph.
+							{t("graphView.empty.body")}
 						</p>
 					</div>
 				</div>
@@ -1541,7 +1562,7 @@ export function GraphView({
 						}}
 						className="flex items-center rounded-lg px-2.5 py-1.5 text-left text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
 					>
-						Delete
+						{t("graphView.contextMenu.delete")}
 					</button>
 				</MenuShell>
 			)}
@@ -1630,9 +1651,9 @@ export function GraphView({
 					className="flex items-center gap-2 rounded-full border bg-card/85 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur"
 				>
 					<Loader2Icon className="size-3.5 shrink-0 animate-spin" />
-					<span className="capitalize">{run.phase}</span>
+					<span className="capitalize">{phaseLabel(t, run.phase)}</span>
 					<span className="max-w-48 truncate text-foreground">{run.title}</span>
-					<span className="tabular-nums">{Math.max(0, Math.round((Date.now() - run.startedAt) / 1000))}s</span>
+					<span className="tabular-nums">{t("graphView.pipeline.elapsed", { seconds: Math.max(0, Math.round((Date.now() - run.startedAt) / 1000)) })}</span>
 				</div>
 			))}
 			</div>
@@ -1652,7 +1673,7 @@ export function GraphView({
 					<div className="mt-1 text-xs leading-relaxed text-muted-foreground">{selected.node.statement}</div>
 					{selected.sourceIds.length > 0 ? (
 						<div className="mt-3 flex flex-col gap-1">
-							<div className="text-xs text-muted-foreground">Sessions</div>
+							<div className="text-xs text-muted-foreground">{t("graphView.detail.sessions")}</div>
 							{selected.sourceIds.map((sourceId) => {
 								// An imported-notes file: a STATIC entry — the path,
 								// plain text, never a link (no session to open).
@@ -1681,7 +1702,7 @@ export function GraphView({
 							})}
 						</div>
 					) : (
-						<div className="mt-3 text-xs text-muted-foreground">No sessions recorded.</div>
+						<div className="mt-3 text-xs text-muted-foreground">{t("graphView.detail.noSessions")}</div>
 					)}
 				</div>
 			)}

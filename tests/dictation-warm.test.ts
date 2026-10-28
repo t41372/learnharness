@@ -100,4 +100,18 @@ describe("warm-token cache (mitigation D, owner 2026-09-27)", () => {
 		await new Promise((r) => setTimeout(r, 0)); // let the background mint settle
 		assert.equal(mints, 1);
 	});
+
+	it("a previous selection's late failure cannot evict the refreshed session", async () => {
+		let rejectOld!: (error: Error) => void;
+		const old = new Promise<string>((_resolve, reject) => { rejectOld = reject; });
+		let mints = 0;
+		const m = createWarmMinter(() => ++mints === 1 ? old : Promise.resolve("new-model"));
+		const first = m.mint();
+		m.refresh();
+		assert.equal(await m.mint(), "new-model");
+		rejectOld(new Error("Previous model unavailable"));
+		await assert.rejects(first, /Previous model unavailable/);
+		assert.equal(await m.mint(), "new-model");
+		assert.equal(mints, 2);
+	});
 });

@@ -1,8 +1,10 @@
 "use client";
 
 import { ArrowRightIcon, CornerDownLeftIcon, SquareIcon } from "lucide-react";
+import { DictationField, useDictationPreview } from "@/components/dictation";
 import { cn } from "@/lib/utils";
 import { Hint } from "@/components/ui/hint";
+import { useT } from "@/components/i18n";
 
 /**
  * The chat composer — content row ONLY (the persistent rounded shell lives in
@@ -46,7 +48,7 @@ export function Composer({
 	autoFocus,
 	inputRef,
 	onEscape,
-	placeholder = "Ask, answer, or steer the lesson…",
+	placeholder,
 	nextProblem = false,
 	onNext,
 }: {
@@ -75,6 +77,8 @@ export function Composer({
 	 *  empty-Enter share it. */
 	onNext?: () => void;
 }) {
+	const { t } = useT("chat");
+	const livePreview = useDictationPreview("page");
 	const act = () => {
 		const action = enterAction({ busy, canSend, nextProblem });
 		if (action === "stop") onStop();
@@ -90,6 +94,9 @@ export function Composer({
 				act();
 			}}
 		>
+			{/* The page's dictation fallback target: the local engine's live
+			    words show here while no question claims the run. */}
+			<DictationField value={value} preview={livePreview} layout="lh-input max-h-48 min-h-10 px-2.5 py-2" className="min-w-0 flex-1">
 			<textarea
 				ref={inputRef}
 				value={value}
@@ -113,11 +120,12 @@ export function Composer({
 						act();
 					}
 				}}
-				placeholder={placeholder}
+				placeholder={placeholder ?? t("composer.placeholder")}
 				autoFocus={autoFocus}
 				rows={1}
-				className="field-sizing-content lh-input max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
+				className="field-sizing-content lh-input max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
 			/>
+			</DictationField>
 			{/* The button follows the text (owner report 2026-10-03): while
 				 a turn runs WITH text typed it stays the SEND affordance
 				 (click = steer — steering must be clickable, not Enter-only);
@@ -136,16 +144,16 @@ export function Composer({
 					<button
 						type="submit"
 						data-testid="next-problem-button"
-						aria-label="Next problem"
+						aria-label={t("composer.nextProblem")}
 						className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-green-600 px-4 font-ui text-xs font-medium uppercase tracking-wide text-white transition-colors hover:bg-green-500"
 					>
-						Next problem
+						{t("composer.nextProblem")}
 						<ArrowRightIcon className="size-4" />
 					</button>
 				) : (
 					<button
 						type="submit"
-						aria-label={busy && !canSend ? "Stop" : "Send"}
+						aria-label={busy && !canSend ? t("composer.stop") : t("composer.send")}
 						disabled={!busy && !canSend}
 						className={cn(
 							"flex size-10 shrink-0 items-center justify-center rounded-[10px] transition-colors",

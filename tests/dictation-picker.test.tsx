@@ -53,6 +53,7 @@ async function fixture(failRead = false) {
 		requestAnimationFrame: (callback: FrameRequestCallback) => setTimeout(() => callback(0), 0),
 		cancelAnimationFrame: clearTimeout,
 		fetch: async (url: string, init?: RequestInit) => {
+			if (url === "/api/stt/standard-asr") return Response.json({ installed: false, uv: true, step: null, inventory: null, recommended: { label: "Local", package: "test", model: "test/small" } });
 			if (url === "/api/keys") return Response.json({ keys: state.keys, providers: [] });
 			if (url === "/api/settings") return state.failRead ? Response.json({}, { status: 500 }) : Response.json({ settings: state.record });
 			assert.equal(url, "/api/settings/dictation");
@@ -222,8 +223,8 @@ for (const source of ["none", "file", "env"] as const) test(`Language is below t
 		present: source !== "none", masked: source === "none" ? null : "…test (32 chars)",
 		source, shadowedByEnv: false,
 	}];
-	const { KeysSection } = await import("../components/settings/keys-section.tsx");
-	await f.render(<KeysSection />);
+	const { DictationSection } = await import("../components/settings/dictation-section.tsx");
+	await f.render(<DictationSection dictation={{ engine: "deepgram" }} onChange={() => {}} />);
 	const group = byTest("group-dictation");
 	const rows = group.lastElementChild!.children;
 	assert.equal(rows[0]!.getAttribute("data-testid"), "key-deepgram_api_key");

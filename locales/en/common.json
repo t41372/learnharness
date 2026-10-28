@@ -1,0 +1,21 @@
+{
+	"shortcuts": {
+		"toggle-dictation": "Toggle dictation",
+		"open-settings": "Open settings",
+		"open-model-picker": "Model selector",
+		"cycle-thinking": "Cycle thinking level",
+		"toggle-sidebar": "Toggle sessions sidebar",
+		"sessions-search": "Search sessions",
+		"jump-graph": "Graph view",
+		"new-session": "New session",
+		"rename-session": "Rename session",
+		"toggle-user-thinking": "Toggle all your thinking",
+		"find": "Find",
+		"cheat-sheet": "Shortcut cheat sheet",
+		"question-focus": "Question · focus thinking ↔ rows",
+		"question-next-row": "Question · next row",
+		"question-prev-row": "Question · previous row",
+		"question-pick-row": "Question · pick row",
+		"question-submit": "Question · submit"
+	}
+}

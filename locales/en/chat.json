@@ -1,0 +1,185 @@
+{
+	"session": {
+		"titleAria": "Session title",
+		"titleRename": "Rename this session",
+		"planChip": "Plan",
+		"planHint": "Open the full plan",
+		"practiceTag": "Practice",
+		"emptyTitle": "New session",
+		"emptyDescription": "The teacher will open by probing what you already know.",
+		"you": "You",
+		"nextProblemLine": "Next problem",
+		"retrying": "Retrying…",
+		"compactingLabel": "Compacting context",
+		"compacting": "COMPACTING CONTEXT…",
+		"thinkingLabel": "Thinking",
+		"thinking": "THINKING…",
+		"setupModels": "Set up your models",
+		"nextPlaceholder": "Ask anything, or press Enter for the next one."
+	},
+	"errors": {
+		"banner": "Something went wrong: {{message}}",
+		"generic": "An error occurred.",
+		"turnRunning": "A turn is already running — try again in a moment.",
+		"attachFailed": "Failed to attach to the running turn.",
+		"emptyStream": "The turn stream body is empty.",
+		"sendFailed": "The send failed ({{status}}).",
+		"steerFailed": "The steer failed ({{status}}).",
+		"dismissFailed": "The dismissal failed ({{status}}).",
+		"modelsNotConfigured": "No model configured — set up your models first",
+		"providerKeyMissing": "No {{provider}} key is set — add one in Settings → Keys",
+		"retry": "Retry"
+	},
+	"composer": {
+		"placeholder": "Ask, answer, or steer the lesson…",
+		"nextProblem": "Next problem",
+		"send": "Send",
+		"stop": "Stop"
+	},
+	"nodePicker": {
+		"selected_one": "{{count}} node selected",
+		"selected_other": "{{count}} nodes selected",
+		"pick": "Pick nodes",
+		"clear": "Clear"
+	},
+	"questionLabel": {
+		"probe": "Probe",
+		"recall": "Recall",
+		"prediction": "Prediction",
+		"check": "Check",
+		"explain": "Explain",
+		"question": "Question"
+	},
+	"questionDock": {
+		"malformed": "This question arrived malformed — the transcript keeps the retry.",
+		"revealTitle": "Check your understanding",
+		"revealOpen": "Open",
+		"answer": "Answer",
+		"multiSelect": " · select all that apply",
+		"dontKnow": "I don't know",
+		"otherPlaceholder": "Type your own answer…",
+		"confidence": "Confidence",
+		"confidenceAria": "Confidence — the probability your selected answer is correct",
+		"confidenceValue": "{{value}} percent",
+		"confidenceTitle": "The probability your selected answer is correct — 50% is a coin flip. Adjust with ←/→.",
+		"yourAnswer": "Your answer",
+		"answerPlaceholder": "Type your answer…",
+		"thinkingPlaceholder": "Why this answer? Whatever comes to mind.",
+		"submit": "Submit answer"
+	},
+	"dock": {
+		"compacting": "compacting session…",
+		"keys": "↵ submits · ⇧↵ newline"
+	},
+	"thinking": {
+		"yours": "YOUR THINKING"
+	},
+	"answeredCard": {
+		"skipped": "<q/> — skipped",
+		"didntKnow": "didn't know",
+		"correct": "correct",
+		"incorrect": "incorrect",
+		"quote": "“{{text}}”",
+		"answeredDontKnow": "Answered “I don't know”.",
+		"why": "Why",
+		"hideWhy": "Hide why",
+		"whyLabel": "Why: ",
+		"theAnswer": "The answer: "
+	},
+	"readingThinking": {
+		"label": "Thinking while reading",
+		"placeholder": "Whatever comes to mind as you read."
+	},
+	"abortTurn": {
+		"cancel": "Cancel",
+		"turn": {
+			"title": "Abort this turn?",
+			"line": "The partial answer stays in the transcript.",
+			"action": "Abort"
+		},
+		"question": {
+			"title": "Dismiss this question?",
+			"line": "Skipped — the teacher moves on without it.",
+			"lineBusy": "Skipped — the teacher moves on without it. The working turn stops too.",
+			"action": "Dismiss"
+		},
+		"problem": {
+			"title": "Discard this problem?",
+			"line": "The problem is dropped — no solution is revealed.",
+			"lineBusy": "The problem is dropped — no solution is revealed. The working turn stops too.",
+			"action": "Discard"
+		}
+	},
+	"phase": {
+		"probe": "Probing",
+		"plan": "Planning",
+		"teach": "Teaching",
+		"planNodes_one": "Plan · {{count}} node",
+		"planNodes_other": "Plan · {{count}} nodes"
+	},
+	"compaction": {
+		"moment": "Context compacted",
+		"cut": "History compacted",
+		"cutTokens": "History compacted · {{k}}k tok"
+	},
+	"practice": {
+		"problem": "Problem",
+		"problemDismissed": "Problem dismissed.",
+		"concluded": "Concluded",
+		"modelSolution": "Model solution",
+		"thinkingPlaceholder": "Work here, think out loud.",
+		"submit": "Submit thinking",
+		"outcome": {
+			"solved": "Solved",
+			"solvedWithHints": "Solved with hints",
+			"movedOn": "Moved on",
+			"surrendered": "Surrendered",
+			"dismissed": "Dismissed"
+		},
+		"metadata": {
+			"toggle": "Metadata",
+			"mode": "Mode",
+			"targets": "Targets",
+			"outcome": "Outcome",
+			"hintRung": "Hint rung",
+			"missClass": "Miss class",
+			"retest": "Retest",
+			"untagged": "untagged",
+			"none": "none",
+			"yes": "yes",
+			"no": "no",
+			"separator": ", "
+		}
+	},
+	"spinner": {
+		"working": "Working"
+	},
+	"reasoning": {
+		"thinking": "Thinking...",
+		"agentThinking": "AGENT’S THINKING"
+	},
+	"conversation": {
+		"emptyTitle": "No messages yet",
+		"emptyDescription": "Start a conversation to see messages here"
+	},
+	"message": {
+		"previousBranch": "Previous branch",
+		"nextBranch": "Next branch",
+		"branchPage": "{{current}} of {{total}}"
+	},
+	"attachments": {
+		"choose": "Attach files",
+		"supported": "Images, PDF, text, or code · up to 10 files · 20 MB each",
+		"tooMany": "A message can contain at most 10 attachments.",
+		"tooLarge": "Each attachment must be 20 MB or smaller.",
+		"failed": "Upload failed. Check the file type and try again.",
+		"retry": "Try again",
+		"uploading": "Uploading…",
+		"remove": "Remove {{name}}",
+		"download": "Download",
+		"close": "Close preview",
+		"loading": "Loading preview…",
+		"previewError": "Could not preview this file. You can still download it.",
+		"previewTruncated": "Preview shortened. Download the file to see its full contents."
+	}
+}
