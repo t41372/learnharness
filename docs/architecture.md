@@ -584,3 +584,11 @@ Each of these was implemented, lived in real data, and was replaced; the replace
 ## 14. Deliberately deferred
 
 Structured logging (§10); SQLite/remote storage (drop-in behind the ports, §3); multi-scale cluster hierarchy (Louvain's dendrogram idea, parked); the anchored calibration rubric; alternative extraction triggers beyond the coverage seam (session end, idle); retroactive bootstrap of the POC sessions (vision §1 consolidation). When any of these land, this doc changes with the commit that lands them — it describes the system, not an intention.
+
+## 8. Spaced review
+
+The review system owns `data/reviews/state.json`, an atomic, versioned snapshot of enrolled proposition ids, FSRS cards, and append-only self-rating history. Memory state never writes to the knowledge graph. The first observation baselines existing graph ids; newly created propositions are automatically enrolled, while existing ones are added from the chain selection bar or the conversation agents' `add_to_review` tool (with a visible reason). Re-encounters and repeated enrollment preserve the schedule.
+
+`core/reviews.ts` owns scheduling through pinned `ts-fsrs` (90% requested retention); `core/review-session.ts` reads review context and successfully concluded problems from the native record. The fs adapter implements `ReviewStore`, wired in `server/stores.ts`. Its graph adapter observes knowledge before and after node appends, so the first new extraction cannot accidentally turn all existing knowledge into new review cards. Reviews notify windows through `reviews-changed`.
+
+`/reviews` lists due and upcoming items, estimated recall, enrollment reason, and history. Starting a due item creates one resumable practice session targeting that proposition. After the problem concludes, the learner rates Forgot / Hard / Good / Easy. The API validates the session, target, successful conclusion, and card revision; one atomic write commits both memory and history. Retrying the same rating is idempotent, conflicting ratings are refused, and leaving without rating leaves the schedule unchanged. Deleted graph propositions are omitted from the queue.

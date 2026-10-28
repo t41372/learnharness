@@ -109,6 +109,8 @@ export interface AgentBuildOptions {
 	/** Tests may pass a bare tool registry to drive deterministic flows.
 	 *  An explicit registry is NEVER toggle-filtered — the caller owns it. */
 	tools?: Record<string, AgentTool<any>>;
+	/** Composition-provided domain tools, available across conversation phases. */
+	extraTools?: Record<string, AgentTool<any>>;
 	/** The resolved per-user tool toggles (core/pending EnabledTools — the
 	 *  2026-09-19 P2 bridge: Platform's chat-handler passes
 	 *  effective.agent.tools; the factories drop any tool explicitly false.
@@ -175,6 +177,7 @@ function makeQuestionStopper(kind: AgentKind) {
 }
 
 function baseAgentOptions(kind: AgentKind, opts: AgentBuildOptions, tools: AgentTool<any, any>[]) {
+	tools = [...tools, ...Object.values(opts.extraTools ?? {})];
 	// Practice never reaches the role fallback (the handler ALWAYS injects
 	// the session's conversation engine — practice rides the same
 	// conversation-spec resolution as teaching); the cast keeps AgentKind

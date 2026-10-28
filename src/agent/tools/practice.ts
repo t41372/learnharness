@@ -32,6 +32,7 @@ import { healEncodedArguments, healToolRecord } from "./heal.ts";
 /** The record-reading context the gates need (the plan-tools idiom). */
 export interface PracticeToolContext {
 	chatId: string;
+	reviewTarget?: string;
 	chatStore: { getChat(id: string): { messages: LhMessage[]; kind?: string } | null };
 	/** The WHOLE-graph node list, read fresh per pose (owner round 9 — the
 	 *  mastery-trace contract): targets validate against every proposition,
@@ -97,6 +98,7 @@ export type ProblemInput = Static<typeof problemInputObject>;
 export function problemTool(
 	gate: PracticeGate,
 	graphNodes?: PracticeToolContext["graphNodes"],
+	reviewTarget?: string,
 ): AgentTool<typeof problemInputObject> {
 	return {
 		name: "problem",
@@ -134,6 +136,9 @@ export function problemTool(
 			return { ...(healed as Record<string, unknown>), target: normalized } as never;
 		},
 		execute: async (_toolCallId, input) => {
+			if (reviewTarget && (input.target?.length !== 1 || input.target[0] !== reviewTarget)) {
+				return invalidInputResult("problem", ["This review must exercise only proposition " + reviewTarget]);
+			}
 			if (gate.problemActive) {
 				return invalidInputResult("problem", [
 					"a problem is already active — call conclude on it before posing the next one",
@@ -236,7 +241,7 @@ export function practiceTools(ctx: PracticeToolContext): Record<string, AgentToo
 	// keep their own (target-normalizing) prepareArguments as the composed
 	// inner pass; the double heal is idempotent by construction.
 	return healToolRecord({
-		problem: problemTool(gate, ctx.graphNodes),
+		problem: problemTool(gate, ctx.graphNodes, ctx.reviewTarget),
 		conclude: concludeTool(gate),
 		read: readTool,
 		ls: lsTool,

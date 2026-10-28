@@ -80,3 +80,5 @@ Questions, bug reports, and feature requests: [GitHub Issues](https://github.com
 [AGPL-3.0](LICENSE)
 
 The app is free and open forever. If we ever charge for anything, it will be for convenience — managed keys, hosting — never for features you can run locally.
+
+Spaced review: new knowledge joins the review queue automatically. Add existing propositions from the knowledge map, open **Reviews**, and start a due item. After practicing, rate your recall to schedule the next review with FSRS.
