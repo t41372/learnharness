@@ -1,4 +1,4 @@
-import type { Attachment } from "../src/core/attachments";
+import type { Attachment } from "@/src/core";
 import { clearOpeningPrompt, OPENING_PROMPT_FAILURE, stashOpeningPrompt } from "./opening-prompt";
 
 interface SessionCreation {
