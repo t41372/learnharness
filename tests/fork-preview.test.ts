@@ -84,3 +84,13 @@ test("preview verifier refuses a tracked local dependency link", () => {
 		assert.match(result.stderr, /must not track dependencies or build outputs/);
 	} finally { repo.cleanup(); }
 });
+
+test("preview verifier refuses changes developed directly on the preview", () => {
+	const repo = repository();
+	try {
+		repo.git("commit", "--allow-empty", "-m", "fix: untracked preview-only development");
+		const result = repo.verify();
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /preview-only commit .* must belong to a feature branch/);
+	} finally { repo.cleanup(); }
+});
