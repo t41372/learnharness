@@ -24,7 +24,10 @@
     },
     {
       "branch": "feat/i18n",
-      "dependsOn": []
+      "dependsOn": [
+        "feat/agent-instructions",
+        "feat/standard-asr-dictation"
+      ]
     },
     {
       "branch": "feat/spaced-repetition",
