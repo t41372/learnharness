@@ -33,15 +33,20 @@ import { createPortal } from "react-dom";
 import { useBackdropDismiss } from "@/components/backdrop-dismiss";
 import {
 	CURRENT_SETTINGS_VERSION,
+	LANGUAGE_NAMES,
+	LANGUAGE_SETTINGS,
 	type AgentSettings,
 	type AppearanceSettings,
 	type CompactionSettings,
 	type DictationSettings,
 	type GraphSettings,
+	type LanguageSetting,
 	type UserSettings,
 } from "@/src/core";
+import { useLanguage, useT } from "@/components/i18n";
+import { cn } from "@/lib/utils";
 import { useAppearance } from "./appearance.tsx";
-import { SettingsSection } from "./controls.tsx";
+import { SettingsSection, SettingsRow } from "./controls.tsx";
 import { UpdateSettings } from "./update-settings.tsx";
 import { AgentSection } from "./agent-section.tsx";
 import type { ModelsSettings } from "@/src/core";
@@ -57,15 +62,16 @@ import { NativeSubscriptionUIProvider } from "./subscription-connections.tsx";
 
 /** Owner (2026-09-20): hints earn their place — mechanics-explaining
  *  prose is out; only the keyboard note stays (storage location is a
- *  real question users ask). */
+ *  real question users ask). Labels are settings-namespace keys,
+ *  resolved at render (i18n wave). */
 const SECTIONS = [
-	{ id: "keys", label: "Providers" },
-	{ id: "agent", label: "Agent" },
-	{ id: "dictation", label: "Dictation" },
-	{ id: "appearance", label: "Appearance" },
-	{ id: "graph", label: "Graph" },
-	{ id: "keyboard", label: "Keyboard", hint: "Stored on this device" },
-	{ id: "general", label: "General" },
+	{ id: "keys", label: "nav.providers" },
+	{ id: "agent", label: "nav.agent" },
+	{ id: "dictation", label: "nav.dictation" },
+	{ id: "appearance", label: "nav.appearance" },
+	{ id: "graph", label: "nav.graph" },
+	{ id: "keyboard", label: "nav.keyboard", hint: "keyboard.storedHint" },
+	{ id: "general", label: "nav.general" },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
@@ -145,6 +151,7 @@ export function SettingsDialogBody({
 	 *  retargets follow it exactly like initialSection below. */
 	initialRow?: string | null;
 }) {
+	const { t } = useT("settings");
 	const { onAppearanceChange } = useAppearance();
 	const [record, setRecord] = useState<UserSettings | null | undefined>(
 		undefined,
@@ -268,23 +275,23 @@ export function SettingsDialogBody({
 		<div
 			role="dialog"
 			aria-modal="true"
-			aria-label="Settings"
+			aria-label={t("dialog.title")}
 			data-testid="settings-dialog"
 			className="settings-dialog-pop flex h-[620px] max-h-[85vh] w-[920px] max-w-[90vw] flex-col overflow-hidden rounded-md border border-border bg-card shadow-xl"
 			onClick={(e) => e.stopPropagation()}
 		>
 			{/* Header — the app's quiet CMU title language. */}
 			<header className="flex h-15 shrink-0 items-center gap-3 border-b border-border px-5">
-				<h2 className="font-title text-2xl tracking-tight">Settings</h2>
+				<h2 className="font-title text-2xl tracking-tight">{t("dialog.title")}</h2>
 				<Hint
 						// Esc closes the dialog (its own listener) — surface it.
-						label="Close"
+						label={t("dialog.close")}
 						binding="escape"
 						side="left"
 					>
 						<button
 					type="button"
-					aria-label="Close settings"
+					aria-label={t("dialog.closeAria")}
 					data-testid="settings-close"
 					className="ml-auto size-7 rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
 					onClick={onClose}
@@ -306,7 +313,7 @@ export function SettingsDialogBody({
 				{/* Left nav — text-only, the session-list mono language,
 					    active = bg-accent. */}
 				<nav
-					aria-label="Settings sections"
+					aria-label={t("dialog.navAria")}
 					data-testid="settings-nav"
 					className="flex w-44 shrink-0 flex-col gap-1 border-r border-border p-2"
 				>
@@ -323,7 +330,7 @@ export function SettingsDialogBody({
 							}`}
 							onClick={() => setActive(s.id)}
 						>
-							{s.label}
+							{t(s.label)}
 						</button>
 					))}
 				</nav>
@@ -350,19 +357,25 @@ export function SettingsDialogBody({
 					)}
 					{record === undefined ? (
 						<p className="px-6 py-5 text-xs text-muted-foreground/70">
-							Loading settings…
+							{t("dialog.loading")}
 						</p>
 					) : record === null ? (
 						<p className="px-6 py-5 text-xs text-muted-foreground/70">
-							Settings could not be loaded — refresh to retry.
+							{t("dialog.loadFailed")}
 						</p>
 					) : (
 						<div>
 							{active === "general" && (
 								<SettingsSection
-									title="General"
+									title={t("nav.general")}
 									testid="section-general"
 								>
+									<LanguageRow
+										value={record.general?.language ?? "system"}
+										onChange={(language) =>
+											void write("general", { ...record.general, language })
+										}
+									/>
 									<UpdateSettings
 										autoUpdate={record.general?.autoUpdate ?? true}
 										onAutoUpdateChange={(on) =>
@@ -372,13 +385,13 @@ export function SettingsDialogBody({
 								</SettingsSection>
 							)}
 							{active === "keys" && (
-								<SettingsSection title="Providers" testid="section-keys">
+								<SettingsSection title={t("nav.providers")} testid="section-keys">
 									<KeysSection initialRow={initialRow ?? undefined} />
 								</SettingsSection>
 							)}
 							{active === "agent" && (
 								<SettingsSection
-									title="Agent"
+									title={t("nav.agent")}
 									testid="section-agent"
 								>
 									<AgentSection
@@ -409,7 +422,7 @@ export function SettingsDialogBody({
 							)}
 							{active === "appearance" && (
 								<SettingsSection
-									title="Appearance"
+									title={t("nav.appearance")}
 									testid="section-appearance"
 								>
 									<AppearanceSection
@@ -422,7 +435,7 @@ export function SettingsDialogBody({
 							)}
 							{active === "graph" && (
 								<SettingsSection
-									title="Graph"
+									title={t("nav.graph")}
 									testid="section-graph"
 								>
 									<GraphSection
@@ -435,8 +448,8 @@ export function SettingsDialogBody({
 							)}
 							{active === "keyboard" && (
 								<SettingsSection
-									title="Keyboard"
-									hint="Stored on this device"
+									title={t("nav.keyboard")}
+									hint={t("keyboard.storedHint")}
 									testid="section-keyboard"
 								>
 									<KeyboardSection />
@@ -447,5 +460,53 @@ export function SettingsDialogBody({
 				</div>
 			</div>
 		</div>
+	);
+}
+
+/** The interface-language row (i18n wave, 2026-10-25): Follow system +
+ *  every shipped language, each named in its own language. A pick applies
+ *  to the running interface at once (useLanguage) and persists through the
+ *  dialog's one writer. */
+export function LanguageRow({
+	value,
+	onChange,
+}: {
+	value: LanguageSetting;
+	onChange: (setting: LanguageSetting) => void;
+}) {
+	const { t } = useT("settings");
+	const { setSetting } = useLanguage();
+	return (
+		<SettingsRow label={t("general.language.label")} testid="row-language">
+			<div
+				role="radiogroup"
+				aria-label={t("general.language.aria")}
+				className="flex rounded-lg border border-border/60 bg-muted/30 p-0.5"
+			>
+				{LANGUAGE_SETTINGS.map((option) => {
+					const active = option === value;
+					return (
+						<button
+							key={option}
+							type="button"
+							role="radio"
+							aria-checked={active}
+							data-testid={`language-${option}`}
+							onClick={() => {
+								if (active) return;
+								setSetting(option);
+								onChange(option);
+							}}
+							className={cn(
+								"h-8 rounded-md px-3 text-sm font-medium transition-colors",
+								active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+							)}
+						>
+							{option === "system" ? t("general.language.system") : LANGUAGE_NAMES[option]}
+						</button>
+					);
+				})}
+			</div>
+		</SettingsRow>
 	);
 }

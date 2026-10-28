@@ -32,6 +32,7 @@ import { AUTH_PROVIDER_KEYS } from "./auth-keys.ts";
 import type { ModelRole } from "../../config.ts";
 import type { ChatSettings } from "./contracts/chat.ts";
 import type { SearchEngineId } from "./search.ts";
+import { isLanguageSetting, type LanguageSetting } from "./language.ts";
 import { isDictationLanguage, type DictationLanguage } from "./dictation.ts";
 
 /** The schema version this code understands. Bump ONLY for breaking shape
@@ -234,6 +235,10 @@ export const ROLE_SLOT: Readonly<Record<ModelRole, ModelSlotName>> = {
 export interface GeneralSettings {
 	/** Automatic startup/24h update checks (default ON). Manual checks bypass this. */
 	autoUpdate?: boolean;
+	/** The interface language (i18n wave, 2026-10-25): a shipped language,
+	 *  or "system" (default) — follow the platform's preference
+	 *  (core/language.ts resolves it). */
+	language?: LanguageSetting;
 }
 
 /** Agent settings — everything about the non-conversation machinery. */
@@ -271,10 +276,6 @@ export interface AgentSettings {
 	instructions?: string;
 }
 
-/** The longest learner-instruction text the record holds (the sanitizer
- *  clamps to it, the PUT parser rejects past it): the text rides every
- *  model call, so the bound is a cost guard. */
-export const LEARNER_INSTRUCTIONS_MAX_CHARS = 4000;
 /** The dictation engines (local dictation, 2026-10-25): Deepgram in the
  *  cloud (a key in Settings → Dictation), or Standard ASR on this device
  *  (any engine plugin installed in the app's speech environment). */
@@ -309,6 +310,10 @@ export function isAsrLanguage(value: unknown): value is string {
 export function isDictationSettingLanguage(value: unknown, engine: unknown): value is string {
 	return engine === "standard-asr" || value === "auto" ? isAsrLanguage(value) : isDictationLanguage(value);
 }
+/** The longest learner-instruction text the record holds (the sanitizer
+ *  clamps to it, the PUT parser rejects past it): the text rides every
+ *  model call, so the bound is a cost guard. */
+export const LEARNER_INSTRUCTIONS_MAX_CHARS = 4000;
 
 /** Markdown-rendering knobs — the bare-bones set (owner decision). */
 export interface MdRenderingSettings {
@@ -444,7 +449,7 @@ export interface FactorySettings {
 
 export const FACTORY_SETTINGS: FactorySettings = {
 	version: CURRENT_SETTINGS_VERSION,
-	general: { autoUpdate: true },
+	general: { autoUpdate: true, language: "system" },
 	dictation: { language: "en" },
 	appearance: {
 		mode: "dark",
@@ -490,6 +495,9 @@ function sanitizeGeneral(raw: Record<string, unknown>): GeneralSettings {
 	const out: GeneralSettings = {};
 	const autoUpdate = boolOrDrop(raw.autoUpdate);
 	if (autoUpdate !== undefined) out.autoUpdate = autoUpdate;
+	// An unknown language (a newer app's, a hand edit) drops — "system"
+	// resumes at resolution.
+	if (isLanguageSetting(raw.language)) out.language = raw.language;
 	return out;
 }
 

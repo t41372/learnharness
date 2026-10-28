@@ -15,6 +15,7 @@ import {
 	type AsrTranscript,
 	type DictationSession,
 } from "@/src/core";
+import { useT, type TFunction } from "@/components/i18n";
 import { deepgramListenUrl, type DictationLanguage } from "@/src/core";
 import { useDictationLanguage } from "@/components/dictation-preference";
 import { setDictationActive } from "@/components/dictation-state";
@@ -115,7 +116,6 @@ export { isDictationActive } from "@/components/dictation-state";
  * endpointing=300, no interims. Silence streams too (the worklet never
  * pauses), so the socket never idles — no KeepAlive needed.
  */
-// URL construction lives in the browser-safe core; only language varies.
 
 /** Meter tuning — the owner's tested values, see the file header. */
 const METER_FLOOR_DB = -50;
@@ -131,8 +131,9 @@ export const DEEPGRAM_KEY_ID = "DEEPGRAM_API_KEY";
 /** The client-authored KEYLESS line (zero-keys wave, owner 2026-09-25):
  * the token route's raw 503 message is dev-speak ("add it to auth.json
  * (desktop) or .env.local (dev)") — the surface says the short truth
- * instead. Exported for pins; the errored idle button's click recognizes
- * it and deep-links Settings → Keys → the Deepgram row. */
+ * instead. Exported for pins; the start path recognizes it as the
+ * `keyless` error, whose errored idle button's click deep-links Settings
+ * → Keys → the Deepgram row. */
 export const DICTATION_KEYLESS = "Dictation needs a Deepgram key";
 
 /** The local engine's not-ready line (local dictation, 2026-10-25): no
@@ -148,6 +149,37 @@ export const DICTATION_LOCAL_NOT_READY = "The dictation model isn't ready";
 
 /** The bridge's refusal codes that mean "fix it in settings", not "retry". */
 const LOCAL_NOT_READY_CODES = new Set(["service_unavailable", "unknown_model", "unsupported"]);
+
+/** A terminal failure (i18n wave, 2026-10-25): an id per client-authored
+ *  line — the bar renders it in the interface language — and `message`
+ *  for text the browser, the session route or the local bridge wrote,
+ *  shown as given. `engine` names which engine's socket failed. */
+export type DictationError =
+	| { kind: "keyless" }
+	| { kind: "localUnset" }
+	| { kind: "localNotReady" }
+	| { kind: "micDenied" }
+	| { kind: "micUnavailable" }
+	| { kind: "tokenUnavailable" }
+	| { kind: "reconnectFailed"; engine: "deepgram" | "local" }
+	| { kind: "connectionLost"; engine: "deepgram" | "local"; code: number }
+	| { kind: "message"; text: string };
+
+/** The line the bar shows for a failure. */
+function dictationErrorText(error: DictationError, t: TFunction<"artifacts">): string {
+	switch (error.kind) {
+		case "reconnectFailed":
+			return error.engine === "local" ? t("dictation.error.localReconnectFailed") : t("dictation.error.reconnectFailed");
+		case "connectionLost":
+			return error.engine === "local"
+				? t("dictation.error.localConnectionLost", { code: error.code })
+				: t("dictation.error.connectionLost", { code: error.code });
+		case "message":
+			return error.text;
+		default:
+			return t(`dictation.error.${error.kind}`);
+	}
+}
 
 /** Mint a fresh run session — the selected engine's connection (the route
  *  holds every secret server-side). Module-level: the start path's warm
@@ -242,6 +274,11 @@ export function rmsToMeter(rms: number): number {
  * window, one pending question, one target at a time.
  */
 let questionTarget: ((text: string) => void) | null = null;
+
+/* Is a dictation run live on this page? The Esc chain (keyboard wave A,
+ * components/keyboard-shortcuts.tsx) needs a SYNCHRONOUS answer — the
+ * stop handler can't report back through a CustomEvent. Set at start(),
+ * cleared in cleanup() (every terminal path runs through cleanup). */
 
 /* The finisher registry: submit paths FAR from the hook's owner (the
  * pending question's dock) need finish() without a prop bridge. Same
@@ -345,7 +382,7 @@ export type DictationPhase = "idle" | "connecting" | "recording" | "stopping";
 export type Dictation = {
 	phase: DictationPhase;
 	/** Terminal-state explanation, shown inside the wide button (cleared on the next start). */
-	error: string | null;
+	error: DictationError | null;
 	/** The engine's own reason behind `error`, when it gave one (the tooltip). */
 	errorDetail: string | null;
 	/** Latest observed RMS, 0..1 — sampled by the meter's own tick, never reset. */
@@ -384,7 +421,7 @@ export type Dictation = {
 export function useDictation({ append }: { append: (text: string) => void }): Dictation {
 	const { getLanguage } = useDictationLanguage();
 	const [phase, setPhase] = useState<DictationPhase>("idle");
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<DictationError | null>(null);
 	/** The engine's own words behind a short error line (the tooltip). */
 	const [errorDetail, setErrorDetail] = useState<string | null>(null);
 	/** Latest RMS from the worklet — the meter samples this (dictate pattern). */
@@ -572,7 +609,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 					// repeat the refusal — say so and point at the settings.
 					if (localErrorCode !== null && LOCAL_NOT_READY_CODES.has(localErrorCode)) {
 						setErrorDetail(localError);
-						setError(DICTATION_LOCAL_NOT_READY);
+						setError({ kind: "localNotReady" });
 						cleanup();
 						return;
 					}
@@ -593,12 +630,12 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 						})
 						.catch(() => {
 							if (gen === genRef.current) {
-								setError(session.engine === "deepgram" ? "Deepgram reconnect failed" : localError ?? "Local dictation reconnect failed");
+								setError(localError !== null ? { kind: "message", text: localError } : { kind: "reconnectFailed", engine: session.engine === "deepgram" ? "deepgram" : "local" });
 								cleanup();
 							}
 						});
 				} else {
-					setError(session.engine === "deepgram" ? `Deepgram connection lost (${ev.code})` : localError ?? `Local dictation connection lost (${ev.code})`);
+					setError(localError !== null ? { kind: "message", text: localError } : { kind: "connectionLost", engine: session.engine === "deepgram" ? "deepgram" : "local", code: ev.code });
 					cleanup();
 				}
 			});
@@ -619,9 +656,9 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		let language: DictationLanguage;
 		try {
 			language = await getLanguage();
-		} catch (e) {
+		} catch (error) {
 			if (gen !== genRef.current) return;
-			setError(e instanceof Error ? e.message : "Dictation language unavailable");
+			setError({ kind: "message", text: error instanceof Error ? error.message : "Dictation language unavailable" });
 			cleanup();
 			return;
 		}
@@ -680,13 +717,13 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 			worklet.connect(ctx.destination);
 		} catch (e) {
 			if (gen !== genRef.current) return;
-			const msg =
+			setError(
 				e instanceof DOMException && (e.name === "NotAllowedError" || e.name === "SecurityError")
-					? "Microphone permission denied"
+					? { kind: "micDenied" }
 					: e instanceof Error
-						? e.message
-						: "mic unavailable";
-			setError(msg);
+						? { kind: "message", text: e.message }
+						: { kind: "micUnavailable" },
+			);
 			cleanup();
 			return;
 		}
@@ -696,7 +733,15 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 			session = await sessionPromise;
 		} catch (e) {
 			if (gen !== genRef.current) return;
-			setError(e instanceof Error ? e.message : "token unavailable");
+			setError(
+				!(e instanceof Error)
+					? { kind: "tokenUnavailable" }
+					: e.message === DICTATION_KEYLESS
+						? { kind: "keyless" }
+						: e.message === DICTATION_LOCAL_UNSET
+							? { kind: "localUnset" }
+							: { kind: "message", text: e.message },
+			);
 			cleanup();
 			return;
 		}
@@ -841,15 +886,18 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 export function DictationBar({ dictation }: { dictation: Dictation }) {
 	const { phase, error, errorDetail, levelRef, toggle, active, clearError } = dictation;
 	const { open: openSettings } = useSettingsDialog();
+	const { t } = useT("artifacts");
+	const errorText = error ? dictationErrorText(error, t) : null;
 	/** The keyless click (zero-keys wave, owner dictation trio): the errored
 	 *  idle button deep-links Settings → Keys → the Deepgram row and clears
 	 *  the error — the surface is clean when the user returns. Any other
 	 *  error keeps the old behavior (click = retry, which clears). */
-	const keyless = error === DICTATION_KEYLESS;
+	const keyless = error?.kind === "keyless";
 	/** The local engine's not-set-up line deep-links the same way — to the
 	 *  Dictation section, where the engine is installed and chosen. */
-	const localUnset = error === DICTATION_LOCAL_UNSET || error === DICTATION_LOCAL_NOT_READY;
+	const localUnset = error?.kind === "localUnset" || error?.kind === "localNotReady";
 	const [levels, setLevels] = useState<number[]>(() => new Array(METER_CELLS).fill(0));
+	const recording = phase === "recording" || phase === "stopping";
 	/** Adaptive cell count (owner round 2): derived from the meter's
 	 *  measured width — narrow rows show fewer bars instead of
 	 *  overflowing under neighbors. */
@@ -897,8 +945,8 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 				// full reveal (the keyless line KEEPS "Deepgram" — owner overrule:
 				// it's the Keys row label, the truth the user needs). Otherwise the
 				// quiet label + the live ⌘D binding.
-				label={error ? (errorDetail ? `${error} — ${errorDetail}` : error) : "Dictate"}
-				action={error ? undefined : "toggle-dictation"}
+				label={errorText ? (errorDetail ? `${errorText} — ${errorDetail}` : errorText) : t("dictation.dictate")}
+				action={errorText ? undefined : "toggle-dictation"}
 				side="top"
 			>
 				<button
@@ -913,12 +961,14 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 							toggle();
 						}
 					}}
-					aria-label={error ? `Dictation failed: ${error}` : "Start dictation"}
+					aria-label={errorText ? t("dictation.failedAria", { reason: errorText }) : t("dictation.start")}
 					data-testid="dictation-toggle"
-					className="flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/50 bg-card/50 text-xs text-muted-foreground/70 shadow-lg backdrop-blur transition-colors hover:border-border hover:text-muted-foreground"
-				>
+				// Same blurring as the floating chrome (owner, fix wave round 3),
+			// but lower opacity — the mic stays quieter than the model pills.
+			className="flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/50 bg-card/50 text-xs text-muted-foreground/70 shadow-lg backdrop-blur transition-colors hover:border-border hover:text-muted-foreground"
+			>
 					<MicIcon className="size-3.5" />
-					<span className="max-w-full truncate">{error ?? "Dictate"}</span>
+					<span className="max-w-full truncate">{errorText ?? t("dictation.dictate")}</span>
 				</button>
 			</Hint>
 		);
@@ -926,20 +976,32 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 
 	return (
 		<div className="flex w-full min-w-0 items-center gap-2" data-testid="dictation-bar">
-			<Hint label="Stop dictation (Esc)" side="top">
+			<Hint
+				// The owner flagged this copy good ("Stop dictation (Esc)") —
+				// kept verbatim; only the machinery moved to the styled tooltip.
+				label={t("dictation.stopHint")}
+				side="top"
+			>
 				<button
 					type="button"
 					onClick={toggle}
 					disabled={phase === "stopping"}
-					aria-label="Stop dictation"
-					data-testid="dictation-toggle"
-					className="flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/10 px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
-				>
-					{phase === "stopping" ? <Loader2Icon className="size-3.5 animate-spin" /> : <MicIcon className="size-3.5" />}
-					Stop
+					aria-label={t("dictation.stop")}
+				data-testid="dictation-toggle"
+				className="flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/10 px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
+			>
+				{phase === "stopping" ? (
+					<Loader2Icon className="size-3.5 animate-spin" />
+				) : (
+					<MicIcon className="size-3.5" />
+				)}
+					{t("dictation.stopButton")}
 				</button>
 			</Hint>
 			<span className="size-1.5 shrink-0 animate-pulse rounded-full bg-destructive" aria-hidden />
+			{/* Fixed width while recording — nothing ever appends text beside it
+			    (no interims, owner round 1). Cells carry no minimum width; the
+			    COUNT adapts to the measured row space (owner round 2). */}
 			<div ref={meterRef} className="flex h-4 min-w-0 flex-1 items-center gap-[2px]" data-testid="dictation-meter">
 				{levels.slice(-cellCount).map((v, i) => (
 					<span
@@ -994,4 +1056,3 @@ export function DictationField({
 		</div>
 	);
 }
-

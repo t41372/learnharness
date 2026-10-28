@@ -192,7 +192,7 @@ test("confirmed choices stay cached across navigation; failed explicit refreshes
 	assert.equal(f.state.reads, reads, "navigation must not reread a confirmed preference");
 	await act(async () => { notifySettingsSaved("dictation"); });
 	await act(async () => { f.dictation.toggle(); });
-	assert.match(f.dictation.error!, /Could not load/);
+	assert.deepEqual(f.dictation.error, { kind: "message", text: "Could not load dictation language. Try again." });
 	assert.equal(f.state.captures, 0);
 	assert.equal(Socket.all.length, 0);
 	f.state.readFails = false;

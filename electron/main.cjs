@@ -30,6 +30,7 @@ const { attachChatGPTChild, trustedSender, chatGPTControl } = require("./chatgpt
 const { createSubscriptions, loadSubscriptionSDK } = require("./subscriptions.cjs");
 const { attachSubscriptionChild, subscriptionControl } = require("./subscription-ipc.cjs");
 const { desktopAPIHeaders } = require("./desktop-api.cjs");
+const { LANGUAGES, menuStrings, resolveLanguage } = require("./menu-strings.cjs");
 const { openWebSubscriptionBrowser } = require("./web-subscription-browser.cjs");
 const { randomBytes } = require("node:crypto");
 const { spawn } = require("node:child_process");
@@ -53,6 +54,23 @@ const PRODUCT_NAME = "LearnHarness";
 app.setName(PRODUCT_NAME);
 const AUTH_FILE = () => path.join(app.getPath("userData"), "auth.json");
 const DATA_DIR = () => path.join(app.getPath("userData"), "data");
+
+/** The interface language the native menus speak (i18n wave, 2026-10-25).
+ *  Boot reads the stored choice from the server's settings record
+ *  (general.language; "system"/absent → the OS preference list); after
+ *  that the renderer reports every change over "lh:language". */
+let menuLanguage = "en";
+function bootLanguage() {
+	let setting = "system";
+	try {
+		const record = JSON.parse(fs.readFileSync(path.join(DATA_DIR(), "settings.json"), "utf-8"));
+		if (typeof record?.general?.language === "string") setting = record.general.language;
+	} catch {
+		/* no record yet = factory "system" */
+	}
+	const preferred = typeof app.getPreferredSystemLanguages === "function" ? app.getPreferredSystemLanguages() : [];
+	return resolveLanguage(setting, [...preferred, app.getLocale()]);
+}
 
 /** The packaged standalone server (extraResources → Resources/server).
  *  In dev LH_DEV_URL short-circuits everything: no spawn, no packaging —
@@ -591,13 +609,14 @@ function applyZoom(win, factor) {
 /** macOS needs an application menu with the Edit roles — without one,
  *  Cmd+C/V/A do nothing in the renderer. Everything else stays minimal. */
 function installMenu() {
+	const strings = menuStrings(menuLanguage);
 	const template = [
 		{
 			label: app.name,
 			submenu: [
 				{ role: "about" },
 				// Manual checks report their result in Settings → General.
-				{ label: "Check for Updates…", click: () => checkForUpdatesFromMenu() },
+				{ label: strings.checkForUpdates, click: () => checkForUpdatesFromMenu() },
 				{ type: "separator" },
 				{ role: "hide" },
 				{ role: "hideOthers" },
@@ -605,9 +624,9 @@ function installMenu() {
 				{ role: "quit" },
 			],
 		},
-		{ label: "Edit", submenu: [{ role: "undo" }, { role: "redo" }, { type: "separator" }, { role: "cut" }, { role: "copy" }, { role: "paste" }, { role: "selectAll" }] },
+		{ label: strings.edit, submenu: [{ role: "undo" }, { role: "redo" }, { type: "separator" }, { role: "cut" }, { role: "copy" }, { role: "paste" }, { role: "selectAll" }] },
 		{
-			label: "View",
+			label: strings.view,
 			submenu: [
 				{ role: "reload" },
 				{ role: "toggleDevTools" },
@@ -617,17 +636,17 @@ function installMenu() {
 				// traffic lights. The renderer's --lh-zoom depends on
 				// hearing every change.
 				{
-					label: "Actual Size",
+					label: strings.actualSize,
 					accelerator: "CommandOrControl+0",
 					click: () => applyZoom(BrowserWindow.getAllWindows()[0], 1),
 				},
 				{
-					label: "Zoom In",
+					label: strings.zoomIn,
 					accelerator: "CommandOrControl+Plus",
 					click: () => zoomStep(BrowserWindow.getAllWindows()[0], +1),
 				},
 				{
-					label: "Zoom Out",
+					label: strings.zoomOut,
 					accelerator: "CommandOrControl+-",
 					click: () => zoomStep(BrowserWindow.getAllWindows()[0], -1),
 				},
@@ -711,6 +730,7 @@ async function main() {
 		return subscriptionControl(command, subscriptions);
 	});
 
+	menuLanguage = bootLanguage();
 	// The dev shell has no browser tabs. Only a one-use action on its own
 	// Next server may be resolved here; never accept an arbitrary external URL.
 	ipcMain.handle("lh:subscriptions:web-browser", async (event, action) => {
@@ -719,6 +739,13 @@ async function main() {
 	});
 
 	installMenu();
+	// The renderer's language (I18nProvider): rebuild the menus in it. Only
+	// a shipped language is honored; anything else keeps the current menus.
+	ipcMain.on("lh:language", (_event, language) => {
+		if (!LANGUAGES.includes(language) || language === menuLanguage) return;
+		menuLanguage = language;
+		installMenu();
+	});
 
 	// Auto-update (Wave C): wire the updater before the window so the
 	// banner channel is live from first paint; the first check and the 24h

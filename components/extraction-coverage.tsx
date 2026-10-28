@@ -6,7 +6,7 @@ import { usePopoverDismiss } from "@/components/popover-dismiss";
 import { useSettingsSaved } from "@/components/settings-signal";
 import { formatTokens } from "@/components/usage-format";
 import { Hint } from "@/components/ui/hint";
-import { timeAgo } from "@/components/sidebar";
+import { useT, type TFunction } from "@/components/i18n";
 import { resolveSettings } from "@/src/core";
 
 /**
@@ -183,6 +183,7 @@ export function CoverageMenuBody({
 	extracting: boolean;
 	onExtract: () => void;
 }) {
+	const { t } = useT("graph");
 	const busy = coverage.running || extracting;
 	const complete = coverage.uncoveredTokens === 0 && coverage.uncoveredCount === 0;
 	return (
@@ -190,17 +191,17 @@ export function CoverageMenuBody({
 			{busy ? (
 				<span className="flex items-center gap-1.5 text-muted-foreground" data-testid="ctx-coverage-running">
 					<span className="size-1.5 animate-pulse rounded-full bg-foreground/70" aria-hidden />
-					extracting…
+					{t("coverage.extracting")}
 				</span>
 			) : complete ? (
-				<span className="text-muted-foreground">fully extracted</span>
+				<span className="text-muted-foreground">{t("coverage.fullyExtracted")}</span>
 			) : (
 				<span className="flex flex-col">
 					<span className="tabular-nums text-foreground">
-						{formatTokens(coverage.uncoveredTokens)} tok uncovered
+						{t("coverage.tokUncovered", { tokens: formatTokens(coverage.uncoveredTokens) })}
 					</span>
 					<span className="tabular-nums text-muted-foreground">
-						{coverage.uncoveredCount} message{coverage.uncoveredCount === 1 ? "" : "s"} unextracted
+						{t("coverage.messagesUnextracted", { count: coverage.uncoveredCount })}
 					</span>
 				</span>
 			)}
@@ -211,7 +212,7 @@ export function CoverageMenuBody({
 				disabled={busy || complete}
 				className="flex items-center justify-center rounded-lg border px-2 py-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent"
 			>
-				{busy ? "Running" : "Extract"}
+				{busy ? t("coverage.running") : t("coverage.extract")}
 			</button>
 		</div>
 	);
@@ -241,6 +242,7 @@ export function ringFill(uncoveredTokens: number, chunkTokens: number): number {
  * threshold/kill-switch re-read live).
  */
 export function CoverageRing({ chatId, refreshKey = 0 }: { chatId: string; refreshKey?: number }) {
+	const { t } = useT("graph");
 	const [graph, setGraph] = useState<GraphRead | null>(null);
 	const [coverage, setCoverage] = useState<SessionCoverage | null>(null);
 	const [open, setOpen] = useState(false);
@@ -301,7 +303,7 @@ export function CoverageRing({ chatId, refreshKey = 0 }: { chatId: string; refre
 		<div ref={rootRef} className="lh-no-drag relative shrink-0">
 			<Hint
 				// Trimmed (owner, subtlety round 2026-09-25).
-				label="How much of this session isn't mapped yet"
+				label={t("coverage.ringHint")}
 				side="bottom"
 			>
 				<button
@@ -355,50 +357,69 @@ export function CoverageRingGlyph({ fill, running }: { fill: number; running: bo
 	);
 }
 
+/** The last fold's age in the interface language — the sidebar's
+ *  timeAgo ladder (just now / m / h / d ago, ISO date beyond a week),
+ *  worded through `t` so the popover never mixes languages. */
+function foldedAgo(t: TFunction<"graph">, iso: string, now = new Date()): string {
+	const ms = now.getTime() - new Date(iso).getTime();
+	if (ms < 60_000) return t("coverage.ago.justNow");
+	const min = Math.floor(ms / 60_000);
+	if (min < 60) return t("coverage.ago.minutes", { count: min });
+	const h = Math.floor(min / 60);
+	if (h < 24) return t("coverage.ago.hours", { count: h });
+	const d = Math.floor(h / 24);
+	if (d < 7) return t("coverage.ago.days", { count: d });
+	const date = new Date(iso);
+	const mm = String(date.getMonth() + 1).padStart(2, "0");
+	const dd = String(date.getDate()).padStart(2, "0");
+	return `${date.getFullYear()}-${mm}-${dd}`;
+}
+
 /** The popover body (exported for static-render tests): the exact numbers —
  *  covered/uncovered tokens, message coverage, the threshold, the last
  *  fold's age. */
 export function CoverageRingDetail({ coverage, chunkTokens }: { coverage: SessionCoverage; chunkTokens: number }) {
+	const { t } = useT("graph");
 	return (
 		<>
 			<div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-				Extraction coverage
+				{t("coverage.detail.title")}
 			</div>
 			<div className="flex flex-col gap-1 text-muted-foreground">
 				<div className="flex justify-between gap-2">
-					<span>Uncovered</span>
+					<span>{t("coverage.detail.uncovered")}</span>
 					<span className="tabular-nums text-card-foreground">
-						{formatTokens(coverage.uncoveredTokens)} tokens
+						{t("coverage.detail.tokens", { tokens: formatTokens(coverage.uncoveredTokens) })}
 					</span>
 				</div>
 				<div className="flex justify-between gap-2">
-					<span>Covered</span>
+					<span>{t("coverage.detail.covered")}</span>
 					<span className="tabular-nums text-card-foreground">
-						{formatTokens(coverage.coveredTokens)} tokens
+						{t("coverage.detail.tokens", { tokens: formatTokens(coverage.coveredTokens) })}
 					</span>
 				</div>
 				<div className="flex justify-between gap-2">
-					<span>Messages</span>
+					<span>{t("coverage.detail.messages")}</span>
 					<span className="tabular-nums text-card-foreground">
 						{coverage.coveredCount} / {coverage.totalMessages}
 					</span>
 				</div>
 				<div className="flex justify-between gap-2">
-					<span>Chunk threshold</span>
+					<span>{t("coverage.detail.chunkThreshold")}</span>
 					<span className="tabular-nums text-card-foreground">
-						{formatTokens(chunkTokens)} tokens
+						{t("coverage.detail.tokens", { tokens: formatTokens(chunkTokens) })}
 					</span>
 				</div>
 				<div className="flex justify-between gap-2">
-					<span>Last extraction</span>
+					<span>{t("coverage.detail.lastExtraction")}</span>
 					<span className="tabular-nums text-card-foreground">
-						{coverage.lastFoldedAt ? timeAgo(coverage.lastFoldedAt) : "—"}
+						{coverage.lastFoldedAt ? foldedAgo(t, coverage.lastFoldedAt) : "—"}
 					</span>
 				</div>
 				{coverage.running && (
 					<div className="flex justify-between gap-2" data-testid="coverage-ring-running">
-						<span>Status</span>
-						<span className="text-card-foreground">extracting…</span>
+						<span>{t("coverage.detail.status")}</span>
+						<span className="text-card-foreground">{t("coverage.extracting")}</span>
 					</div>
 				)}
 			</div>
