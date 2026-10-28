@@ -71,7 +71,7 @@ async function fixture(language: "pl" | "en" = "pl", delayedRead?: Promise<Respo
 		WebSocket: Socket, AudioContext: AudioGraph, AudioWorkletNode: Worklet,
 		IS_REACT_ACT_ENVIRONMENT: true,
 		fetch: async (url: string, init?: RequestInit) => {
-			if (url === "/api/stt/token") return Response.json({ token: "test-token" });
+			if (url === "/api/stt/session") return Response.json({ engine: "deepgram", token: "test-token" });
 			if (url === "/api/settings") {
 				state.reads++;
 				if (state.nextRead) { const response = state.nextRead; state.nextRead = undefined; return response; }
@@ -192,7 +192,7 @@ test("confirmed choices stay cached across navigation; failed explicit refreshes
 	assert.equal(f.state.reads, reads, "navigation must not reread a confirmed preference");
 	await act(async () => { notifySettingsSaved("dictation"); });
 	await act(async () => { f.dictation.toggle(); });
-	assert.match(f.dictation.error!, /Could not load/);
+	assert.deepEqual(f.dictation.error, { kind: "message", text: "Could not load dictation language. Try again." });
 	assert.equal(f.state.captures, 0);
 	assert.equal(Socket.all.length, 0);
 	f.state.readFails = false;

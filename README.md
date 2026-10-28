@@ -28,7 +28,7 @@ Instead of just giving you an explanation, it uses your answers and thinking to 
 3. **Teach.** Each step builds on something you already understand. You predict, get an explanation, and check your understanding. Confusions are repaired before anything is built on them. The aim is for the goal to feel obviously true, not merely familiar.
 4. **Practice.** Separate sessions pose varied problems that require the right knowledge to come to mind without being named first. Problems and hints adapt to your reasoning.
 
-**Think out loud.** The thinking fields let you explain your reasoning, uncertainties, and reactions in your own words. This is how the agent gets a detailed picture rather than just a record of right and wrong answers. You can type or use dictation.
+**Think out loud.** The thinking fields let you explain your reasoning, uncertainties, and reactions in your own words. This is how the agent gets a detailed picture rather than just a record of right and wrong answers. You can type or use dictation — in the cloud with a Deepgram key, or on your computer with any [Standard ASR](https://github.com/standard-voice/standard_asr) engine (install a plugin, choose a model, then download its files).
 
 The agent can also research questions in the background, create visual explanations, and build interactive demonstrations.
 
@@ -48,6 +48,8 @@ Future teaching sessions can read the graph instead of starting from scratch. Pr
 - **Windows (x64):** run the installer. It is currently unsigned; Windows may show an “unknown publisher” or SmartScreen warning.
 - **Linux (x64):** make the AppImage executable and open it, or install the Debian/Ubuntu `.deb`.
 
+The interface is in English, Simplified Chinese and Traditional Chinese, and follows your system's language (Settings → General).
+
 Add your provider API key and choose your models, then start a session with what you want to understand. LearnHarness supports 30+ provider options, including OpenAI, Anthropic, Google, DeepSeek, and OpenRouter. Optional dictation and web search use separate service keys.
 
 All three platforms support in-app updates.
@@ -58,8 +60,8 @@ All three platforms support in-app updates.
 
 - **Your keys and models.** No LearnHarness subscription or markup. You pay your providers for usage; a live cost meter shows model costs.
 - **Local storage.** Your chats, graph, settings, and API keys live on your machine. Learning records are plain files you can inspect.
-- **External services.** Models run through your configured providers. Model requests send the context needed for the task; web research and dictation also contact external services. Local storage does not mean offline processing.
-- **Inspectable behavior.** System prompts are visible and editable. The app is open source under the AGPL-3.0 license.
+- **External services.** Models run through your configured providers. Model requests send the context needed for the task; web research and Deepgram dictation also contact external services (local dictation keeps audio on your computer). Local storage does not mean offline processing.
+- **Inspectable behavior.** System prompts are visible and editable, and your own instructions (for example, the language the agents write in) reach every agent. The app is open source under the AGPL-3.0 license.
 
 ## Development and support
 
@@ -78,3 +80,5 @@ Questions, bug reports, and feature requests: [GitHub Issues](https://github.com
 [AGPL-3.0](LICENSE)
 
 The app is free and open forever. If we ever charge for anything, it will be for convenience — managed keys, hosting — never for features you can run locally.
+
+Spaced review: new knowledge joins the review queue automatically. Add existing propositions from the knowledge map, open **Reviews**, and start a due item. After practicing, rate your recall to schedule the next review with FSRS.

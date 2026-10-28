@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import { joinDictation, useDictationTarget } from "@/components/dictation";
+import { DictationField, joinDictation, useDictationPreview, useDictationTarget } from "@/components/dictation";
+import { useT } from "@/components/i18n";
 
 /**
  * The reading-thinking field (owner design 2026-10-03, "two questions per
@@ -37,6 +38,7 @@ export function ReadingThinkingField({
 	/** Primary dictation claim — true while the check is behind its reveal. */
 	claim: boolean;
 }) {
+	const { t } = useT("chat");
 	useDictationTarget(
 		useCallback(
 			(t: string) => {
@@ -46,14 +48,16 @@ export function ReadingThinkingField({
 		),
 		claim,
 	);
+	const livePreview = useDictationPreview("question", claim);
 	return (
 		<div
 			data-testid="reading-thinking-field"
 			className="pointer-events-auto mb-2 rounded-2xl border bg-card/60 px-3 py-2 transition-colors focus-within:border-primary/50"
 		>
 			<div className="pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-				Thinking while reading
+				{t("readingThinking.label")}
 			</div>
+			<DictationField value={value} preview={livePreview} layout="lh-input max-h-40 py-0.5">
 			<textarea
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
@@ -94,10 +98,11 @@ export function ReadingThinkingField({
 						e.currentTarget.blur();
 					}
 				}}
-				placeholder="Whatever comes to mind as you read."
+				placeholder={t("readingThinking.placeholder")}
 				rows={1}
 				className="field-sizing-content lh-input max-h-40 w-full resize-none bg-transparent py-0.5 outline-none placeholder:text-muted-foreground/70"
 			/>
+			</DictationField>
 		</div>
 	);
 }
