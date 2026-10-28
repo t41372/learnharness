@@ -22,6 +22,7 @@ afterEach(() => {
 	if (original) Object.defineProperty(globalThis, "sessionStorage", original);
 	else Reflect.deleteProperty(globalThis, "sessionStorage");
 });
+const attachment = { id: "att_" + "a".repeat(32), name: "proof.png", size: 20, mimeType: "image/png", kind: "image" as const };
 const fail = () => { throw new Error("synthetic storage failure"); };
 
 describe("opening message storage", () => {
@@ -119,5 +120,31 @@ describe("new-session create and handover", () => {
 			await assert.rejects(starter.start({ title: "hello" }, (async () => response) as typeof fetch));
 			assert.equal(data.size, 0);
 		}
+	});
+});
+
+
+describe("opening file handover", () => {
+	it("restores an attachment-only opening and retains the attempted flag", () => {
+		assert.equal(stashOpeningPrompt("files", "", false, [attachment]), true);
+		assert.deepEqual(readOpeningPromptEntry("files"), { text: "", attachments: [attachment], attempted: false });
+		assert.equal(stashOpeningPrompt("files", "", true, [attachment]), true);
+		assert.deepEqual(readOpeningPromptEntry("files"), { text: "", attachments: [attachment], attempted: true });
+	});
+
+	it("keeps file references and long text off the URL, including storage failure retries", async () => {
+		const starter = new SessionStarter();
+		let creations = 0;
+		const request = (async () => { creations++; return Response.json({ id: `files_${creations}` }); }) as typeof fetch;
+		const opening = { text: "long text ".repeat(5000), attachments: [attachment] };
+		const setItem = storage.setItem;
+		storage.setItem = fail;
+		await assert.rejects(starter.start({ title: "Files" }, request, "model", opening));
+		storage.setItem = setItem;
+		assert.equal(await starter.start({ title: "Files" }, request, "model", opening), "/chat/files_1");
+		assert.equal(creations, 1);
+		assert.deepEqual(readOpeningPromptEntry("files_1"), { ...opening, attempted: false });
+		await starter.start({ title: "Files" }, request, "model", { text: "", attachments: [attachment] });
+		assert.equal(creations, 2, "changed content must not reuse a stale opening");
 	});
 });

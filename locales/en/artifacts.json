@@ -1,0 +1,141 @@
+{
+	"shared": {
+		"failed": "failed",
+		"invertColors": "Invert colors"
+	},
+	"demoCard": {
+		"unreadable": "Demo completed, but the result could not be displayed.",
+		"failedTitle": "Interactive demo",
+		"title": "interactive demo",
+		"buildFailed": "The demo could not be built.",
+		"invert": "Invert demo brightness",
+		"downloadAria": "Download demo as HTML",
+		"download": "Download as HTML",
+		"error": {
+			"title": "This demo threw an error",
+			"unknown": "unknown error",
+			"send": "Send to teacher"
+		}
+	},
+	"dispatchCard": {
+		"kind": {
+			"research": "Research agent",
+			"demo": "Demo agent",
+			"visual": "Figure agent",
+			"pdf": "PDF reader"
+		},
+		"refused": {
+			"modelsLine": "needs model setup",
+			"modelsButton": "Set up models",
+			"keyLine": "needs a provider key",
+			"keyButton": "Add a key"
+		},
+		"delivered": "delivered",
+		"running": "{{label}} running",
+		"elapsed": "{{seconds}}s",
+		"pending": "Dispatched…",
+		"finished": "finished"
+	},
+	"jobCard": {
+		"pdf": {
+			"unreadable": "PDF reading completed, but the result could not be displayed.",
+			"title": "PDF brief",
+			"pagesRead": "Pages read: {{pages}}",
+			"pagesConsulted": "Pages consulted: {{pages}}"
+		},
+		"research": {
+			"unreadable": "Research completed, but the result could not be displayed.",
+			"title": "Research brief",
+			"sources": "Sources"
+		}
+	},
+	"liveToolCard": {
+		"live": "{{activity}} — live",
+		"input": "Input (streaming)",
+		"activity": {
+			"read": "Reading a file…",
+			"ls": "Listing a directory…",
+			"find": "Finding files…",
+			"grep": "Searching file contents…",
+			"research": "Dispatching research…",
+			"demo": "Building a demo…",
+			"visual": "Making a visual…",
+			"pdf": "Reading a PDF…",
+			"planInit": "Drawing up the plan…",
+			"probeDone": "Concluding the assessment…",
+			"question": "Writing a question…",
+			"working": "Working…"
+		}
+	},
+	"probeDoneCard": {
+		"title": "Probe concluded — your assessment",
+		"retried": "The prober retried: {{error}}",
+		"malformed": "The assessment was malformed — the prober retried with a corrected one.",
+		"writing": "Writing the assessment…"
+	},
+	"steerCard": {
+		"unreadable": "A sub-agent finished, but its result could not be displayed.",
+		"kind": {
+			"research": "research",
+			"demo": "demo",
+			"visual": "visual",
+			"pdf": "pdf",
+			"job": "job"
+		},
+		"aborted": "aborted by the learner",
+		"pdfComplete": "reading complete",
+		"pagesRead_one": "read {{count}} page",
+		"pagesRead_other": "read {{count}} pages",
+		"research": "Research",
+		"researchComplete": "complete",
+		"sources": "{{count}} sources",
+		"viewBrief": "view brief",
+		"hideBrief": "hide brief"
+	},
+	"toolCallCard": {
+		"input": "Input",
+		"error": "Error",
+		"output": "Output",
+		"running": "running…",
+		"imagesAttached_one": "[{{count}} image attached to the model]",
+		"imagesAttached_other": "[{{count}} images attached to the model]"
+	},
+	"visualCard": {
+		"unreadable": "Figure completed, but the result could not be displayed.",
+		"label": "Figure",
+		"drawFailed": "The figure could not be drawn.",
+		"invert": "Invert figure brightness",
+		"downloadAria": "Download figure as SVG",
+		"download": "Download as SVG",
+		"openAria": "Open figure fullscreen",
+		"open": "Open fullscreen"
+	},
+	"mdBlocks": {
+		"copyDiagram": "Copy diagram source",
+		"copyCode": "Copy code",
+		"copyTable": "Copy table",
+		"copyEquation": "Copy equation source",
+		"openFullScreen": "Open full-screen",
+		"expandDiagram": "Expand diagram"
+	},
+	"dictation": {
+		"dictate": "Dictate",
+		"start": "Start dictation",
+		"failedAria": "Dictation failed: {{reason}}",
+		"stopHint": "Stop dictation (Esc)",
+		"stop": "Stop dictation",
+		"stopButton": "Stop",
+		"error": {
+			"keyless": "Dictation needs a Deepgram key",
+			"micDenied": "Microphone permission denied",
+			"micUnavailable": "mic unavailable",
+			"tokenUnavailable": "token unavailable",
+			"reconnectFailed": "Deepgram reconnect failed",
+			"connectionLost": "Deepgram connection lost ({{code}})",
+			"localUnset": "Set up local dictation",
+			"localReconnectFailed": "Local dictation reconnect failed",
+			"localConnectionLost": "Local dictation connection lost ({{code}})",
+			"localNotReady": "The dictation model isn't ready"
+		}
+	}
+}

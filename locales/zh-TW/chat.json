@@ -1,0 +1,183 @@
+{
+	"session": {
+		"titleAria": "對話標題",
+		"titleRename": "重新命名此對話",
+		"planChip": "計畫",
+		"planHint": "開啟完整計畫",
+		"practiceTag": "練習",
+		"emptyTitle": "新對話",
+		"emptyDescription": "老師會先問幾個問題，了解你已經掌握了什麼。",
+		"you": "你",
+		"nextProblemLine": "下一題",
+		"retrying": "正在重試…",
+		"compactingLabel": "正在壓縮上下文",
+		"compacting": "正在壓縮上下文…",
+		"thinkingLabel": "思考中",
+		"thinking": "思考中…",
+		"setupModels": "設定你的模型",
+		"nextPlaceholder": "想問什麼都可以，或按 Enter 進入下一題。"
+	},
+	"errors": {
+		"banner": "發生錯誤：{{message}}",
+		"generic": "未知錯誤。",
+		"turnRunning": "已有一輪回覆正在進行，請稍後再試。",
+		"attachFailed": "無法連線到正在進行的回覆。",
+		"emptyStream": "回覆的資料流是空的。",
+		"sendFailed": "傳送失敗（{{status}}）。",
+		"steerFailed": "引導訊息傳送失敗（{{status}}）。",
+		"dismissFailed": "略過/捨棄失敗（{{status}}）。",
+		"modelsNotConfigured": "尚未設定模型，請先完成模型設定",
+		"providerKeyMissing": "尚未設定 {{provider}} 金鑰，請在「設定 → 供應商」中新增",
+		"retry": "重試"
+	},
+	"composer": {
+		"placeholder": "提問、回答，或引導這堂課的方向…",
+		"nextProblem": "下一題",
+		"send": "傳送",
+		"stop": "停止"
+	},
+	"nodePicker": {
+		"selected_other": "已選 {{count}} 個節點",
+		"pick": "選擇節點",
+		"clear": "清除"
+	},
+	"questionLabel": {
+		"probe": "前測",
+		"recall": "回想",
+		"prediction": "預測",
+		"check": "測驗",
+		"explain": "解釋",
+		"question": "問題"
+	},
+	"questionDock": {
+		"malformed": "這道題的格式有誤，重試紀錄會保留在對話中。",
+		"revealTitle": "檢驗一下你的理解",
+		"revealOpen": "開啟",
+		"answer": "作答",
+		"multiSelect": " · 可複選",
+		"dontKnow": "我不知道",
+		"otherPlaceholder": "輸入你自己的回答…",
+		"confidence": "把握程度",
+		"confidenceAria": "把握程度——你所選答案正確的機率",
+		"confidenceValue": "{{value}}%",
+		"confidenceTitle": "你所選答案正確的機率——50% 等於擲硬幣。用 ←/→ 調整。",
+		"yourAnswer": "你的回答",
+		"answerPlaceholder": "輸入你的回答…",
+		"thinkingPlaceholder": "為什麼選這個？想到什麼就寫什麼。",
+		"submit": "送出回答"
+	},
+	"dock": {
+		"compacting": "正在壓縮對話…",
+		"keys": "↵ 送出 · ⇧↵ 換行"
+	},
+	"thinking": {
+		"yours": "你的思路"
+	},
+	"answeredCard": {
+		"skipped": "<q/>——已略過",
+		"didntKnow": "不知道",
+		"correct": "正確",
+		"incorrect": "錯誤",
+		"quote": "「{{text}}」",
+		"answeredDontKnow": "回答了「我不知道」。",
+		"why": "解析",
+		"hideWhy": "收合解析",
+		"whyLabel": "解析：",
+		"theAnswer": "參考答案："
+	},
+	"readingThinking": {
+		"label": "邊讀邊想",
+		"placeholder": "讀的時候想到什麼，都可以寫在這裡。"
+	},
+	"abortTurn": {
+		"cancel": "取消",
+		"turn": {
+			"title": "中止這一輪回覆？",
+			"line": "已產生的部分會保留在對話紀錄中。",
+			"action": "中止"
+		},
+		"question": {
+			"title": "略過這個問題？",
+			"line": "略過後，老師會直接往下講。",
+			"lineBusy": "略過後，老師會直接往下講。正在進行的回覆也會停止。",
+			"action": "略過"
+		},
+		"problem": {
+			"title": "捨棄這道題？",
+			"line": "這道題會被捨棄，不會公布解答。",
+			"lineBusy": "這道題會被捨棄，不會公布解答。正在進行的回覆也會停止。",
+			"action": "捨棄"
+		}
+	},
+	"phase": {
+		"probe": "前測",
+		"plan": "規劃",
+		"teach": "教學",
+		"planNodes_other": "計畫 · {{count}} 個節點"
+	},
+	"compaction": {
+		"moment": "上下文已壓縮",
+		"cut": "歷史已壓縮",
+		"cutTokens": "歷史已壓縮 · {{k}}k token"
+	},
+	"practice": {
+		"problem": "題目",
+		"problemDismissed": "題目已捨棄。",
+		"concluded": "已結束",
+		"modelSolution": "參考解答",
+		"thinkingPlaceholder": "在這裡推演，邊想邊寫。",
+		"submit": "送出思路",
+		"outcome": {
+			"solved": "已解決",
+			"solvedWithHints": "靠提示解決",
+			"movedOn": "已略過",
+			"surrendered": "已放棄",
+			"dismissed": "已捨棄"
+		},
+		"metadata": {
+			"toggle": "中繼資料",
+			"mode": "模式",
+			"targets": "目標",
+			"outcome": "結果",
+			"hintRung": "提示層級",
+			"missClass": "錯誤類型",
+			"retest": "複測",
+			"untagged": "未標記",
+			"none": "無",
+			"yes": "是",
+			"no": "否",
+			"separator": "、"
+		}
+	},
+	"spinner": {
+		"working": "處理中"
+	},
+	"reasoning": {
+		"thinking": "思考中…",
+		"agentThinking": "Agent 的思路"
+	},
+	"conversation": {
+		"emptyTitle": "還沒有訊息",
+		"emptyDescription": "開始對話後，訊息會顯示在這裡"
+	},
+	"message": {
+		"previousBranch": "上一個分支",
+		"nextBranch": "下一個分支",
+		"branchPage": "{{current}} / {{total}}"
+	},
+	"attachments": {
+		"choose": "加入附件",
+		"supported": "圖片、PDF、文字或程式碼 · 最多 10 個檔案 · 每檔 20 MB",
+		"tooMany": "每則訊息最多可附加 10 個檔案。",
+		"tooLarge": "每個附件必須小於或等於 20 MB。",
+		"failed": "上傳失敗，請檢查檔案類型後再試一次。",
+		"retry": "再試一次",
+		"uploading": "正在上傳…",
+		"remove": "移除 {{name}}",
+		"download": "下載",
+		"close": "關閉預覽",
+		"loading": "正在載入預覽…",
+		"previewError": "無法預覽此檔案，你仍可下載檔案。",
+		"previewTruncated": "預覽已縮短，下載檔案可查看完整內容。"
+	}
+}

@@ -72,6 +72,7 @@ function fixture({ packaged = true, updaterMissing = false } = {}) {
 		isPackaged: packaged,
 		name: "LearnHarness",
 		setName() {},
+		getLocale: () => "en",
 		getPath: () => userData,
 		setPath: (_: string, value: string) => { userData = value; },
 		requestSingleInstanceLock: () => false,

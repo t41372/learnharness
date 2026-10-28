@@ -1,0 +1,201 @@
+{
+	"graphView": {
+		"empty": {
+			"title": "知識圖譜",
+			"body": "開始對話或匯入筆記，就能建立你的圖譜。"
+		},
+		"search": {
+			"label": "搜尋節點",
+			"placeholder": "搜尋節點…",
+			"noMatch": "沒有符合的節點。"
+		},
+		"chains": {
+			"hint": "所有推理鏈",
+			"button": "推理鏈"
+		},
+		"import": {
+			"hint": "將筆記匯入圖譜",
+			"button": "匯入筆記…",
+			"importing": "匯入中…"
+		},
+		"contextMenu": {
+			"delete": "刪除"
+		},
+		"detail": {
+			"sessions": "對話",
+			"noSessions": "尚無對話紀錄。"
+		},
+		"pipeline": {
+			"phase": {
+				"queued": "排隊中",
+				"extracting": "擷取中",
+				"waiting": "等待中",
+				"auditing": "審核中",
+				"merging": "合併中"
+			},
+			"elapsed": "{{seconds}} 秒"
+		}
+	},
+	"graphCosts": {
+		"hint": "圖譜費用——點一下查看明細",
+		"title": "圖譜建構費用",
+		"unpriced": "{{count}} 次未計價",
+		"plusUnpriced": "+{{count}} 次未計價",
+		"stage": {
+			"extraction": "擷取",
+			"audit": "審核"
+		},
+		"tokens": "輸入 {{input}} / 輸出 {{output}}",
+		"merged": "+{{count}} 個節點",
+		"ago": {
+			"now": "剛剛",
+			"minutes": "{{count}} 分鐘",
+			"hours": "{{count}} 小時",
+			"days": "{{count}} 天"
+		}
+	},
+	"graphSettings": {
+		"hint": "圖譜顯示設定",
+		"nodeSize": "節點大小",
+		"edgeWidth": "連線粗細",
+		"arrowSize": "箭頭大小",
+		"labelSize": "標籤大小",
+		"labelZoom": "標籤顯示倍率",
+		"regions": {
+			"title": "區域",
+			"background": "背景色塊",
+			"dilation": "擴張",
+			"blur": "模糊",
+			"edgeAlpha": "邊緣透明度",
+			"bitmap": "點陣圖解析度",
+			"clusterLabels": "分組標籤",
+			"clusterLabelSize": "分組標籤大小"
+		},
+		"physics": {
+			"title": "物理",
+			"repulsion": "節點斥力",
+			"edgeAttraction": "連線引力",
+			"edgeLength": "連線長度",
+			"centralPull": "向心力",
+			"clusterPull": "分組聚合力",
+			"off": "關",
+			"friction": "摩擦力",
+			"depthAnchor": "深度錨定",
+			"depthMode": {
+				"off": "關閉",
+				"vertical": "垂直（向上）",
+				"radial": "放射狀（向外）"
+			},
+			"depthStrength": "深度強度",
+			"depthSpacing": "深度間距",
+			"baseRadius": "基礎環半徑"
+		}
+	},
+	"chainTable": {
+		"summary": "{{chains}} · {{nodes}}",
+		"chainCount_other": "{{count}} 條鏈",
+		"nodeCount_other": "{{count}} 個節點",
+		"search": {
+			"label": "搜尋節點",
+			"placeholder": "搜尋節點…"
+		},
+		"close": "關閉推理鏈",
+		"columns": {
+			"name": "名稱",
+			"props": "命題數",
+			"created": "建立時間"
+		},
+		"noMatch": "沒有符合的推理鏈。",
+		"unlabeled": "未命名",
+		"notesTag": "筆記",
+		"noPremises": "{{name}}（無前提）",
+		"selectCluster": "選取「{{label}}」中產生的全部內容",
+		"expandCluster": "展開分組「{{label}}」",
+		"selectChain": "選取推理鏈「{{name}}」",
+		"expandChain": "展開推理鏈「{{name}}」",
+		"selectNode": "選取節點「{{name}}」",
+		"selection": {
+			"summary": "{{nodes}} → {{chains}}",
+			"clear": "清除",
+			"done": "完成",
+			"doneLabel_other": "完成選取——已選 {{count}} 個命題",
+			"delete": "刪除",
+			"deleteLabel_other": "刪除選取的 {{count}} 個節點"
+		}
+	},
+	"deleteNode": {
+		"aria": "刪除節點",
+		"title": "刪除節點？",
+		"titleMany": "刪除 {{count}} 個節點？",
+		"more": ", 以及另外 {{count}} 個",
+		"permanence": "這會永久刪除此節點，且無法復原。",
+		"permanenceMany": "這會永久刪除全部 {{count}} 個節點，且無法復原。",
+		"failure": {
+			"extractionRunning": "有擷取任務正在執行——請等活動面板中的任務完成後再試。",
+			"notFound": "節點不存在",
+			"http": "刪除失敗（{{status}}）",
+			"network": "刪除失敗——網路錯誤，請再試一次。"
+		},
+		"retry": "重試",
+		"cancel": "取消",
+		"confirm": "刪除",
+		"deleting": "刪除中…"
+	},
+	"coverage": {
+		"extracting": "擷取中…",
+		"fullyExtracted": "已全部擷取",
+		"tokUncovered": "{{tokens}} token 未涵蓋",
+		"messagesUnextracted_other": "{{count}} 則訊息未擷取",
+		"running": "執行中",
+		"extract": "擷取",
+		"ringHint": "這段對話還有多少內容未納入圖譜",
+		"detail": {
+			"title": "擷取涵蓋率",
+			"uncovered": "未涵蓋",
+			"covered": "已涵蓋",
+			"tokens": "{{tokens}} token",
+			"messages": "訊息",
+			"chunkThreshold": "分段門檻",
+			"lastExtraction": "上次擷取",
+			"status": "狀態"
+		},
+		"ago": {
+			"justNow": "剛剛",
+			"minutes": "{{count}} 分鐘前",
+			"hours": "{{count}} 小時前",
+			"days": "{{count}} 天前"
+		}
+	},
+	"notesImport": {
+		"invalidResponse": "匯入回應無效，請重新匯入此檔案。",
+		"requestFailed": "匯入請求失敗（HTTP {{status}}），請重新匯入此檔案。",
+		"requestFailedDetail": "匯入請求失敗（HTTP {{status}}）：{{detail}}。請重新匯入此檔案。",
+		"modelsNotConfigured": "尚未設定模型——請先設定你的模型",
+		"providerKeyMissing": "尚未設定 {{provider}} 金鑰——請到「設定 → 供應商」新增"
+	},
+	"plan": {
+		"diagramLabel": "計畫圖",
+		"open": "開啟完整計畫",
+		"popup": {
+			"aria": "完整計畫",
+			"title": "計畫",
+			"live": "即時——狀態依你的測驗結果而定",
+			"close": "關閉",
+			"panHint": "拖曳平移 · 捲動縮放",
+			"zoomOut": "縮小",
+			"fit": "縮放至符合螢幕",
+			"zoomIn": "放大",
+			"empty": "這段對話還沒有計畫。"
+		}
+	},
+	"graphContext": {
+		"title": "圖譜上下文",
+		"propositions_other": "{{count}} 個命題",
+		"chains_other": "{{count}} 條鏈"
+	},
+	"mermaidError": {
+		"title": "圖表無法顯示",
+		"showSource": "檢視圖表原始碼",
+		"retry": "重試"
+	}
+}

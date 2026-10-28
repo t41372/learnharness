@@ -99,6 +99,14 @@ extraResources:
     to: server
     filter:
       - "standalone/**/*"
+  # uv for local dictation's speech environment (scripts/fetch-uv.mjs; the
+  # server finds it through LH_UV_PATH, set in electron/main.cjs).
+  - from: vendor/uv
+    to: uv
+    filter:
+      - uv
+      - uv.exe
+      - LICENSE-*
 mac:
   # The backend's --require runs before Next loads. Keep this resource
   # outside app.asar so early Node-mode loading needs no ASAR support.
@@ -116,11 +124,14 @@ mac:
     - target: zip
       arch:
         - arm64
-  # Locale trim (payload wave, 2026-09-24): English-only app — cuts
-  # every non-en .lproj from the frameworks (the STT/mic entitlements
-  # don't depend on locales). Revisit only if localization ever lands.
+  # Locale trim (payload wave, 2026-09-24; i18n wave 2026-10-25): only
+  # the interface languages ship — every other .lproj is cut from the
+  # frameworks. These give the role menu items (Undo, Copy, Quit…) and
+  # Chromium's own strings their Chinese labels.
   electronLanguages:
     - en
+    - zh_CN
+    - zh_TW
   category: public.app-category.education
   # Laid for the STT milestone (researcher-verified): the TCC mic prompt
   # reads this string; macOS asks regardless of Electron's own handlers.

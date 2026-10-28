@@ -33,6 +33,7 @@ import {
 	ROLE_SLOT,
 	type AgentSettings,
 	type BackgroundModelRole,
+	type DictationEngine,
 	type FactorySettings,
 	type GeneralSettings,
 	type DictationSettings,
@@ -70,7 +71,6 @@ export type EffectiveAppearance = FactorySettings["appearance"];
 /** The concrete view: every knob resolved, no absent fields. */
 export interface EffectiveSettings {
 	general: Required<GeneralSettings>;
-	dictation: Required<DictationSettings>;
 	agent: {
 		models: Record<BackgroundModelRole, EffectiveModelSpec | undefined>;
 		/** Delta map as stored — consumers resolve absent key → enabled. */
@@ -84,6 +84,8 @@ export interface EffectiveSettings {
 		/** Prober graph tools (wave 7): passthrough delta as stored —
 		 * absent/undefined enabled = ON; consumers use graphToolsEnabled. */
 		graphTools: { enabled?: boolean };
+		/** The learner's instructions, trimmed ("" = none). */
+		instructions: string;
 	};
 	/** The resolved strong/cheap/vision slots: each tier's concrete model or
 	 *  NULL when the tier holds no model (no factory floor — BYOK all the
@@ -95,6 +97,9 @@ export interface EffectiveSettings {
 	/** Compaction (owner round 14): resolved concrete — absent record
 	 *  section resolves to the factory 150k. */
 	compaction: Required<CompactionSettings>;
+	/** Dictation (local dictation, 2026-10-25): engine defaults to
+	 *  Deepgram; model null until one is chosen; language "auto". */
+	dictation: { engine: DictationEngine; model: string | null; language: string };
 }
 
 /** The conversation pair's chain (BYOK, owner 2026-09-22): the chat's own
@@ -177,9 +182,7 @@ export function resolveSettings(record: UserSettings | null): EffectiveSettings 
 	return {
 		general: {
 			autoUpdate: record?.general?.autoUpdate ?? FACTORY_SETTINGS.general.autoUpdate,
-		},
-		dictation: {
-			language: record?.dictation?.language ?? FACTORY_SETTINGS.dictation.language,
+			language: record?.general?.language ?? FACTORY_SETTINGS.general.language,
 		},
 		agent: {
 			models,
@@ -187,6 +190,7 @@ export function resolveSettings(record: UserSettings | null): EffectiveSettings 
 			prompts: agent.prompts ?? {},
 			search: agent.search ?? {},
 			graphTools: agent.graphTools ?? {},
+			instructions: agent.instructions?.trim() ?? "",
 		},
 		models: {
 			strong: resolveSlot(modelsSection.strong),
@@ -217,6 +221,11 @@ export function resolveSettings(record: UserSettings | null): EffectiveSettings 
 			// (pre-redesign record, fresh install) resolves to the factory
 			// 4096; the sanitizer has already clamped/floored any stored value.
 			extractionChunkTokens: graph.extractionChunkTokens ?? FACTORY_SETTINGS.graph.extractionChunkTokens,
+		},
+		dictation: {
+			engine: record?.dictation?.engine ?? "deepgram",
+			model: record?.dictation?.model ?? null,
+			language: record?.dictation?.language ?? (record?.dictation?.engine === "standard-asr" ? "auto" : FACTORY_SETTINGS.dictation.language),
 		},
 		compaction: {
 			thresholdTokens: record?.compaction?.thresholdTokens ?? FACTORY_SETTINGS.compaction.thresholdTokens,

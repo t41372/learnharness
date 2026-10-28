@@ -1,3 +1,8 @@
+import { reviewTools } from "../agent/tools/reviews.ts";
+import { reviews } from "./reviews.ts";
+import { reviewContextOf } from "../core/review-session.ts";
+import { attachmentContent, attachmentErrorResponse, resolveInputAttachments } from "./attachments.ts";
+import { toLlmMessages } from "../core/native-messages.ts";
 import type { Usage } from "@earendil-works/pi-ai";
 import {
 	createPracticeAgent,
@@ -7,6 +12,7 @@ import {
 	type TeachingAgent,
 } from "../agent/teacher-agent.ts";
 import { piEngineForSpec, type PiEngine } from "../agent/models.ts";
+import { appendLearnerInstructions, withLearnerInstructions } from "../agent/learner-instructions.ts";
 import { connectionBackgroundAllowed, connectionScopeCurrent, isSubscriptionProvider } from "../agent/subscription-connections.ts";
 import { nativeSubscriptionError } from "../agent/subscription-stream.ts";
 import { chatGPTStreamError } from "../agent/chatgpt-stream.ts";
@@ -142,7 +148,9 @@ setTurnRunner(async (chatId, input) => {
  *  FRESH so a settings PUT between dispatch and spawn lands. */
 function resolveEngine(role: ModelRole): PiEngine | undefined {
 	const spec = resolveRoleSpec(role, stores.settingsStore.readSettings());
-	return spec ? piEngineForSpec(spec) : undefined;
+	// The learner's instructions ride every background agent's calls too
+	// (agent-instructions wave, 2026-10-25) — read fresh with the spec.
+	return spec ? withLearnerInstructions(piEngineForSpec(spec), effectiveSettings().agent.instructions) : undefined;
 }
 
 setJobRespawn((jobId) => void jobRunner.runJob(jobId));
@@ -182,6 +190,8 @@ export async function handleChatInput(
 	input: TurnInput,
 	buildAgent?: (opts: AgentBuildOptions & { teaching: boolean }) => TeachingAgent,
 ): Promise<Response> {
+	try { input = resolveInputAttachments(input); }
+	catch (error) { return attachmentErrorResponse(error); }
 	let record = stores.chatStore.getChat(chatId);
 	if (!record) {
 		return Response.json({ error: "Unknown chat" }, { status: 404 });
@@ -251,14 +261,18 @@ export async function handleChatInput(
 		beforeDispatch: (scope) => requestCycle?.beforeDispatch(scope),
 		noDispatch: (kind) => requestCycle?.noDispatch(kind),
 	};
+	// The learner's instructions (agent-instructions wave, 2026-10-25): the
+	// ONE seam every agent shares is its engine — every engine this turn
+	// builds (conversation, compaction) carries them.
+	const instructions = effective.agent.instructions;
 	let conversationEngine: PiEngine;
-	try { conversationEngine = piEngineForSpec(conversation, () => callPurpose.background, lifecycle); }
+	try { conversationEngine = withLearnerInstructions(piEngineForSpec(conversation, () => callPurpose.background, lifecycle), instructions); }
 	catch { return Response.json({ error: conversation.provider === "chatgpt" ? chatGPTStreamError("model catalog") : isSubscriptionProvider(conversation.provider) ? nativeSubscriptionError(conversation.provider, "model catalog") : "The selected model is unavailable." }, { status: 503 }); }
 	const modelIdForCompaction = `${conversationEngine.model.provider}:${conversationEngine.model.id}`;
 	await ensureCompacted(
 		{
 			chatStore: stores.chatStore,
-			engine: piEngineForSpec(conversation, true),
+			engine: withLearnerInstructions(piEngineForSpec(conversation, true), instructions),
 			canStart: () => connectionBackgroundAllowed(conversation.provider),
 			modelId: modelIdForCompaction,
 			kind: record.kind === "practice" ? "practice" : hasProbeDone(record.messages) ? "teach" : "probe",
@@ -266,7 +280,7 @@ export async function handleChatInput(
 				effective.compaction?.thresholdTokens,
 				catalogContextLimits().get(modelIdForCompaction),
 			),
-			systemPromptTokens: Math.ceil(composeInstructions(record.kind === "practice" ? "practice" : "teacher").length / 4),
+			systemPromptTokens: Math.ceil(appendLearnerInstructions(composeInstructions(record.kind === "practice" ? "practice" : "teacher"), instructions).length / 4),
 		},
 		chatId,
 	);
@@ -304,6 +318,11 @@ export async function handleChatInput(
 			return Response.json({ error: err.message }, { status: 400 });
 		}
 		throw err;
+	}
+
+	const projected = toLlmMessages(asAgentMessages([...record.messages, ...appends]));
+	if (!conversationEngine.model.input.includes("image") && projected.some((m) => Array.isArray(m.content) && m.content.some((c) => c.type === "image"))) {
+		return Response.json({ error: "Choose a model that supports images before sending image attachments.", code: "image_input_not_supported" }, { status: 422 });
 	}
 
 	// THE PARALLEL-QUESTION GATE (owner, 2026-10-03 — the deepseek parallel
@@ -419,6 +438,8 @@ export async function handleChatInput(
 		restoreAutomatic: (automaticIds, retainedIds) => restoreUncommittedAutomatic(chatId, constructed, automaticIds, retainedIds),
 	});
 	const agentOpts: AgentBuildOptions = {
+		extraTools: reviewTools((ids, reason) => reviews.enroll(ids, "agent", reason)),
+		convertToLlm: (messages) => toLlmMessages(messages, attachmentContent),
 		engine,
 		callPurpose,
 		requestCycle,
@@ -450,6 +471,7 @@ export async function handleChatInput(
 						// proposition, not just the session's picks (pickless sessions
 						// and future graph-tools poses stay valid).
 						graphNodes: () => stores.graphStore.readNodes(),
+						reviewTarget: reviewContextOf(record.messages)?.nodeId,
 						// THE RARELY-NEEDED SET (owner round 10): research + pdf jobs
 						// (same runner/gating as the teacher's — research honestly
 						// absent when no engine is live) and the map readers behind
@@ -627,7 +649,7 @@ export async function handleChatInput(
 						const spec = resolveConversationSpec(stores.chatStore.getChat(chatId)?.settings, fresh.models.strong);
 						if (!spec || !connectionBackgroundAllowed(spec.provider)) return null;
 						let kickEngine: PiEngine;
-						try { kickEngine = piEngineForSpec(spec, true); } catch { return null; }
+						try { kickEngine = withLearnerInstructions(piEngineForSpec(spec, true), fresh.agent.instructions); } catch { return null; }
 						const kickModelId = `${kickEngine.model.provider}:${kickEngine.model.id}`;
 						const freshRecord = stores.chatStore.getChat(chatId);
 						if (!freshRecord) return null;
@@ -641,7 +663,7 @@ export async function handleChatInput(
 								fresh.compaction?.thresholdTokens,
 								catalogContextLimits().get(kickModelId),
 							),
-							systemPromptTokens: Math.ceil(composeInstructions(freshRecord.kind === "practice" ? "practice" : "teacher").length / 4),
+							systemPromptTokens: Math.ceil(appendLearnerInstructions(composeInstructions(freshRecord.kind === "practice" ? "practice" : "teacher"), fresh.agent.instructions).length / 4),
 						};
 					}, chatId);
 			},

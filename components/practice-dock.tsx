@@ -1,12 +1,15 @@
 "use client";
 
+import { AttachmentDraftList, AttachmentPicker, useAttachmentDraft } from "@/components/attachments";
+import type { Attachment } from "@/src/core";
 import { useCallback, useRef, useState } from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { ToolContentResponse } from "@/components/ai-elements/message";
 import { Button } from "@/components/ui/button";
-import { joinDictation, useDictationTarget } from "@/components/dictation";
+import { DictationField, joinDictation, useDictationPreview, useDictationTarget } from "@/components/dictation";
 import { useEnterSubmits } from "@/components/enter-submits";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n";
 
 /**
  * The practice dock (practice sessions, owner design 2026-10-04): an
@@ -38,7 +41,7 @@ export interface PracticeDockProps {
 	expanded: boolean;
 	onExpand: () => void;
 	/** text — POST {type:"thinking"} (one lane; the register is read from the text). */
-	onSubmit: (text: string) => void;
+	onSubmit: (text: string, attachments?: Attachment[], accepted?: () => void) => void;
 	/** Escape in the thinking field stops dictation (threaded from the page). */
 	onEscape?: () => void;
 	/** Compaction is running for this chat (owner round 14): the thinking
@@ -49,7 +52,9 @@ export interface PracticeDockProps {
 }
 
 export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmit, onEscape, compactionRunning = false }: PracticeDockProps) {
+	const { t } = useT("chat");
 	const [thinking, setThinking] = useState("");
+	const attachments = useAttachmentDraft();
 	// Ref MIRRORS the field ("nothing gets lost", the question-dock
 	// discipline): a submit resuming after `await finishDictation()` reads
 	// the tail, never a stale closure.
@@ -66,14 +71,16 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 		),
 		true,
 	);
+	const livePreview = useDictationPreview("question");
 
 	const submit = () => {
 		if (compactionRunning) return;
 		const text = thinkingRef.current.trim();
-		if (text.length === 0) return;
+		const files = attachments.current();
+		if ((text.length === 0 && !files.length) || attachments.pending || attachments.uploads.some((u) => u.failed)) return;
 		thinkingRef.current = "";
 		setThinking("");
-		onSubmit(text);
+		onSubmit(text, files, () => attachments.clear(files.map((a) => a.id)));
 	};
 
 	/* ENTER SUBMITS FROM ANYWHERE (owner round 6, 2026-10-05): dictation
@@ -92,7 +99,7 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 				className="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ChevronRightIcon className="size-4 shrink-0 rotate-90" />
-				<span className="font-medium">Problem</span>
+				<span className="font-medium">{t("practice.problem")}</span>
 				<span className="min-w-0 flex-1 truncate">{input.statement}</span>
 			</button>
 		);
@@ -100,13 +107,13 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 
 	/* ── the expanded form ── */
 	return (
-		<div data-testid="practice-dock" data-problem={problemCallId}>
+		<div data-testid="practice-dock" data-problem={problemCallId} {...attachments.bind}>
 			{/* The agent's half: the 'Problem' eyebrow (mirroring the quiz
 			    cards' label row — owner round, 2026-10-05) + the statement,
 			    markdown + LaTeX rendered, capped by the measured column
 			    (--dock-max-h; the old fixed 40vh cut long problems short). */}
 			<div data-dock-scroll-area="" className="max-h-[var(--dock-max-h,40vh)] overflow-y-auto px-4 pt-3 pb-2">
-				<div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Problem</div>
+				<div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("practice.problem")}</div>
 				<div className="lh-prose text-[15px]">
 					<ToolContentResponse>{input.statement}</ToolContentResponse>
 				</div>
@@ -119,8 +126,10 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 				className="m-1.5 rounded-[10px] border border-border/70 bg-background/60 transition-colors focus-within:border-primary/50"
 			>
 				<div className="px-2.5 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-					YOUR THINKING
+					{t("thinking.yours")}
 				</div>
+				<AttachmentDraftList draft={attachments} />
+				<DictationField value={thinking} preview={livePreview} layout="lh-input max-h-64 min-h-16 px-2.5 pb-2">
 				<textarea
 					value={thinking}
 					onChange={(e) => {
@@ -143,28 +152,30 @@ export function PracticeDock({ problemCallId, input, expanded, onExpand, onSubmi
 							submit();
 						}
 					}}
-					placeholder="Work here, think out loud."
+					placeholder={t("practice.thinkingPlaceholder")}
 					rows={4}
 					className={cn(
 						"field-sizing-content lh-input max-h-64 min-h-16 w-full resize-none bg-transparent px-2.5 pb-2 outline-none placeholder:text-muted-foreground",
 					)}
 				/>
+				</DictationField>
 				{/* The submit row (owner round 4, 2026-10-05): IDENTICAL to the
 				    question dock's — hint left, the SAME Button (h-9, px-3.5),
 				    one p-1 row. Corner radii concentric: shell 16 − m-1.5 (6) =
 				    field 10 − p-1 (4) = button 6. */}
 				<div className="flex items-center justify-between gap-2 p-1">
+					<AttachmentPicker draft={attachments} disabled={compactionRunning} />
 					<span aria-hidden className="pl-1.5 text-xs text-muted-foreground">
-						{compactionRunning ? "compacting session…" : "↵ submits · ⇧↵ newline"}
+						{compactionRunning ? t("dock.compacting") : t("dock.keys")}
 					</span>
 					<Button
 						type="button"
 						data-testid="practice-send"
-						disabled={thinking.trim().length === 0 || compactionRunning}
+						disabled={(thinking.trim().length === 0 && attachments.items.length === 0) || attachments.pending || attachments.uploads.some((u) => u.failed) || compactionRunning}
 						onClick={() => submit()}
 						className="ml-auto h-9 rounded-[6px] px-3.5 text-sm font-medium"
 					>
-						Submit thinking
+						{t("practice.submit")}
 					</Button>
 				</div>
 			</div>

@@ -2,7 +2,8 @@
 
 import { createContext, Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useChatSession } from "@/components/session";
-import { visibleQueuedSteers } from "@/components/session-core";
+import { visibleQueuedSteers, type SessionError } from "@/components/session-core";
+import { useT, type TFunction } from "@/components/i18n";
 import { SetupDialog } from "@/components/setup-dialog";
 import { Hint } from "@/components/ui/hint";
 import { useModelSetup, selectedModelUnavailable, openModelPicker, ZeroKeysPill } from "@/components/setup-cta";
@@ -29,12 +30,13 @@ import { dockStateKey } from "@/components/dock-state-key";
 import { clearOpeningPrompt, readOpeningPromptEntry, stashOpeningPrompt, OPENING_PROMPT_FAILURE } from "@/components/opening-prompt";
 import { forwardDockWheel, useDockHeight } from "@/components/dock-height";
 import { QueuedSteersBody, type QueuedSteerLine } from "@/components/queued-steers";
-import { DictationBar, finishDictation, joinDictation, useDictation } from "@/components/dictation";
+import { DictationBar, finishDictation, joinDictation, useDictation, useDictationTerms } from "@/components/dictation";
 import { useFieldCycle } from "@/components/field-cycle";
 import { JobsContext } from "@/components/jobs-context";
 import { StatsBar } from "@/components/stats-bar";
 import { useServerEvent, useServerResync } from "@/components/server-events";
 import {
+	AUTH_PROVIDER_KEYS,
 	isProviderKeyRefusal,
 	firstSourceTextParts,
 	messageAnchorId,
@@ -54,6 +56,9 @@ import type { PlanBlockData } from "@/src/core";
 import { QuestionDock } from "@/components/question-dock";
 import { SessionFind } from "@/components/session-find";
 import { SessionMessageNavigation } from "@/components/session-navigation";
+import { ReviewRatingPanel } from "@/components/reviews";
+import { AttachmentList, useAttachmentDraft } from "@/components/attachments";
+import type { Attachment } from "@/src/core";
 import { PracticeDock } from "@/components/practice-dock";
 import { ThinkingCard, type PracticeThinkingData } from "@/components/practice-cards";
 import { GraphContextCard, type GraphContextData } from "@/components/graph-context-card";
@@ -163,6 +168,37 @@ export function parseProviderKeyRefusal(message: string | undefined): boolean {
 	}
 }
 
+/** The error banner's line in the interface language (i18n wave,
+ *  2026-10-25): the session model's own coded lines and the two refusal
+ *  envelopes (keyed on their machine codes) translate; provider, server,
+ *  and network text stays exactly as received. */
+function errorLine(error: SessionError, t: TFunction<["chat", "common"]>): string {
+	switch (error.code) {
+		case "generic":
+			return t("errors.generic");
+		case "turnRunning":
+			return t("errors.turnRunning");
+		case "attachFailed":
+			return t("errors.attachFailed");
+		case "emptyStream":
+			return t("errors.emptyStream");
+		case "sendFailed":
+			return t("errors.sendFailed", { status: error.status });
+		case "steerFailed":
+			return t("errors.steerFailed", { status: error.status });
+		case "dismissFailed":
+			return t("errors.dismissFailed", { status: error.status });
+	}
+	if (parseModelsRefusal(error.message)) return t("errors.modelsNotConfigured");
+	if (parseProviderKeyRefusal(error.message)) {
+		// The envelope's own label lookup (core providerKeyMissing).
+		const { provider } = JSON.parse(error.message) as { provider?: unknown };
+		const id = typeof provider === "string" ? provider : "";
+		return t("errors.providerKeyMissing", { provider: AUTH_PROVIDER_KEYS.find((p) => p.id === id)?.label ?? id });
+	}
+	return error.message;
+}
+
 /** Retry sends no composer text. Its refusal must not resurrect the draft
  * from an earlier, already-durable text send over today's unsent composer.
  * Retire that fallback synchronously, never when the async Retry settles:
@@ -213,6 +249,7 @@ export function Chat({
 	initialMessages,
 	initialError,
 	initialPrompt,
+	initialAttachments = [],
 	initiallyInFlight,
 	initiallyCompacting = false,
 	initialConfigured = false,
@@ -223,6 +260,7 @@ export function Chat({
 	initialMessages: LhMessage[];
 	/** Memory-only settlement notice supplied on reopening. */
 	initialError?: string;
+	initialAttachments?: Attachment[];
 	/** The session kind (practice sessions, owner 2026-10-04): practice
 	 *  renders no phase chip (no probe→teach arc applies) and a Practice
 	 *  tag rides the header instead. */
@@ -245,6 +283,7 @@ export function Chat({
 	// settled terminal's callback — a stable ref assigned below, once
 	// syncFromServer exists (refs, not closures: no stale capture).
 	const reattachSettledRef = useRef<() => void>(() => {});
+	const { t } = useT(["chat", "common"]);
 
 	// THE SESSION HOOK (Wave D, owner-approved 2026-09-26): the app-owned
 	// replacement for useChat + the AI-SDK transport. The record is native
@@ -262,6 +301,7 @@ export function Chat({
 	// The reattach settled terminal → the sync-and-continue seam (below).
 	setReattachSettled(() => reattachSettledRef.current());
 
+	const composerAttachments = useAttachmentDraft();
 	// A turn running server-side, attached to no live view of ours (navigate
 	// away mid-turn, or a wake turn discovered mid-session): the reattach
 	// stream is the primary channel (resumeStream — the same rendering path
@@ -491,10 +531,10 @@ export function Chat({
 	// the dock stays mounted (the problem is still active until the agent
 	// concludes).
 	const submitThinking = useCallback(
-		(text: string) => {
+		(text: string, attachments?: Attachment[], accepted?: () => void) => {
 			const problem = activeProblemRef.current;
 			if (!problem) return;
-			void send({ type: "thinking", problemCallId: problem.toolCallId, text });
+			void send({ type: "thinking", problemCallId: problem.toolCallId, text, ...(attachments?.length ? { attachments } : {}) }, accepted);
 		},
 		[send],
 	);
@@ -571,6 +611,7 @@ export function Chat({
 	 *  opens recovery with no replay. */
 	const draftRef = useRef<string | null>(null);
 	const openingDraftRef = useRef<string | null>(null);
+	const openingAttachmentsRef = useRef<Attachment[]>([]);
 	const [openingError, setOpeningError] = useState(false);
 	const openingMountedRef = useRef(false);
 	useEffect(() => {
@@ -578,11 +619,13 @@ export function Chat({
 		return () => { openingMountedRef.current = false; };
 	}, []);
 
-	const deliverOpeningPrompt = useCallback((prompt: string) => {
+	const deliverOpeningPrompt = useCallback((prompt: string, files: Attachment[] = openingAttachmentsRef.current) => {
 		openingDraftRef.current = prompt;
+		openingAttachmentsRef.current = files;
+		composerAttachments.restore(files);
 		// Persist uncertainty BEFORE the POST: another mount must restore,
 		// not race the still-arriving request. No storage means no auto-send.
-		if (!stashOpeningPrompt(chatId, prompt, true)) {
+		if (!stashOpeningPrompt(chatId, prompt, true, files)) {
 			applyText(prompt);
 			setOpeningError(true);
 			return;
@@ -590,7 +633,9 @@ export function Chat({
 		setOpeningError(false);
 		draftRef.current = prompt; // The existing 503 flow must restore it too.
 		applyText("");
-		void send({ type: "text", text: prompt }, () => {
+		void send({ type: "text", text: prompt, ...(files.length ? { attachments: files } : {}) }, () => {
+			composerAttachments.clear(files.map(file => file.id));
+			openingAttachmentsRef.current = [];
 			clearOpeningPrompt(chatId);
 			openingDraftRef.current = null;
 			if (draftRef.current === prompt) draftRef.current = null;
@@ -599,25 +644,28 @@ export function Chat({
 				applyText(prompt);
 			}
 		});
-	}, [chatId, send, applyText]);
+	}, [chatId, send, applyText, composerAttachments]);
 
 	const sentInitial = useRef(false);
 	useEffect(() => {
 		if (sentInitial.current) return;
 		sentInitial.current = true;
 		const entry = readOpeningPromptEntry(chatId);
-		const prompt = initialPrompt || entry?.text; // Legacy links still work.
-		if (!initialPromptOwed(initialMessages, prompt)) {
+		const prompt = initialPrompt ?? entry?.text ?? ""; // Legacy links still work.
+		const files = initialAttachments.length ? initialAttachments : entry?.attachments ?? [];
+		if (!initialPromptOwed(initialMessages, prompt, files)) {
 			if (initialMessages.some(m => m.role === "user" || m.role === "assistant")) clearOpeningPrompt(chatId);
 			return;
 		}
-		openingDraftRef.current = prompt!;
+		openingDraftRef.current = prompt;
+		openingAttachmentsRef.current = files;
+		composerAttachments.restore(files);
 		if (entry?.attempted || initiallyInFlight) {
 			applyText(prompt!); // Interrupted start: the learner explicitly resends.
 			return;
 		}
-		deliverOpeningPrompt(prompt!);
-	}, [chatId, initialPrompt, initialMessages, initiallyInFlight, deliverOpeningPrompt, applyText]);
+		deliverOpeningPrompt(prompt, files);
+	}, [chatId, initialPrompt, initialAttachments, initialMessages, initiallyInFlight, deliverOpeningPrompt, applyText, composerAttachments]);
 
 	useEffect(() => {
 		if (!hasConfirmedConversation) return;
@@ -625,6 +673,8 @@ export function Chat({
 		// A later canonical read may confirm a lost acknowledgment. Clear
 		// only the unchanged recovered draft, never the learner's newer work.
 		const opening = openingDraftRef.current;
+		composerAttachments.clear(openingAttachmentsRef.current.map(file => file.id));
+		openingAttachmentsRef.current = [];
 		if (opening !== null && textRef.current === opening) applyText("");
 		if (draftRef.current === opening) draftRef.current = null;
 		openingDraftRef.current = null;
@@ -741,7 +791,7 @@ export function Chat({
 	const retryable = (status === "ready" || status === "error") && !busy && !compacting && endsInFailedTurn(nativeMessages);
 	const retryFailedTurn = () => retryFailedResponse(send, draftRef);
 	const canSend =
-		(text.trim().length > 0 || dictation.active) && !pending && !activeProblem && !compacting;
+		(text.trim().length > 0 || dictation.active || composerAttachments.items.length > 0) && !composerAttachments.pending && !pending && !activeProblem && !compacting;
 
 	/* THE PRACTICE PAUSE (owner round 16): between problems — practice
 	 * kind, nothing active, nothing in flight, and at least one problem
@@ -905,6 +955,10 @@ export function Chat({
 	// The session's live plan (drives the top-bar chip; the marginalia
 	// derives its own from the same transcript).
 	const planTree = useMemo(() => latestTree(messages), [messages]);
+	// The session's vocabulary for the local dictation engine: its title and
+	// the plan's step names (the words a learner is likely to say here).
+	const dictationTerms = useMemo(() => [titleText, ...(planTree?.nodes.map((n) => n.title) ?? [])], [titleText, planTree]);
+	useDictationTerms(dictationTerms);
 
 	// ── Session usage (wave-4 stats bar) ──
 	// The money channel: the record's turns log and read-time server Pi
@@ -1203,7 +1257,8 @@ export function Chat({
 	const doSend = () => {
 		if (busy || pending || compacting) return;
 		const t = textRef.current.trim();
-		if (!t) return;
+		const attachments = composerAttachments.current();
+		if ((!t && !attachments.length) || composerAttachments.pending) return;
 		if (zeroKeys) {
 			setSetupOpen(true);
 			return;
@@ -1213,12 +1268,12 @@ export function Chat({
 			return; // No optimistic send and no change to the learner's draft.
 		}
 		if (openingDraftRef.current !== null) {
-			deliverOpeningPrompt(t);
+			deliverOpeningPrompt(t, attachments);
 			return;
 		}
 		draftRef.current = t; // the refusal flow's preserve-and-replay seam
 		applyText("");
-		void send({ type: "text", text: t });
+		void send({ type: "text", text: t, ...(attachments.length ? { attachments } : {}) }, () => composerAttachments.clear(attachments.map((a) => a.id)));
 	};
 
 	/* STEER VS SEND (owner arc 2026-10-03): a send while a turn runs steers
@@ -1233,10 +1288,11 @@ export function Chat({
 	const doSteerOrSend = () => {
 		if (pending || compacting) return;
 		const t = textRef.current.trim();
-		if (!t) return;
+		const attachments = composerAttachments.current();
+		if ((!t && !attachments.length) || composerAttachments.pending) return;
 		if (busy) {
 			applyText("");
-			void steer(t);
+			void steer(t, attachments, () => composerAttachments.clear(attachments.map((a) => a.id)));
 			return;
 		}
 		doSend();
@@ -1309,8 +1365,8 @@ export function Chat({
 								}}
 								onBlur={() => void commitRename(titleDraft)}
 								spellCheck={false}
-								aria-label="Session title"
-								title="Rename this session"
+								aria-label={t("session.titleAria")}
+								title={t("session.titleRename")}
 								className="lh-no-drag min-w-[8ch] max-w-[70%] shrink-0 bg-transparent font-title text-3xl tracking-tight caret-current outline-none [field-sizing:content]"
 							/>
 							{/* flex-1 spacer during rename too, so the chips stay at
@@ -1322,7 +1378,7 @@ export function Chat({
 					<>
 						<Hint
 							// F2 renames (registry) — surfaced on the hover.
-							label="Rename session"
+							label={t("common:shortcuts.rename-session")}
 							action="rename-session"
 							side="bottom"
 						>
@@ -1346,7 +1402,7 @@ export function Chat({
 					    structure beside the phase chip — access to the full-DAG popup
 					    at every width; the marginalia is the wide-screen glance view. */}
 					{planTree && (
-						<Hint label="Open the full plan" side="bottom">
+						<Hint label={t("session.planHint")} side="bottom">
 <button
 							type="button"
 							data-testid="plan-chip"
@@ -1357,7 +1413,7 @@ export function Chat({
 							className="lh-no-drag flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-border/80 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:border-border hover:text-foreground"
 						>
 							<WaypointsIcon className="size-3.5 text-primary" aria-hidden />
-							Plan
+							{t("session.planChip")}
 						</button>
 </Hint>
 					)}
@@ -1379,7 +1435,7 @@ export function Chat({
 							className="pointer-events-none flex shrink-0 select-none items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
 						>
 							<DumbbellIcon className="size-3" />
-							Practice
+							{t("session.practiceTag")}
 						</span>
 					) : (
 						<PhaseChip phase={phases.at(-1) ?? "probe"} />
@@ -1394,8 +1450,8 @@ export function Chat({
 						<div data-session-find-root="" className={`${COLUMN} flex flex-1 flex-col gap-4 pt-4`}>
 							{messages.length === 0 && !busy && (
 								<ConversationEmptyState
-									title="New session"
-									description="The teacher will open by probing what you already know."
+									title={t("session.emptyTitle")}
+									description={t("session.emptyDescription")}
 								/>
 							)}
 
@@ -1428,6 +1484,8 @@ export function Chat({
 								<Fragment key={m.id || `m-${mi}`}>
 									{m.parts.map((part, pi) => {
 										switch (part.type) {
+											case "data-attachments":
+												return <AttachmentList key={pi} attachments={part.data as Attachment[]} />;
 											case "data-graph-context":
 												return <GraphContextCard key={pi} data={part.data as GraphContextData} />;
 											case "data-compaction":
@@ -1446,7 +1504,7 @@ export function Chat({
 														className="my-4 flex items-center justify-center gap-1.5 font-ui text-xs font-medium uppercase tracking-wide text-muted-foreground"
 													>
 														<ArrowRightIcon className="size-3" />
-														Next problem
+														{t("session.nextProblemLine")}
 													</div>
 												);
 											default:
@@ -1505,9 +1563,10 @@ export function Chat({
 												{/* The rail GROUPS (owner round 4, 2026-10-05): the YOU heading
 												    sits INSIDE the rail, same mono-xs register and same 1ch
 												    rail as the thinking rows — one quote geometry. */}
-												<div className="font-medium uppercase tracking-wide text-muted-foreground">You</div>
+												<div className="font-medium uppercase tracking-wide text-muted-foreground">{t("session.you")}</div>
 												<div className="lh-prose whitespace-pre-wrap text-foreground">
 													{m.parts.filter((p) => p.type === "text").map((p) => p.text).join("\n")}
+													{m.parts.filter((p) => p.type === "data-attachments").map((p, i) => <AttachmentList key={i} attachments={p.data as Attachment[]} />)}
 												</div>
 											</div>
 									) : (
@@ -1538,7 +1597,7 @@ export function Chat({
 												) {
 													return (
 														<SystemLine key={`retry-${pi}`} testId="tool-retry">
-															Retrying…
+															{t("session.retrying")}
 														</SystemLine>
 													);
 												}
@@ -1633,27 +1692,28 @@ export function Chat({
 						    the summarizer holds the model gate. Mutually exclusive with
 						    the THINKING placeholder by construction (the gate sits
 						    BEFORE beginTurn; the settle kick runs after endTurn). */}
+							<ReviewRatingPanel chatId={chatId} messages={nativeMessages} busy={status !== "ready" || turnInFlight} />
 							{compacting && (
 								<span className="flex items-center gap-2 font-ui text-xs font-medium uppercase tracking-wide text-muted-foreground">
-									<BrailleSpinner label="Compacting context" />
-									<Shimmer duration={1}>COMPACTING CONTEXT…</Shimmer>
+									<BrailleSpinner label={t("session.compactingLabel")} />
+									<Shimmer duration={1}>{t("session.compacting")}</Shimmer>
 								</span>
 							)}
 							{(status === "submitted" || turnInFlight) && (
 								<span className="flex items-center gap-2 font-ui text-xs font-medium uppercase tracking-wide text-muted-foreground">
-									<BrailleSpinner label="Thinking" />
+									<BrailleSpinner label={t("session.thinkingLabel")} />
 									<Shimmer duration={1}>
-										THINKING…
+										{t("session.thinking")}
 									</Shimmer>
 								</span>
 							)}
 							{openingError && <p role="alert" className="text-sm text-destructive">{OPENING_PROMPT_FAILURE}</p>}
 							{error && (
 								<div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm">
-									<span>Something went wrong: {error.message}</span>
+									<span>{t("errors.banner", { message: errorLine(error, t) })}</span>
 									{retryable && (
 										<Button variant="outline" size="xs" data-testid="retry-failed-turn" onClick={retryFailedTurn}>
-											Retry
+											{t("errors.retry")}
 										</Button>
 									)}
 								</div>
@@ -1707,7 +1767,7 @@ export function Chat({
 										onClick={() => setSetupOpen(true)}
 										className="rounded-sm border border-border bg-card px-3 py-1.5 font-ui text-xs text-foreground transition-colors hover:border-muted-foreground/50 hover:bg-accent cursor-pointer"
 									>
-										Set up your models
+										{t("session.setupModels")}
 									</button>
 								</div>
 							)
@@ -1720,6 +1780,7 @@ export function Chat({
 							// abort channel kills it server-side; stop() alone would
 							// only detach our view.
 							busy={busy}
+							attachmentDraft={composerAttachments}
 							value={text}
 							onChange={applyText}
 							inputRef={composerInputRef}
@@ -1732,7 +1793,7 @@ export function Chat({
 							// applies.
 							nextProblem={nextReady}
 							onNext={sendNext}
-							placeholder={nextReady ? "Ask anything, or press Enter for the next one." : undefined}
+							placeholder={nextReady ? t("session.nextPlaceholder") : undefined}
 						/>
 					}
 					onSubmitAnswer={(output) => {
@@ -1843,8 +1904,8 @@ export type EscAbortTarget = "mermaid" | "plan" | "setup" | "question" | "proble
  * (owner report, 2026-10-04: the turn went dead behind it — the old
  * `length === 0` check saw the marker and refused to fire).
  */
-export function initialPromptOwed(messages: readonly { role: string }[], prompt: string | undefined): boolean {
-	if (!prompt) return false;
+export function initialPromptOwed(messages: readonly { role: string }[], prompt: string | undefined, attachments: readonly Attachment[] = []): boolean {
+	if (!prompt && !attachments.length) return false;
 	return !messages.some((m) => m.role === "user" || m.role === "assistant");
 }
 
@@ -1940,7 +2001,7 @@ function DockOverlay({
 	 *  question (the composer is replaced); null in teaching sessions. */
 	practice: { toolCallId: string; input: unknown } | null;
 	/** (commit, text) — the practice dock's two submit lanes. */
-	onSubmitThinking: (text: string) => void;
+	onSubmitThinking: (text: string, attachments?: Attachment[], accepted?: () => void) => void;
 	/** Teach-phase pending question: arrives collapsed behind the reveal button (W5). */
 	requiresReveal: boolean;
 	/** The reading-thinking draft (owner 2026-10-03) — owned by ChatView so
@@ -1980,6 +2041,7 @@ function DockOverlay({
 	setupCta?: React.ReactNode;
 }) {
 	const { isAtBottom, scrollToBottom, scrollRef } = useStickToBottomContext();
+	const { t } = useT("chat");
 	// Render-fresh bottom state (flicker round): the arrival block below reads
 	// it DURING RENDER — the same value the after-paint effect used to read a
 	// frame too late. Assigned per render like the other refs below.
@@ -2436,7 +2498,7 @@ function DockOverlay({
 				    mid-question unmount), and widening past the floor fades it
 				    back in. */}
 				{pending && plan && (
-					<Hint label="Open the full plan" side="bottom">
+					<Hint label={t("session.planHint")} side="bottom">
 <button
 						type="button"
 						data-testid="plan-marginalia"

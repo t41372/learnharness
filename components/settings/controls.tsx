@@ -81,6 +81,12 @@ export function SettingsRow({
 	);
 }
 
+/** The switch's default testid: the label, slugged. Exported so callers
+ *  whose label is translated (i18n wave) keep the English-derived id. */
+export function toggleTestid(name: string): string {
+	return `toggle-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
+
 /** The existing Agent/Appearance collapsed-menu look, shared with dictation.
  * `unavailable` preserves callers that gate clicks without native disabling;
  * `disabled` retains native button semantics where the caller requires them. */
@@ -111,6 +117,7 @@ export function Toggle({
 	disabled,
 	onChange,
 	label,
+	testid,
 	discIcon,
 	title,
 }: {
@@ -119,6 +126,9 @@ export function Toggle({
 	onChange: (next: boolean) => void;
 	/** Accessible name for the switch role. */
 	label: string;
+	/** Stable testid when the label is translated (default: derived from
+	 *  the label — a CJK label would slug to nothing). */
+	testid?: string;
 	/** Optional icon disc (owner round, 2026-10-07): the figure cards' invert
 	 *  toggle renders the half-filled contrast circle AS the disc — the icon
 	 *  carries the meaning; plain toggles keep the plain disc. */
@@ -134,7 +144,7 @@ export function Toggle({
 			aria-label={label}
 			{...(title ? { title } : {})}
 			disabled={disabled}
-			data-testid={`toggle-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+			data-testid={testid ?? toggleTestid(label)}
 			onClick={() => onChange(!checked)}
 			className={cn(
 				"relative h-4.5 w-8 shrink-0 rounded-full border border-border transition-colors",
