@@ -61,7 +61,7 @@ All three platforms support in-app updates.
 - **Your keys and models.** No LearnHarness subscription or markup. You pay your providers for usage; a live cost meter shows model costs.
 - **Local storage.** Your chats, graph, settings, and API keys live on your machine. Learning records are plain files you can inspect.
 - **External services.** Models run through your configured providers. Model requests send the context needed for the task; web research and Deepgram dictation also contact external services (local dictation keeps audio on your computer). Local storage does not mean offline processing.
-- **Inspectable behavior.** System prompts are visible and editable. The app is open source under the AGPL-3.0 license.
+- **Inspectable behavior.** System prompts are visible and editable, and your own instructions (for example, the language the agents write in) reach every agent. The app is open source under the AGPL-3.0 license.
 
 ## Development and support
 

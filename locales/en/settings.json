@@ -363,6 +363,32 @@
 		"unreachable": "The speech environment is unreachable"
 	},
 	"deepgramLanguage": {
-		"setupHint": "Create a <key>Deepgram API key</key> with the Member role or higher, then add it above."
+		"setupHint": "Create a <key>Deepgram API key</key> with the Member role or higher, then add it above.",
+		"label": "Language",
+		"hint": "Dictation language: {{language}}",
+		"search": "Search dictation languages",
+		"placeholder": "Search languages…",
+		"empty": "No languages match.",
+		"multilingual": "Multilingual"
+	},
+	"updates": {
+		"version": "Version {{version}}",
+		"unknown": "unknown",
+		"manualHint": "Checking downloads available updates. Downloaded updates install when you quit the app.",
+		"autoHint": "Check at startup and every 24 hours. Turning this off does not stop updates already in progress or ready to install.",
+		"error": "Couldn’t check for updates. Try again later.",
+		"checking": "Checking for updates…",
+		"downloadingVersion": "Downloading version {{version}}…",
+		"downloading": "Downloading an update…",
+		"upToDate": "No newer version was found at the last check.",
+		"downloadedVersion": "Version {{version}} is ready. It will install when you quit the app.",
+		"downloaded": "An update is ready. It will install when you quit the app.",
+		"releaseNotes": "Release notes",
+		"restart": "Restart",
+		"check": "Check for updates",
+		"downloadingLabel": "Downloading update",
+		"checkingLabel": "Checking for updates",
+		"autoLabel": "Automatic updates",
+		"autoToggle": "auto update"
 	}
 }

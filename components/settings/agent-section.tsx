@@ -35,6 +35,13 @@
  * Absent key = enabled in the schema; the UI writes explicit booleans for
  * all four (simpler to reason about, sanitize-equivalent).
  *
+ * Your instructions (agent-instructions wave, 2026-10-25): one free-text
+ * box whose text is appended to EVERY agent's system prompt (the
+ * conversation agents, the sub-agents, extraction, compaction) — e.g. the
+ * language the agents should write in. Saved explicitly (a Save link
+ * that is live only when the draft differs), applied from the next model
+ * call; blank removes it.
+ *
  * Prompts: GET /api/settings/prompts segments — THREE SECTIONS in the
  * owner's ruled order (2026-09-26 overhaul): Teacher first, Prober, then
  * Shared LAST. The server returns per-agent lists that each INCLUDE the
@@ -60,6 +67,7 @@ import { Hint } from "@/components/ui/hint";
 import type React from "react";
 import {
 	COMPACTION_THRESHOLD_FLOOR,
+	LEARNER_INSTRUCTIONS_MAX_CHARS,
 	MODEL_SLOTS,
 	resolveSettings,
 	type AgentSettings,
@@ -112,6 +120,16 @@ export function composeTool(agent: AgentSettings | undefined, id: string, on: bo
  *  in agent/tools.ts). Pure — exported for tests. */
 export function composeQuizMechanics(agent: AgentSettings | undefined, mechanics: "choice" | "free"): AgentSettings {
 	return { ...agent, tools: { ...agent?.tools, explain: mechanics === "free" } };
+}
+
+/** Compose the learner's instructions: blank clears the key (absence is
+ *  the unset), the rest of the section carried verbatim. Pure — exported
+ *  for tests. */
+export function composeLearnerInstructions(agent: AgentSettings | undefined, text: string): AgentSettings {
+	const next: AgentSettings = { ...agent };
+	if (text.trim()) next.instructions = text;
+	else delete next.instructions;
+	return next;
 }
 
 /** Compose the prober graph-tools toggle (wave 7): its own key in the
@@ -857,6 +875,13 @@ export function AgentSection({
 				</SettingsRow>
 			</SettingsGroup>
 
+			<SettingsGroup label={t("agent.instructions.group")} testid="group-instructions">
+				<InstructionsEditor
+					value={agent?.instructions ?? ""}
+					onSave={(text) => onSectionChange(composeLearnerInstructions(agent, text))}
+				/>
+			</SettingsGroup>
+
 			<SettingsGroup label={t("agent.prompts.group")} testid="group-prompts">
 				{prompts === null ? (
 					<p className="text-xs text-muted-foreground/70">{t("agent.prompts.loading")}</p>
@@ -883,5 +908,68 @@ export function AgentSection({
 				)}
 			</SettingsGroup>
 		</>
+	);
+}
+
+/** The hint under the instructions box (exported for the copy pin). */
+export const INSTRUCTIONS_HINT =
+	"Added to the end of every agent's instructions — the teacher, practice, research, demos, visuals and the knowledge graph. Applies from the next reply.";
+
+/** The learner's-instructions editor: a draft over the stored text, saved
+ *  explicitly. The draft is kept until the stored value catches up with it
+ *  (the dialog's write lands asynchronously), so the box never flashes the
+ *  old text after Save. */
+export function InstructionsEditor({ value, onSave }: { value: string; onSave: (text: string) => void }) {
+	const { t } = useT("settings");
+	const [draft, setDraft] = useState<string | null>(null);
+	const [saved, setSaved] = useState(false);
+	useEffect(() => {
+		if (draft !== null && draft === value) setDraft(null);
+	}, [draft, value]);
+	const text = draft ?? value;
+	const dirty = text !== value;
+	const over = text.length > LEARNER_INSTRUCTIONS_MAX_CHARS;
+	return (
+		<div className="flex flex-col gap-2" data-testid="instructions-editor">
+			<p className="text-xs text-muted-foreground/70">{t("agent.instructions.hint")}</p>
+			<textarea
+				value={text}
+				onChange={(e) => {
+					setDraft(e.target.value);
+					setSaved(false);
+				}}
+				aria-label={t("agent.instructions.aria")}
+				placeholder={t("agent.instructions.placeholder")}
+				rows={4}
+				data-testid="instructions-input"
+				className="w-full resize-y rounded-sm border border-border bg-background p-2 font-prose text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+			/>
+			<div className="flex items-center gap-3">
+				<button
+					type="button"
+					disabled={!dirty || over}
+					data-testid="instructions-save"
+					onClick={() => {
+						onSave(text);
+						setSaved(true);
+					}}
+					className={
+						dirty && !over
+							? "text-xs text-foreground underline-offset-2 hover:underline"
+							: "cursor-not-allowed text-xs text-muted-foreground/40 underline-offset-2"
+					}
+				>
+					{t("agent.instructions.save")}
+				</button>
+				{saved && !dirty && (
+					<p className="text-xs text-muted-foreground/70" data-testid="instructions-status">
+						{t("agent.instructions.saved")}
+					</p>
+				)}
+				<p className={cn("ml-auto text-xs tabular-nums", over ? "text-red-500" : "text-muted-foreground/50")}>
+					{text.length} / {LEARNER_INSTRUCTIONS_MAX_CHARS}
+				</p>
+			</div>
+		</div>
 	);
 }

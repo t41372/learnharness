@@ -362,6 +362,32 @@
 		"unreachable": "无法连接语音环境"
 	},
 	"deepgramLanguage": {
-		"setupHint": "创建具有 Member 或更高权限的 <key>Deepgram API 密钥</key>，然后添加到上方。"
+		"setupHint": "创建具有 Member 或更高权限的 <key>Deepgram API 密钥</key>，然后添加到上方。",
+		"label": "语言",
+		"hint": "语音输入语言：{{language}}",
+		"search": "搜索语音输入语言",
+		"placeholder": "搜索语言…",
+		"empty": "没有匹配的语言。",
+		"multilingual": "多语言"
+	},
+	"updates": {
+		"version": "版本 {{version}}",
+		"unknown": "未知",
+		"manualHint": "检查时会下载可用更新，退出应用时安装已下载的更新。",
+		"autoHint": "启动时及每隔 24 小时检查一次。关闭后，进行中或等待安装的更新仍会继续。",
+		"error": "无法检查更新，请稍后重试。",
+		"checking": "正在检查更新…",
+		"downloadingVersion": "正在下载版本 {{version}}…",
+		"downloading": "正在下载更新…",
+		"upToDate": "上次检查时未发现更新版本。",
+		"downloadedVersion": "版本 {{version}} 已就绪，退出应用时将安装。",
+		"downloaded": "更新已就绪，退出应用时将安装。",
+		"releaseNotes": "更新说明",
+		"restart": "重新启动",
+		"check": "检查更新",
+		"downloadingLabel": "正在下载更新",
+		"checkingLabel": "正在检查更新",
+		"autoLabel": "自动更新",
+		"autoToggle": "自动更新"
 	}
 }

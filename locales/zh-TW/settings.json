@@ -362,6 +362,32 @@
 		"unreachable": "無法連線至語音環境"
 	},
 	"deepgramLanguage": {
-		"setupHint": "建立具有 Member 或更高權限的 <key>Deepgram API 金鑰</key>，然後新增到上方。"
+		"setupHint": "建立具有 Member 或更高權限的 <key>Deepgram API 金鑰</key>，然後新增到上方。",
+		"label": "語言",
+		"hint": "語音輸入語言：{{language}}",
+		"search": "搜尋語音輸入語言",
+		"placeholder": "搜尋語言…",
+		"empty": "沒有符合的語言。",
+		"multilingual": "多語言"
+	},
+	"updates": {
+		"version": "版本 {{version}}",
+		"unknown": "未知",
+		"manualHint": "檢查時會下載可用更新，結束 App 時安裝已下載的更新。",
+		"autoHint": "啟動時及每隔 24 小時檢查一次。關閉後，進行中或等待安裝的更新仍會繼續。",
+		"error": "無法檢查更新，請稍後重試。",
+		"checking": "正在檢查更新…",
+		"downloadingVersion": "正在下載版本 {{version}}…",
+		"downloading": "正在下載更新…",
+		"upToDate": "上次檢查時未發現更新版本。",
+		"downloadedVersion": "版本 {{version}} 已就緒，結束 App 時將安裝。",
+		"downloaded": "更新已就緒，結束 App 時將安裝。",
+		"releaseNotes": "更新說明",
+		"restart": "重新啟動",
+		"check": "檢查更新",
+		"downloadingLabel": "正在下載更新",
+		"checkingLabel": "正在檢查更新",
+		"autoLabel": "自動更新",
+		"autoToggle": "自動更新"
 	}
 }
