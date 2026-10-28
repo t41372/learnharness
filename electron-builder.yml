@@ -8,7 +8,7 @@
 #   - the asar holds only the shell (electron/main.cjs + package.json);
 #   - signed + notarized since 2026-10-08 (Developer ID Application cert in
 #     the login keychain; notary credentials in the LH_NOTARY keychain
-#     profile; the profile + team env vars are baked into desktop:dist).
+#     profile; local desktop:dist instead uses electron-builder.local.yml).
 appId: com.learnharness.LearnHarness
 productName: LearnHarness
 directories:
@@ -185,10 +185,10 @@ publish:
   # zip/blockmap live on releases; electron-updater reads them anonymously.
   # REQUIRES THE REPO TO BE PUBLIC before 0.3.0 ships — anonymous downloads
   # from a private repo are impossible, and a token baked into the app
-  # would be a leak. desktop:dist passes no --publish flag, so builds never
+  # would be a leak. desktop:dist passes --publish never; local builds never
   # upload; publishing happens at release time (GH_TOKEN + --publish).
   - provider: github
-    owner: amosblomqvist
+    owner: t41372
     repo: learnharness
     # All three CI jobs contribute assets; only the owner publishes it.
     releaseType: draft
