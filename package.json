@@ -21,7 +21,7 @@
 		"typecheck": "tsc --noEmit",
 		"desktop:dev": "concurrently -k \"next dev\" \"LH_DEV_URL=http://localhost:3000 electron .\"",
 		"dev:fresh": "bash scripts/dev-fresh.sh",
-		"desktop:dist": "rm -rf .next/standalone && next build && node scripts/smoke-provider-runtime.mjs && node scripts/build-server.mjs && node scripts/smoke-server.mjs && electron-builder --config electron-builder.local.yml --mac zip --arm64 --publish never",
+		"desktop:dist": "rm -rf .next/standalone && next build && node scripts/smoke-provider-runtime.mjs && node scripts/build-server.mjs && node scripts/smoke-server.mjs && node scripts/fetch-uv.mjs && electron-builder --config electron-builder.local.yml --mac zip --arm64 --publish never",
 		"predesktop:dist": "node scripts/verify-fork-preview.mjs --fetch --write dist/fork-preview-manifest.json"
 	},
 	"dependencies": {
