@@ -1,5 +1,13 @@
 # Desktop builds and releases
 
+## Fork preview builds
+
+The fork uses `main` only to track upstream, and `fork-preview` to preview all registered feature branches. Run `npm run desktop:dist` from a clean, committed `fork-preview`. Its prebuild gate fetches both repositories, verifies the upstream baseline and every registered feature head, and writes `dist/fork-preview-manifest.json`. Incomplete previews are rejected before compiling.
+
+Local builds produce `dist/mac-arm64/LearnHarness.app` and `dist/LearnHarness-<version>-arm64-mac.zip` with ad hoc signatures. `electron-builder.local.yml` disables notarization and uses `build/icon.icns`; the command selects ZIP explicitly and passes `--publish never`. It needs no Developer ID, notary profile, Icon Composer, or DMG device. Existing artifacts are retained until outputs at the same paths are rebuilt.
+
+Updates are configured only for `t41372/learnharness` Releases. Updating this source does not alter an already installed app; replace it with a new preview build. Future releases must be built from a verified `fork-preview`. The remaining release tooling below is inherited and is not the fork's current delivery method.
+
 ## Platforms
 
 | Platform | Build runner | Packages | In-app update |
@@ -27,7 +35,7 @@ Each OS installs its own dependencies and builds its own Next standalone tree:
 
 The shell/updater live in `app.asar`; the standalone server and native renderer binaries ship unpacked as `extraResources`. **Do not cross-build the server payload.** Next traces the build machine's native binaries, so a macOS-built standalone tree is not a Windows/Linux payload.
 
-`npm run desktop:dist` remains the local macOS signing path, using the `LH_NOTARY` keychain profile. For a local Windows/Linux build, run steps 1–5 above, then:
+For a local Windows/Linux build, run steps 1–5 above, then:
 
 ```sh
 # On Windows:
