@@ -16,6 +16,7 @@ import { StatsBar } from "@/components/stats-bar";
 import { ChainTableOverlay } from "@/components/chain-table.tsx";
 import { ComposerActions, NodePickerControl } from "@/components/composer-actions";
 import { SessionStarter } from "@/components/start-session";
+import { OPENING_IMAGE_KEY, handOverOpeningImages } from "@/components/staged-images";
 import type { ChatSettings, GraphSnapshot } from "@/src/core";
 import { useT } from "@/components/i18n";
 
@@ -210,6 +211,7 @@ export function DraftShell({
 										// started yet, so the composer must not read like one is in
 										// flight.
 										placeholder={mode === "practice" ? t("draft.practicePlaceholder") : t("draft.learnPlaceholder")}
+										imageDraftKey={OPENING_IMAGE_KEY}
 									/>
 								</div>
 								<StatsBar
@@ -315,8 +317,9 @@ export function NewSession({ initialConfigured, mode = "teach" }: { initialConfi
 		setStartError(false);
 		void startDraftSession(draft, fetch, mode === "practice" ? "practice" : undefined, mode === "practice" ? picksRef.current : undefined,
 			starterRef.current, JSON.stringify(catalog?.slots.strong))
-			.then((target) => {
-				if (target) router.push(target);
+			.then(async (target) => {
+				// Pasted images ride into the created chat's composer draft.
+				if (target) { await handOverOpeningImages(target); router.push(target); }
 				else { startingRef.current = false; setBusy(false); }
 			})
 			.catch(() => {

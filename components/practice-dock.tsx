@@ -10,6 +10,7 @@ import { useEnterSubmits } from "@/components/enter-submits";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
 import { PathInput } from "@/components/path-input";
+import { StagedImageStrip, stagedImagePasteHandler, useStagedImages } from "@/components/staged-image-strip";
 import type { PrepareThinkingSubmission } from "./plugin-submission-adapters";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/i18n";
@@ -64,10 +65,15 @@ export interface PracticeDockProps {
 	 *  and say so in the hint row. The server registry is the real gate;
 	 *  this is the affordance. */
 	compactionRunning?: boolean;
+	/** Pasted images for the native thinking field (ignored with customInput). */
+	imageDraftKey?: string;
 }
 
-export function PracticeDock({ viewReader, problemCallId, input, expanded, onExpand, onSubmit, onPrepareSubmission, customInput, hasPendingInput = false, preparing = false, onEscape, compactionRunning = false }: PracticeDockProps) {
+export function PracticeDock({ viewReader, problemCallId, input, expanded, onExpand, onSubmit, onPrepareSubmission, customInput, hasPendingInput = false, preparing = false, onEscape, compactionRunning = false, imageDraftKey: nativeImageDraftKey }: PracticeDockProps) {
 	const { t } = useT("chat");
+	const imageDraftKey = customInput ? undefined : nativeImageDraftKey;
+	// Staged images alone make a submission (upstream accepts image-only thinking).
+	const hasImages = useStagedImages(imageDraftKey).images.length > 0;
 	const controller = useOptionalInteractionLayers();
 	const rootRef = useRef<HTMLElement>(null);
 	const [nativeThinking, setNativeThinking] = useState("");
@@ -105,7 +111,7 @@ export function PracticeDock({ viewReader, problemCallId, input, expanded, onExp
 		if (compactionRunning || preparing) return;
 		const prepare = customInput?.prepare ?? onPrepareSubmission;
 		if (prepare) {
-			if (customInput ? !customInput.ready : (!thinkingRef.current.trim() && !hasPendingInput)) return;
+			if (customInput ? !customInput.ready : (!thinkingRef.current.trim() && !hasPendingInput && !hasImages)) return;
 			let capturedRevision = editRevision.current;
 			prepare(() => { capturedRevision = editRevision.current; return customInput ? thinkingRef.current : thinkingRef.current.trim(); }, captured => {
 				if (editRevision.current === capturedRevision && (customInput ? thinkingRef.current : thinkingRef.current.trim()) === captured) { thinkingRef.current = ""; setThinking(""); }
@@ -168,7 +174,10 @@ export function PracticeDock({ viewReader, problemCallId, input, expanded, onExp
 				<div className="px-2.5 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 					{t("thinking.yours")}
 				</div>
+				<StagedImageStrip draftKey={imageDraftKey} className="px-1.5" />
 				<PathInput
+					data-staged-image-key={imageDraftKey}
+					onPaste={stagedImagePasteHandler(imageDraftKey)}
 					value={thinking}
 					dictationPreview={livePreview}
 					onValueChange={(value) => {
@@ -209,7 +218,7 @@ export function PracticeDock({ viewReader, problemCallId, input, expanded, onExp
 					<Button
 						type="button"
 						data-testid="practice-send"
-						disabled={(customInput ? !customInput.ready : (!thinking.trim() && !hasPendingInput)) || compactionRunning || preparing}
+						disabled={(customInput ? !customInput.ready : (!thinking.trim() && !hasPendingInput && !hasImages)) || compactionRunning || preparing}
 						onClick={() => submit()}
 						className="ml-auto h-9 rounded-[6px] px-3.5 text-sm font-medium"
 					>

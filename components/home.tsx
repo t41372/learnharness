@@ -18,6 +18,8 @@ import { StatsBar } from "@/components/stats-bar";
 import { PathInput } from "@/components/path-input";
 import { AttachFilesButton } from "@/components/attach-files-button";
 import { SessionStarter } from "@/components/start-session";
+import { StagedImageStrip, stagedImagePasteHandler } from "@/components/staged-image-strip";
+import { OPENING_IMAGE_KEY, handOverOpeningImages } from "@/components/staged-images";
 import type { TurnUsage } from "@/src/core";
 import { useT } from "@/components/i18n";
 
@@ -160,6 +162,9 @@ export function Home({
 				...(mode === "practice" ? { kind: "practice" } : {}),
 				...(practiceProps.length > 0 ? { graphContext: { propositions: practiceProps } } : {}),
 			}, fetch, JSON.stringify(catalog?.slots.strong));
+			// Pasted images ride into the created chat's composer draft; its
+			// opening delivery sends them and clears them on acceptance.
+			await handOverOpeningImages(target);
 			router.push(target);
 		} catch {
 			startingRef.current = false;
@@ -247,14 +252,17 @@ export function Home({
 					{startError && <p role="alert" className="mb-2 text-sm text-destructive">{t("common:openingPromptFailure")}</p>}
 					<form
 						data-attachment-composer=""
-						className="flex items-end gap-1.5 rounded-2xl border bg-card p-1.5 shadow-lg"
+						className="flex flex-wrap items-end gap-1.5 rounded-2xl border bg-card p-1.5 shadow-lg"
 					onSubmit={(e) => {
 						e.preventDefault();
 						void start();
 					}}
 				>
+					<StagedImageStrip draftKey={OPENING_IMAGE_KEY} className="basis-full" />
 					<PathInput
 						ref={topicInputRef}
+						data-staged-image-key={OPENING_IMAGE_KEY}
+						onPaste={stagedImagePasteHandler(OPENING_IMAGE_KEY)}
 						value={topic}
 						dictationPreview={livePreview}
 						onValueChange={(value) => {
@@ -283,7 +291,7 @@ export function Home({
 						autoFocus
 						className="field-sizing-content lh-input max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
 					/>
-					<AttachFilesButton editorRef={topicInputRef} />
+					<AttachFilesButton editorRef={topicInputRef} imageDraftKey={OPENING_IMAGE_KEY} />
 					{/* No tooltip on the start square — the ↵ glyph is the
 					    affordance (owner, subtlety round 2026-09-25). */}
 					<button

@@ -4,6 +4,7 @@ import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from "
 import { DICTATION_PREVIEW_QUESTION, joinDictation, useDictationPreview, useDictationTarget } from "@/components/dictation";
 import { composingQuestionKey, pluginQuestionKeySuppressed } from "./plugin-question-keys";
 import { PathInput } from "@/components/path-input";
+import { StagedImageStrip, stagedImagePasteHandler } from "@/components/staged-image-strip";
 import { useT } from "@/components/i18n";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
@@ -31,6 +32,7 @@ export function ReadingThinkingField({
 	onOpen,
 	claim,
 	inputRef,
+	imageDraftKey,
 }: {
 	value: string;
 	revision: number;
@@ -45,6 +47,8 @@ export function ReadingThinkingField({
 	/** Primary dictation claim — true while the check is behind its reveal. */
 	claim: boolean;
 	inputRef?: RefObject<HTMLDivElement | null>;
+	/** Pasted images for the readingThinking channel (built-in checks only). */
+	imageDraftKey?: string;
 }) {
 	const { t } = useT("chat");
 	const controller = useOptionalInteractionLayers();
@@ -72,8 +76,11 @@ export function ReadingThinkingField({
 			<div className="pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 				{t("readingThinking.label")}
 			</div>
+			<StagedImageStrip draftKey={imageDraftKey} className="pb-1" />
 			<PathInput
 				ref={inputRef}
+				data-staged-image-key={imageDraftKey}
+				onPaste={stagedImagePasteHandler(imageDraftKey)}
 				value={draft}
 				onValueChange={applyDraft}
 				dictationPreview={livePreview}

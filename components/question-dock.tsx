@@ -9,6 +9,7 @@ import { useEnterSubmits } from "@/components/enter-submits";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
 import { PathInput } from "@/components/path-input";
+import { StagedImageStrip, stagedImagePasteHandler, useStagedImages } from "@/components/staged-image-strip";
 import { MalformedQuestion } from "@/components/malformed-question";
 import { ToolContentResponse } from "@/components/ai-elements/message";
 import { QuestionPreview } from "@/components/question-preview";
@@ -111,6 +112,9 @@ export interface QuestionDockProps {
 	 *  and say so in the hint row. The server registry is the real gate;
 	 *  this is the affordance. */
 	compactionRunning?: boolean;
+	/** Staged-image drafts for the text-mode answer field and the select-mode
+	 *  thinking field (keyed per pending question). Absent: no image staging. */
+	imageDraftKeys?: { answer: string; thinking: string };
 }
 
 export function QuestionDock({
@@ -132,6 +136,7 @@ export function QuestionDock({
 	dictationClaim = true,
 	compactionRunning = false,
 	workingRef,
+	imageDraftKeys,
 }: QuestionDockProps) {
 	const { t } = useT("chat");
 	// The probe-phase names (owner, 2026-10-09) canonicalize onto their
@@ -191,6 +196,7 @@ export function QuestionDock({
 					workingRef={workingRef}
 					dictationClaim={dictationClaim}
 					compactionRunning={compactionRunning}
+					imageDraftKeys={imageDraftKeys}
 				/>
 			</div>
 		</>
@@ -285,6 +291,7 @@ function QuestionDockForm({
 	dictationClaim = true,
 	compactionRunning = false,
 	workingRef,
+	imageDraftKeys,
 }: Omit<QuestionDockProps, "expanded" | "onExpand" | "reveal">) {
 	const { t } = useT("chat");
 	const kind = toolQuestionKind(toolName);
@@ -404,9 +411,14 @@ function QuestionDockForm({
 
 	const toggle = (idx: number) => setSel(toggleOption(selectMode, sel, idx));
 
+	// The field's pasted images: answer images in text mode, else thinking
+	// images. Answer images alone make a text answer (upstream accepts that);
+	// a selection is still required in select modes.
+	const imageDraftKey = qd.mode === "text" ? imageDraftKeys?.answer : imageDraftKeys?.thinking;
+	const hasImages = useStagedImages(imageDraftKey).images.length > 0;
 	const nativeCanSubmit =
 		qd.mode === "text"
-			? text.trim().length > 0
+			? text.trim().length > 0 || hasImages
 			: sel.dontKnow || (sel.otherSelected && other.trim().length > 0) || sel.selected.size > 0;
 
 	const canSubmit = nativeCanSubmit || hasPendingInput?.(qd) === true;
@@ -918,8 +930,11 @@ function QuestionDockForm({
 					<div className="px-2.5 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
 						{qd.mode === "text" ? t("questionDock.yourAnswer") : t("thinking.yours")}
 					</div>
+					<StagedImageStrip draftKey={imageDraftKey} className="px-1.5" />
 					{qd.mode === "text" ? (
 						<PathInput
+							data-staged-image-key={imageDraftKey}
+							onPaste={stagedImagePasteHandler(imageDraftKey)}
 							value={text}
 							dictationPreview={livePreview}
 							onValueChange={(value) => {
@@ -951,6 +966,8 @@ function QuestionDockForm({
 					) : (
 						<PathInput
 							ref={thinkingRef}
+							data-staged-image-key={imageDraftKey}
+							onPaste={stagedImagePasteHandler(imageDraftKey)}
 							value={thinking}
 							dictationPreview={livePreview}
 							onValueChange={(value) => {

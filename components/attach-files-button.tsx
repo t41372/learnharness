@@ -10,6 +10,7 @@ import { useT } from "@/components/i18n";
 import { InteractionLayerOwner, useInteractionLayer, useInteractionLayers, useOptionalInteractionLayers } from "./interaction-layers";
 import { INTERACTION_LAYER_Z_BASE } from "./host-dialog";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
+import { STAGED_IMAGE_ACCEPT, splitImageFiles, stagedImages } from "./staged-images";
 
 /** Picked files → the rooted paths an editor chips (issue #285), via the
  *  desktop bridge. Same validity rule as drops: a file without a usable
@@ -85,11 +86,17 @@ function AttachmentPopup({ anchorRef, rootRef, open, close, children }: {
  *  copy resolves at render, in the interface language). */
 type AttachNotice = "" | "browser" | "folderFailed";
 
-export function AttachFilesButton({ editorRef }: { editorRef: React.RefObject<HTMLDivElement | null> }) {
+/**
+ * In the browser, an input with a staged-image draft (`imageDraftKey`) turns
+ * the paperclip into an image picker: picked images are staged as inline
+ * images, other files get the browser notice. The desktop is unchanged.
+ */
+export function AttachFilesButton({ editorRef, imageDraftKey }: { editorRef: React.RefObject<HTMLDivElement | null>; imageDraftKey?: string }) {
 	const { t } = useT("chat");
 	const controller = useOptionalInteractionLayers();
 	const pickerRef = useRef<HTMLInputElement>(null);
 	const desktop = useDesktopPaths();
+	const browserImages = !desktop && imageDraftKey !== undefined;
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const popupRef = useRef<HTMLDivElement>(null);
 	const choosingFolder = useRef(false);
@@ -153,24 +160,35 @@ export function AttachFilesButton({ editorRef }: { editorRef: React.RefObject<HT
 				type="file"
 				multiple
 				hidden
+				accept={browserImages ? STAGED_IMAGE_ACCEPT : undefined}
 				data-testid="attach-files-input"
 				onChange={(e) => {
 					const resolve = window.lh?.getPathForFile;
+					if (!resolve && imageDraftKey !== undefined) {
+						const { images, others } = splitImageFiles(Array.from(e.currentTarget.files ?? []));
+						if (images.length) void stagedImages.add(imageDraftKey, images);
+						setNotice(others.length ? "browser" : "");
+						e.currentTarget.value = "";
+						return;
+					}
 					const { paths } = resolve ? pathsForFiles(Array.from(e.currentTarget.files ?? []), resolve) : { paths: [] };
 					if (paths.length > 0) editorRef.current?.dispatchEvent(new CustomEvent(INSERT_FILE_PATHS_EVENT, { detail: paths }));
 					e.currentTarget.value = ""; // allow re-picking the same file
 				}}
 			/>
-			<Hint label={desktop ? t("filePaths.attachMenu") : t("filePaths.browserNotice")}>
+			<Hint label={desktop ? t("filePaths.attachMenu") : browserImages ? t("attachments.attachImages") : t("filePaths.browserNotice")}>
 				<button
 					ref={buttonRef}
 					type="button"
-					aria-label={t("filePaths.attach")}
-					aria-disabled={!desktop}
-					aria-haspopup="menu"
-					aria-expanded={open}
+					aria-label={browserImages ? t("attachments.attachImages") : t("filePaths.attach")}
+					aria-disabled={!desktop && !browserImages}
+					aria-haspopup={browserImages ? undefined : "menu"}
+					aria-expanded={browserImages ? undefined : open}
 					data-testid="attach-files"
-					onClick={() => { if (desktop) { setNotice(""); setOpen(!open); } }}
+					onClick={() => {
+						if (desktop) { setNotice(""); setOpen(!open); }
+						else if (browserImages) { setNotice(""); pickerRef.current?.click(); }
+					}}
 					className="flex size-10 shrink-0 items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground aria-disabled:cursor-default aria-disabled:opacity-40 aria-disabled:hover:bg-transparent aria-disabled:hover:text-muted-foreground"
 				>
 					<PaperclipIcon className="size-4" />

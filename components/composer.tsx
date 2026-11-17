@@ -6,6 +6,7 @@ import { DICTATION_PREVIEW_MAIN, useDictationPreview } from "@/components/dictat
 import { cn } from "@/lib/utils";
 import { PathInput } from "@/components/path-input";
 import { AttachFilesButton } from "@/components/attach-files-button";
+import { StagedImageStrip, stagedImagePasteHandler, useStagedImages } from "@/components/staged-image-strip";
 import { useT } from "@/components/i18n";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
@@ -63,6 +64,7 @@ export function ChatSessionComposer({
 	nextProblem,
 	onNext,
 	pendingInput = false,
+	imageDraftKey,
 }: {
 	busy: boolean;
 	value: string;
@@ -79,10 +81,14 @@ export function ChatSessionComposer({
 	nextProblem?: boolean;
 	onNext?: () => void;
 	pendingInput?: boolean;
+	/** The chat composer's staged-image draft (text and steer share it). */
+	imageDraftKey?: string;
 }) {
 	const [draft, setDraft] = useState(value);
 	useLayoutEffect(() => { setDraft(value); }, [revision, value]);
-	const canSend = sendAllowed && (draft.trim().length > 0 || dictationActive || pendingInput);
+	// Staged images alone make a sendable message (upstream accepts image-only text).
+	const stagedImageCount = useStagedImages(imageDraftKey).images.length;
+	const canSend = sendAllowed && (draft.trim().length > 0 || dictationActive || pendingInput || stagedImageCount > 0);
 	const applyDraft = useCallback((next: string) => {
 		setDraft(next);
 		onChange(next);
@@ -102,6 +108,7 @@ export function ChatSessionComposer({
 			placeholder={placeholder}
 			nextProblem={nextProblem}
 			onNext={onNext}
+			imageDraftKey={imageDraftKey}
 		/>
 	);
 }
@@ -122,6 +129,7 @@ export function Composer({
 	defaultDropTarget = true,
 	fileInsertion = true,
 	dictationPreviewKey = DICTATION_PREVIEW_MAIN,
+	imageDraftKey,
 }: {
 	busy: boolean;
 	value: string;
@@ -154,6 +162,9 @@ export function Composer({
 	 *  the page composer by default; a plugin composer passes its own
 	 *  controller's key, or null for none. */
 	dictationPreviewKey?: string | null;
+	/** Opt-in pasted-image staging (built-in composers only): the strip
+	 *  above the row, paste, browser drop and the browser paperclip. */
+	imageDraftKey?: string;
 }) {
 	const { t } = useT("chat");
 	const controller = useOptionalInteractionLayers();
@@ -170,14 +181,17 @@ export function Composer({
 	return (
 		<form
 			data-testid="composer"
-			className="flex items-end gap-1.5 p-1.5"
+			className={cn("flex items-end gap-1.5 p-1.5", imageDraftKey !== undefined && "flex-wrap")}
 			onSubmit={(e) => {
 				e.preventDefault();
 				act();
 			}}
 		>
+			<StagedImageStrip draftKey={imageDraftKey} className="basis-full" />
 			<PathInput
 				ref={editorRef}
+				data-staged-image-key={imageDraftKey}
+				onPaste={stagedImagePasteHandler(imageDraftKey)}
 				value={value}
 				dictationPreview={livePreview}
 				onValueChange={onChange}
@@ -208,7 +222,7 @@ export function Composer({
 				autoFocus={autoFocus}
 				className="field-sizing-content lh-input max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
 			/>
-			<AttachFilesButton editorRef={editorRef} />
+			<AttachFilesButton editorRef={editorRef} imageDraftKey={imageDraftKey} />
 			{/* The button follows the text (owner report 2026-10-03): while
 				 a turn runs WITH text typed it stays the SEND affordance
 				 (click = steer — steering must be clickable, not Enter-only);

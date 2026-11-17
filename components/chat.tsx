@@ -7,6 +7,7 @@ import { usePlugins } from "./plugins";
 import { PluginSubmissionRunner, SubmissionModelEpoch, type SubmissionAttempt } from "./plugin-submission-runner";
 import { submissionImages, type BuiltinSubmissionCapture, type PrepareBuiltinSubmission, type PrepareThinkingSubmission, type PreparePluginQuestionSubmission, type PreparePluginProblemSubmission } from "./plugin-submission-adapters";
 import { SubmittedImages } from "./submitted-images";
+import { stagedImageKey, stagedImages, type StagedImageCapture } from "./staged-images";
 import { usePageSurfaceBoundary, SurfaceRegion } from "./plugin-surfaces";
 import { findSurfaceBoundary } from "./plugin-surface-targets";
 import { scheduleOpeningSubmission } from "./plugin-submission-opening";
@@ -249,6 +250,8 @@ function errorLine(error: SessionError, t: TFunction<["chat", "common"]>): strin
  *  recognized word for word at render; plugin and preparation text from
  *  elsewhere stays verbatim. */
 const THINKING_REQUIRED = "Thinking text or images are required. Your input has been kept.";
+/** A channel that carries no staged images in this submission. */
+const emptyCapture: StagedImageCapture = Object.freeze({ key: "", ids: [], images: [] });
 const MESSAGE_REQUIRED = "Message text or images are required. Your input has been kept.";
 
 function preparationLine(message: string, t: TFunction<["chat", "common"]>): string {
@@ -772,14 +775,23 @@ export function Chat({
 	const prepareBuiltin: PrepareBuiltinSubmission = ({ question, capture, isCurrent }: BuiltinSubmissionCapture) => {
 		const target = builtinTarget(question), original = pending;
 		if (!target || !original || busyRef.current || compacting) return;
-		void runSubmission(target, () => {
+		// Staged images per field: the answer field (text mode) or thinking
+		// field (select modes), plus the reading field behind a reveal.
+		let staged: StagedImageCapture[] = [];
+		void runSubmission(target, async () => {
+			const field = (surface: "answer" | "thinking" | "readingThinking", used: boolean) =>
+				used ? stagedImages.capture(stagedImageKey(chatId, surface, original.key)) : emptyCapture;
+			const [answerImages, thinkingImages, readingImages] = await Promise.all([
+				field("answer", question.mode === "text"), field("thinking", question.mode !== "text"), field("readingThinking", requiresReveal),
+			]);
+			staged = [answerImages, thinkingImages, readingImages];
 			const raw = capture();
 			saveQuestionDraft(original.key, { readingThinking: readingThinkingRef.current });
 			return { type: "answer", answer: {
 				...(raw.dontKnow !== undefined ? { dontKnow: raw.dontKnow } : {}), ...(raw.values !== undefined ? { values: raw.values } : {}),
 				...(raw.other !== undefined ? { other: raw.other } : {}), ...(raw.text !== undefined ? { text: raw.text } : {}),
-				...(raw.confidence !== undefined ? { confidence: raw.confidence } : {}), images: [],
-			}, thinking: { text: raw.thinking ?? "", images: [] }, readingThinking: { text: requiresReveal ? readingThinkingRef.current : "", images: [] } };
+				...(raw.confidence !== undefined ? { confidence: raw.confidence } : {}), images: answerImages.images,
+			}, thinking: { text: raw.thinking ?? "", images: thinkingImages.images }, readingThinking: { text: requiresReveal ? readingThinkingRef.current : "", images: readingImages.images } };
 		}, () => {
 			const now = pendingQuestionOf(submissionLive.current.nativeMessages);
 			return isCurrent() && !busyRef.current && now?.messageId === original.messageId && now.contentIndex === original.contentIndex && now.toolCallId === original.toolCallId && now.tool === original.tool;
@@ -791,7 +803,7 @@ export function Chat({
 			// Save newer native edits without changing the prepared payload.
 			capture(); saveQuestionDraft(original.key, { readingThinking: readingThinkingRef.current });
 			attempt.deliver();
-			return send({ type: "answer", toolCallId: original.toolCallId, occurrence: target.question.occurrence, answer: { ...answer, ...(images ? { images } : {}) } }, attempt.accepted, original.key, attempt.refused);
+			return send({ type: "answer", toolCallId: original.toolCallId, occurrence: target.question.occurrence, answer: { ...answer, ...(images ? { images } : {}) } }, () => { stagedImages.release(staged); attempt.accepted(); }, original.key, attempt.refused);
 		});
 	};
 	const thinkingTarget = (): Extract<PluginSubmissionTarget, { type: "thinking" }> | undefined => {
@@ -802,12 +814,15 @@ export function Chat({
 	const prepareThinking: PrepareThinkingSubmission = (capture, clear) => {
 		const target = thinkingTarget();
 		if (!target || busyRef.current || compacting) return;
-		let captured = "";
-		void runSubmission(target, () => ({ type: "thinking", content: { text: captured = capture(), images: [] } }), () => !busyRef.current && JSON.stringify(activeProblemOccurrenceOf(submissionLive.current.nativeMessages)) === JSON.stringify(target.problem.occurrence), async (prepared, attempt) => {
+		let captured = "", staged = emptyCapture;
+		void runSubmission(target, async () => {
+			staged = await stagedImages.capture(stagedImageKey(chatId, "practiceThinking", target.problem.occurrence.toolCallId));
+			return { type: "thinking", content: { text: captured = capture(), images: staged.images } };
+		}, () => !busyRef.current && JSON.stringify(activeProblemOccurrenceOf(submissionLive.current.nativeMessages)) === JSON.stringify(target.problem.occurrence), async (prepared, attempt) => {
 			if (prepared.type !== "thinking") return false;
 			if (!prepared.content.text.trim() && !prepared.content.images.length) throw new Error(THINKING_REQUIRED);
 			attempt.deliver();
-			return send({ type: "thinking", problemCallId: target.problem.occurrence.toolCallId, occurrence: target.problem.occurrence, text: prepared.content.text, ...(prepared.content.images.length ? { images: prepared.content.images.map(image => ({ ...image })) } : {}) }, () => { clear(captured); attempt.accepted(); }, undefined, attempt.refused);
+			return send({ type: "thinking", problemCallId: target.problem.occurrence.toolCallId, occurrence: target.problem.occurrence, text: prepared.content.text, ...(prepared.content.images.length ? { images: prepared.content.images.map(image => ({ ...image })) } : {}) }, () => { clear(captured); stagedImages.release([staged]); attempt.accepted(); }, undefined, attempt.refused);
 		});
 	};
 	const pluginProblemTarget = (): Extract<PluginSubmissionTarget, { type: "plugin-problem-submission" }> | undefined => {
@@ -860,13 +875,20 @@ export function Chat({
 		if (!target || pendingRef.current || pluginOwnsDock || activeProblemRef.current || compacting) return Promise.resolve(false);
 		if (!busyRef.current && zeroKeys) { setSetupOpen(true); return Promise.resolve(false); }
 		if (!busyRef.current && selectedModelUnavailable(catalog, selectedModel)) { openModelPicker(); return Promise.resolve(false); }
-		let captured = "", capturedRevision = 0;
-		return runSubmission(target, () => { capturedRevision = composerEditRevision.current; return { type: "text", content: { text: captured = supplied ?? textRef.current.trim(), images: [] } }; }, () => submissionLive.current.ready && !pendingQuestionOf(submissionLive.current.nativeMessages) && !pendingPluginQuestionOf(submissionLive.current.nativeMessages) && !activeProblemOf(submissionLive.current.nativeMessages), async (prepared, attempt) => {
+		let captured = "", capturedRevision = 0, staged = emptyCapture;
+		// The composer's staged images ride composer sends and the opening
+		// prompt; a supplied programmatic text (sendText) carries none.
+		const withImages = supplied === undefined || openingAccepted !== undefined;
+		return runSubmission(target, async () => {
+			if (withImages) staged = await stagedImages.capture(stagedImageKey(chatId, "composer"));
+			capturedRevision = composerEditRevision.current;
+			return { type: "text", content: { text: captured = supplied ?? textRef.current.trim(), images: staged.images } };
+		}, () => submissionLive.current.ready && !pendingQuestionOf(submissionLive.current.nativeMessages) && !pendingPluginQuestionOf(submissionLive.current.nativeMessages) && !activeProblemOf(submissionLive.current.nativeMessages), async (prepared, attempt) => {
 			if (prepared.type !== "text") return false;
 			if (!prepared.content.text.trim() && !prepared.content.images.length) throw new Error(MESSAGE_REQUIRED);
 			if (beforePost && !beforePost(captured)) { attempt.cancel(); return false; }
 			draftRef.current = captured;
-			const accepted = () => { if (composerEditRevision.current === capturedRevision && textRef.current.trim() === captured) applyText(""); openingAccepted?.(); attempt.accepted(); };
+			const accepted = () => { if (composerEditRevision.current === capturedRevision && textRef.current.trim() === captured) applyText(""); stagedImages.release([staged]); openingAccepted?.(); attempt.accepted(); };
 			attempt.deliver();
 			if (busyRef.current) return steer(prepared.content.text, prepared.content.images, accepted, attempt.refused);
 			return send({ type: "text", text: prepared.content.text, ...(prepared.content.images.length ? { images: prepared.content.images.map(image => ({ ...image })) } : {}) }, accepted, undefined, attempt.refused);
@@ -2169,6 +2191,7 @@ export function Chat({
 							busy={busy}
 							value={textRef.current}
 							pendingInput={pendingTextInput}
+							imageDraftKey={stagedImageKey(chatId, "composer")}
 							revision={composerDraftRevision}
 							onChange={recordComposerText}
 							inputRef={composerInputRef}
@@ -2918,6 +2941,8 @@ export function DockOverlay({
 					{(pending || pluginQuestion) && requiresReveal && (
 						<ReadingThinkingField
 							inputRef={readingInputRef}
+							// Built-in checks only: plugin questions own their channels.
+							imageDraftKey={!pluginQuestion && pending ? stagedImageKey(chatId, "readingThinking", pending.key) : undefined}
 							value={readingThinking}
 							revision={readingThinkingRevision}
 							onChange={onReadingThinking}
@@ -2970,6 +2995,7 @@ export function DockOverlay({
 									onEscape={dictationCancel}
 									dictationClaim={!revealPending}
 									compactionRunning={compactionRunning}
+									imageDraftKeys={{ answer: stagedImageKey(chatId, "answer", pending.key), thinking: stagedImageKey(chatId, "thinking", pending.key) }}
 								/>
 							) : pluginPractice ? (
 								<PluginProblemDock {...pluginPractice} viewReader={customViewReader} expanded={expanded} onExpand={() => { setExpanded(true); void suppressFoldDuringReveal(); }} />
@@ -2989,6 +3015,7 @@ export function DockOverlay({
 									preparing={preparing}
 									onEscape={dictationCancel}
 									compactionRunning={compactionRunning}
+									imageDraftKey={stagedImageKey(chatId, "practiceThinking", practice.toolCallId)}
 								/>
 							) : (
 								composer

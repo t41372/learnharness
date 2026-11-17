@@ -6,19 +6,27 @@ import { directoryReferencePath, quoteFilePath } from "@/src/core";
 import { appendToPrimaryInput } from "@/components/dictation";
 import { INSERT_FILE_PATHS_EVENT } from "@/components/path-input";
 import { useT } from "@/components/i18n";
+import { splitImageFiles, stagedImageDropKey, stagedImages } from "@/components/staged-images";
 
 /** The English reference line (chat:filePaths.browserNotice renders it in
  *  the interface language). */
 export const BROWSER_NOTICE = "Local file paths can only be attached in the desktop app. You can paste a full path instead.";
 
 /** The drop's passive status line; its copy resolves at render. */
-type DropNotice = "" | "browser" | "noPaths" | "noChat" | "skipped";
+type DropNotice = "" | "browser" | "noPaths" | "noChat" | "skipped" | "noImageTarget";
 const NOTICE_KEY = {
 	browser: "filePaths.browserNotice",
 	noPaths: "filePaths.noPaths",
 	noChat: "filePaths.noChat",
 	skipped: "filePaths.skipped",
+	noImageTarget: "attachments.noTarget",
 } as const;
+
+/** Every dragged item claims an image type (types are visible mid-drag). */
+const onlyImages = (event: React.DragEvent) => {
+	const items = Array.from(event.dataTransfer.items ?? []).filter(item => item.kind === "file");
+	return items.length > 0 && items.every(item => item.type.startsWith("image/"));
+};
 
 /** The content area only: the sidebar is deliberately outside this zone.
  * Existing files stay where they are; only quoted path strings enter drafts. */
@@ -35,6 +43,7 @@ export function FilePathDropZone({ children, className, onContentRoot }: {
 	}, [onContentRoot]);
 	const depth = useRef(0);
 	const [dragging, setDragging] = useState(false);
+	const [draggingImages, setDraggingImages] = useState(false);
 	const [notice, setNotice] = useState<DropNotice>("");
 	const hasFiles = (event: React.DragEvent) => Array.from(event.dataTransfer.types).includes("Files");
 	const clearDrag = () => { depth.current = 0; setDragging(false); };
@@ -62,6 +71,7 @@ export function FilePathDropZone({ children, className, onContentRoot }: {
 				event.preventDefault();
 				depth.current++;
 				setDragging(true);
+				setDraggingImages(onlyImages(event));
 				setNotice("");
 			}}
 			onDragOver={(event) => {
@@ -81,7 +91,15 @@ export function FilePathDropZone({ children, className, onContentRoot }: {
 				event.stopPropagation();
 				clearDrag();
 				const resolve = window.lh?.getPathForFile;
-				if (!resolve) { setNotice("browser"); return; }
+				if (!resolve) {
+					// Browser: images become staged inline images on the
+					// focused (else default) input; other files keep the notice.
+					const { images, others } = splitImageFiles(Array.from(event.dataTransfer.files));
+					const key = images.length ? stagedImageDropKey(event.currentTarget, document.activeElement) : undefined;
+					if (key !== undefined) void stagedImages.add(key, images);
+					setNotice(others.length ? "browser" : images.length && key === undefined ? "noImageTarget" : "");
+					return;
+				}
 				// Inspect only the dropped item's type, never traverse its entries.
 				// Positively known directories get a durable trailing separator.
 				const entries = Array.from(event.dataTransfer.items).filter((item) => item.kind === "file");
@@ -117,7 +135,7 @@ export function FilePathDropZone({ children, className, onContentRoot }: {
 				<div data-testid="file-path-drop-indicator" className="pointer-events-none absolute inset-2 z-50 flex items-center justify-center rounded-xl border-2 border-dashed border-primary bg-background/85 p-6 text-center backdrop-blur-sm">
 					<div className="flex max-w-md flex-col items-center gap-3">
 						<FileSymlinkIcon className="size-8 text-primary" aria-hidden />
-						<span className="font-ui text-sm">{window.lh?.getPathForFile ? t("filePaths.dropHere") : t("filePaths.browserNotice")}</span>
+						<span className="font-ui text-sm">{window.lh?.getPathForFile ? t("filePaths.dropHere") : draggingImages ? t("attachments.dropImages") : t("filePaths.browserNotice")}</span>
 					</div>
 				</div>
 			)}
