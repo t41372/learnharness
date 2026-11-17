@@ -247,7 +247,7 @@ export function DictationSection({
 
 			<SettingsGroup label="On this device" testid="group-standard-asr">
 				{(actionError ?? status?.error) && (
-					<p role="alert" className="whitespace-pre-wrap break-words rounded-sm border border-red-500/40 px-3 py-2 font-mono text-[11px] text-red-500" data-testid="standard-asr-error">
+					<p role="alert" className="whitespace-pre-wrap break-words rounded-sm border border-error/40 px-3 py-2 font-mono text-[11px] text-error" data-testid="standard-asr-error">
 						{actionError ?? status?.error}
 					</p>
 				)}
@@ -304,7 +304,7 @@ export function DictationSection({
 													setRemoving(null);
 													void run({ op: "uninstallEngine", name: plugin.name });
 												}}
-												className="text-red-500 underline-offset-2 hover:underline"
+												className="text-error underline-offset-2 hover:underline"
 											>
 												Remove
 											</button>
@@ -317,7 +317,7 @@ export function DictationSection({
 											type="button"
 											disabled={busy}
 											onClick={() => setRemoving(plugin.name)}
-											className="shrink-0 text-xs text-muted-foreground/70 underline-offset-2 hover:text-red-500 hover:underline disabled:opacity-40"
+											className="shrink-0 text-xs text-muted-foreground/70 underline-offset-2 hover:text-error hover:underline disabled:opacity-40"
 										>
 											Remove…
 										</button>
