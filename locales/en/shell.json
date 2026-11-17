@@ -57,9 +57,6 @@
 	"minimalHome": {
 		"chains": "Chains",
 		"chainsHint": "Every reasoning chain",
-		"import": "Import notes…",
-		"importHint": "Import notes into the graph",
-		"importing": "Importing…",
 		"summary": {
 			"propositions_one": "{{count}} proposition",
 			"propositions_other": "{{count}} propositions",
@@ -71,7 +68,8 @@
 			"practiceSessions_other": "{{count}} practice sessions",
 			"importedNotes_one": "{{count}} imported note",
 			"importedNotes_other": "{{count}} imported notes",
-			"empty": "Nothing here yet — import notes to begin building the graph."
+			"emptyStart": "Start a session to begin learning.",
+			"emptyAttach": "Attach your material with the paperclip or drag and drop."
 		}
 	},
 	"activity": {
@@ -93,7 +91,8 @@
 			"demo": "Demo builder",
 			"visual": "Figure maker",
 			"pdf": "PDF reader",
-			"subAgent": "Sub-agent"
+			"subAgent": "Sub-agent",
+			"plugin": "Plugin worker"
 		},
 		"abortFailed": "Abort failed — try again",
 		"end": "End this background process",
@@ -109,7 +108,8 @@
 		"ready": "LearnHarness {{version}} is ready",
 		"readyUnversioned": "LearnHarness update is ready",
 		"restartToInstall": " — restart to finish installing.",
-		"restart": "Restart"
+		"restart": "Restart",
+		"dismiss": "Dismiss update notification"
 	},
 	"cheatSheet": {
 		"title": "Keyboard shortcuts",
@@ -118,7 +118,9 @@
 			"global": "Global",
 			"chat": "Chat",
 			"graph": "Graph view"
-		}
+		},
+		"unbound": "Unbound",
+		"inactive": "Inactive: {{reason}}"
 	},
 	"deleteSession": {
 		"aria": "Delete session",
@@ -161,7 +163,11 @@
 		"zoomOut": "Zoom out",
 		"fit": "Fit diagram to view",
 		"zoomIn": "Zoom in",
-		"rendering": "Rendering diagram…"
+		"rendering": "Rendering diagram…",
+		"imageTitle": "Image",
+		"imageAria": "Image focus",
+		"fitImage": "Fit image to view",
+		"imageAlt": "Submitted image"
 	},
 	"setupCta": {
 		"addProviderKey": "Add a provider key"
@@ -226,34 +232,32 @@
 		"manageChatGPT": "Manage ChatGPT usage",
 		"unpriced": "Unpriced turns",
 		"turns": "Turns",
-		"steps": "{{n}} steps"
+		"steps": "{{n}} steps",
+		"cliWindow": "Window reported by Claude Code; may be lower for auto-compaction.",
+		"cacheHitRate": "Cache hit rate"
 	},
-	"reviews": {
-		"title": "Reviews",
-		"description": "Review knowledge when it is due. New knowledge is added automatically; add existing propositions from the knowledge map.",
-		"dueCount": "{{count}} due",
-		"loadError": "Could not load reviews. Try again.",
-		"saveError": "Could not save your review. Your rating has not been discarded; try again.",
-		"startError": "Could not start this review. Check your model settings and try again.",
+	"deleteSource": {
+		"aria": "Delete sources",
+		"title": "Delete selected sources and folders?",
+		"more_one": ", and {{count}} more",
+		"more_other": ", and {{count}} more",
+		"contributions": "Removes these sources’ contributions to propositions and reasoning chains. Knowledge supported by other sources survives; knowledge supported only by these sources is removed.",
+		"records": "Imported source records are removed, but original files on disk are never changed. Selected folders are removed only when empty; folders needed by kept sessions remain.",
+		"alsoDeleteSessions_one": "Also delete the {{count}} selected session",
+		"alsoDeleteSessions_other": "Also delete the {{count}} selected sessions",
+		"sessionsBody": "Unchecked, conversations stay in their current folders and can be extracted again. Either way, their graph contributions and extraction coverage are cleared. Checking this also permanently deletes their messages and background jobs.",
+		"cancel": "Cancel",
+		"deleting": "Deleting…",
 		"retry": "Try again",
-		"loading": "Loading reviews…",
-		"empty": "No knowledge is enrolled yet. Select propositions in the knowledge map and choose Add to review.",
-		"dueNow": "Due now",
-		"retention": "Estimated recall: {{percent}}%",
-		"history": "Review history",
-		"sourceAutomatic": "Added automatically when first learned.",
-		"sourceManual": "Added by you.",
-		"resume": "Resume",
-		"start": "Start review",
-		"add": "Add to review",
-		"added": "Added to review",
-		"beginPrompt": "Start this spaced review with a fresh retrieval problem.",
-		"again": "Forgot",
-		"hard": "Hard",
-		"good": "Good",
-		"easy": "Easy",
-		"scheduled": "Next review scheduled.",
-		"back": "Back to reviews",
-		"ratePrompt": "How well could you recall this before seeing the solution?"
+		"confirm": "Delete"
+	},
+	"sources": {
+		"folderNamePlaceholder": "Folder name",
+		"nameInput": "Source or folder name",
+		"rename": "Rename",
+		"selectFolder": "Select folder {{name}}",
+		"selectFolderContents": "Select contents of {{name}}",
+		"expandFolder": "Expand folder {{name}}",
+		"moveToRoot": "Move outside folders"
 	}
 }

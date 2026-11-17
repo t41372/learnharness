@@ -16,6 +16,8 @@
 		"question-next-row": "題目 · 下一項",
 		"question-prev-row": "題目 · 上一項",
 		"question-pick-row": "題目 · 選取此項",
-		"question-submit": "題目 · 送出"
-	}
+		"question-submit": "題目 · 送出",
+		"toggle-question-thread": "題目 · 請求提示（旁支對話）"
+	},
+	"openingPromptFailure": "無法開啟對話。你的訊息還在，請重新傳送。"
 }

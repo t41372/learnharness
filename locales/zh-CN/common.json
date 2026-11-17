@@ -16,6 +16,8 @@
 		"question-next-row": "题目 · 下一项",
 		"question-prev-row": "题目 · 上一项",
 		"question-pick-row": "题目 · 选中此项",
-		"question-submit": "题目 · 提交"
-	}
+		"question-submit": "题目 · 提交",
+		"toggle-question-thread": "题目 · 请求提示（旁支对话）"
+	},
+	"openingPromptFailure": "无法打开会话。你的消息还在，请重新发送。"
 }

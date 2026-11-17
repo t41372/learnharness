@@ -16,7 +16,8 @@ export const MermaidError = ({
 	error,
 	retry,
 	className,
-}: MermaidErrorComponentProps & { className?: string }) => {
+	displayOnly = false,
+}: MermaidErrorComponentProps & { className?: string; displayOnly?: boolean }) => {
 	const { t } = useT("graph");
 	return (
 	<div
@@ -32,17 +33,21 @@ export const MermaidError = ({
 		<p className="mt-1 font-mono text-xs break-words text-muted-foreground">
 			{error}
 		</p>
-		<details className="mt-3">
+		{displayOnly ? (
+			<pre className="mt-3 overflow-x-auto rounded-lg bg-muted p-3 font-mono text-xs text-foreground">
+				{chart}
+			</pre>
+		) : <details className="mt-3">
 			<summary className="cursor-pointer text-xs text-muted-foreground">
 				{t("mermaidError.showSource")}
 			</summary>
 			<pre className="mt-2 overflow-x-auto rounded-lg bg-muted p-3 font-mono text-xs text-foreground">
 				{chart}
 			</pre>
-		</details>
-		<Button className="mt-3" onClick={retry} size="sm" variant="outline">
+		</details>}
+		{!displayOnly && <Button className="mt-3" onClick={retry} size="sm" variant="outline">
 			{t("mermaidError.retry")}
-		</Button>
+		</Button>}
 	</div>
 	);
 };

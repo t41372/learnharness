@@ -57,16 +57,14 @@
 	"minimalHome": {
 		"chains": "推理链",
 		"chainsHint": "所有推理链",
-		"import": "导入笔记…",
-		"importHint": "将笔记导入图谱",
-		"importing": "正在导入…",
 		"summary": {
 			"propositions_other": "{{count}} 个命题",
 			"chains_other": "{{count}} 条推理链",
 			"teachSessions_other": "{{count}} 个教学会话",
 			"practiceSessions_other": "{{count}} 个练习会话",
 			"importedNotes_other": "{{count}} 篇导入的笔记",
-			"empty": "这里还什么都没有——导入笔记，开始构建图谱。"
+			"emptyStart": "新建一个会话，开始学习。",
+			"emptyAttach": "点击回形针或拖放文件来添加学习材料。"
 		}
 	},
 	"activity": {
@@ -88,7 +86,8 @@
 			"demo": "演示制作者",
 			"visual": "图示制作者",
 			"pdf": "PDF 阅读者",
-			"subAgent": "子 Agent"
+			"subAgent": "子 Agent",
+			"plugin": "插件后台任务"
 		},
 		"abortFailed": "终止失败——请重试",
 		"end": "结束这个后台进程",
@@ -104,7 +103,8 @@
 		"ready": "LearnHarness {{version}} 已就绪",
 		"readyUnversioned": "LearnHarness 更新已就绪",
 		"restartToInstall": "，重启即可完成安装。",
-		"restart": "重启"
+		"restart": "重启",
+		"dismiss": "关闭更新通知"
 	},
 	"cheatSheet": {
 		"title": "键盘快捷键",
@@ -113,7 +113,9 @@
 			"global": "全局",
 			"chat": "会话",
 			"graph": "图谱视图"
-		}
+		},
+		"unbound": "未绑定",
+		"inactive": "未生效：{{reason}}"
 	},
 	"deleteSession": {
 		"aria": "删除会话",
@@ -156,7 +158,11 @@
 		"zoomOut": "缩小",
 		"fit": "缩放至适合视图",
 		"zoomIn": "放大",
-		"rendering": "正在渲染图表…"
+		"rendering": "正在渲染图表…",
+		"imageTitle": "图片",
+		"imageAria": "图片聚焦视图",
+		"fitImage": "缩放至适合视图",
+		"imageAlt": "提交的图片"
 	},
 	"setupCta": {
 		"addProviderKey": "添加服务商密钥"
@@ -221,34 +227,30 @@
 		"manageChatGPT": "管理 ChatGPT 用量",
 		"unpriced": "未计价轮次",
 		"turns": "轮次",
-		"steps": "{{n}} 步"
+		"steps": "{{n}} 步",
+		"cliWindow": "上下文窗口由 Claude Code 报告；因自动压缩，实际可能更小。",
+		"cacheHitRate": "缓存命中率"
 	},
-	"reviews": {
-		"title": "待复习",
-		"description": "在到期时复习知识。新知识会自动加入；已有知识可从知识图谱选择加入。",
-		"dueCount": "{{count}} 项到期",
-		"loadError": "无法加载复习列表，请重试。",
-		"saveError": "无法保存复习结果，请重试。",
-		"startError": "无法开始复习，请检查模型设置后重试。",
+	"deleteSource": {
+		"aria": "删除来源",
+		"title": "删除所选的来源和文件夹？",
+		"more_other": "，以及另外 {{count}} 项",
+		"contributions": "移除这些来源对命题和推理链的贡献。有其他来源支持的知识会保留；只由这些来源支持的知识会被移除。",
+		"records": "导入的来源记录会被移除，但磁盘上的原始文件不会被改动。所选文件夹只有为空时才会被移除；保留的会话仍需要的文件夹会保留。",
+		"alsoDeleteSessions_other": "同时删除所选的 {{count}} 个会话",
+		"sessionsBody": "不勾选时，这些会话会留在当前文件夹中，之后可以再次提取。无论是否勾选，它们对图谱的贡献和提取覆盖率都会被清除。勾选后还会永久删除它们的消息和后台任务。",
+		"cancel": "取消",
+		"deleting": "正在删除…",
 		"retry": "重试",
-		"loading": "正在加载复习列表…",
-		"empty": "目前没有待复习的知识。请在知识图谱选择知识，点击“加入复习”。",
-		"dueNow": "现在可复习",
-		"retention": "预计回忆率：{{percent}}%",
-		"history": "复习记录",
-		"sourceAutomatic": "首次学到时自动加入。",
-		"sourceManual": "由你加入。",
-		"resume": "继续复习",
-		"start": "开始复习",
-		"add": "加入复习",
-		"added": "已加入复习",
-		"beginPrompt": "请用一道新的提取练习题开始这次复习。",
-		"again": "忘记",
-		"hard": "困难",
-		"good": "良好",
-		"easy": "容易",
-		"scheduled": "已安排下次复习。",
-		"back": "返回复习列表",
-		"ratePrompt": "在看到答案之前，你能多顺利地回想起来？"
+		"confirm": "删除"
+	},
+	"sources": {
+		"folderNamePlaceholder": "文件夹名称",
+		"nameInput": "来源或文件夹名称",
+		"rename": "重命名",
+		"selectFolder": "选择文件夹 {{name}}",
+		"selectFolderContents": "选择 {{name}} 中的内容",
+		"expandFolder": "展开文件夹 {{name}}",
+		"moveToRoot": "移出文件夹"
 	}
 }

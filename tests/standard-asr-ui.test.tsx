@@ -4,6 +4,7 @@ import { afterEach, test } from "node:test";
 import { createRoot, type Root } from "react-dom/client";
 import { parseHTML } from "linkedom";
 import { DictationSection } from "../components/settings/dictation-section.tsx";
+import { InteractionLayersProvider } from "../components/interaction-layers.tsx";
 import type { AsrModel, AsrModelStatus, DictationSettings, StandardAsrStatus } from "../src/core/index.ts";
 
 const dom = parseHTML("<html><body></body></html>");
@@ -68,7 +69,9 @@ function fixture(installed = true) {
 		return Response.json(overview());
 	};
 	function render() {
-		root!.render(<DictationSection dictation={settings} onChange={(next) => { settings = next; render(); }} />);
+		// The Deepgram key row is the Keys section's, which joins the app's
+		// interaction layers (the shell's provider).
+		root!.render(<InteractionLayersProvider><DictationSection dictation={settings} onChange={(next) => { settings = next; render(); }} /></InteractionLayersProvider>);
 	}
 	return {
 		status, reports, commands, overview,

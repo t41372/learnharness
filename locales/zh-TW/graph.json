@@ -2,7 +2,8 @@
 	"graphView": {
 		"empty": {
 			"title": "知識圖譜",
-			"body": "開始對話或匯入筆記，就能建立你的圖譜。"
+			"body": "開始對話，就能開始學習。",
+			"attachHint": "用迴紋針按鈕加入附件，或直接拖放資料。"
 		},
 		"search": {
 			"label": "搜尋節點",
@@ -12,11 +13,6 @@
 		"chains": {
 			"hint": "所有推理鏈",
 			"button": "推理鏈"
-		},
-		"import": {
-			"hint": "將筆記匯入圖譜",
-			"button": "匯入筆記…",
-			"importing": "匯入中…"
 		},
 		"contextMenu": {
 			"delete": "刪除"
@@ -120,7 +116,18 @@
 			"done": "完成",
 			"doneLabel_other": "完成選取——已選 {{count}} 個命題",
 			"delete": "刪除",
-			"deleteLabel_other": "刪除選取的 {{count}} 個節點"
+			"sourcesAndFolders": "{{sources}} · {{folders}}",
+			"deleteSourcesLabel": "刪除選取的來源和資料夾"
+		},
+		"sourceCount_other": "{{count}} 個來源",
+		"folderCount_other": "{{count}} 個資料夾",
+		"addFolder": "新增資料夾",
+		"selectSource": "選取來源「{{label}}」",
+		"expandSource": "展開來源「{{label}}」",
+		"sources": {
+			"readFailed": "無法讀取來源的資料夾結構。",
+			"saveFailed": "無法儲存來源的資料夾結構。",
+			"deleteFailed": "無法刪除來源。"
 		}
 	},
 	"deleteNode": {
@@ -134,12 +141,18 @@
 			"extractionRunning": "有擷取任務正在執行——請等活動面板中的任務完成後再試。",
 			"notFound": "節點不存在",
 			"http": "刪除失敗（{{status}}）",
-			"network": "刪除失敗——網路錯誤，請再試一次。"
+			"network": "刪除失敗——網路錯誤，請再試一次。",
+			"folderUnavailable": "無法移除資料夾。"
 		},
 		"retry": "重試",
 		"cancel": "取消",
 		"confirm": "刪除",
-		"deleting": "刪除中…"
+		"deleting": "刪除中…",
+		"titleNodesAndFolders": "刪除節點並移除空資料夾？",
+		"titleFolders": "移除空資料夾？",
+		"emptyFolders": "空資料夾：{{names}}",
+		"kept": "對話、匯入的來源紀錄和非空資料夾都會保留。",
+		"keptWithFolders": "只會移除上面列出的空資料夾。對話、匯入的來源紀錄和非空資料夾都會保留。"
 	},
 	"coverage": {
 		"extracting": "擷取中…",
@@ -167,9 +180,18 @@
 		}
 	},
 	"notesImport": {
-		"invalidResponse": "匯入回應無效，請重新匯入此檔案。",
-		"requestFailed": "匯入請求失敗（HTTP {{status}}），請重新匯入此檔案。",
-		"requestFailedDetail": "匯入請求失敗（HTTP {{status}}）：{{detail}}。請重新匯入此檔案。",
+		"invalidResponse": "匯入回應無效。重試前請先檢查圖譜。",
+		"requestFailed": "匯入請求失敗（HTTP {{status}}）。重試前請先檢查圖譜。",
+		"requestFailedDetail": "匯入請求失敗（HTTP {{status}}）：{{detail}}。重試前請先檢查圖譜。",
+		"requestFailedDetailEnded": "匯入請求失敗（HTTP {{status}}）：{{detail}} 重試前請先檢查圖譜。",
+		"control": {
+			"hint": "將檔案擷取到圖譜",
+			"button": "擷取檔案…",
+			"extracting": "擷取中…",
+			"lessonsHint": "如要用於課程，請改為在對話中加入附件。",
+			"files": "檔案",
+			"folder": "資料夾"
+		},
 		"modelsNotConfigured": "尚未設定模型——請先設定你的模型",
 		"providerKeyMissing": "尚未設定 {{provider}} 金鑰——請到「設定 → 供應商」新增"
 	},

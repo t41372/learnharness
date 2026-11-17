@@ -22,7 +22,8 @@
 			"research": "Research agent",
 			"demo": "Demo agent",
 			"visual": "Figure agent",
-			"pdf": "PDF reader"
+			"pdf": "PDF reader",
+			"plugin": "Plugin worker"
 		},
 		"refused": {
 			"modelsLine": "needs model setup",
@@ -68,10 +69,12 @@
 		}
 	},
 	"probeDoneCard": {
-		"title": "Probe concluded — your assessment",
+		"title": "Probe assessment",
 		"retried": "The prober retried: {{error}}",
 		"malformed": "The assessment was malformed — the prober retried with a corrected one.",
-		"writing": "Writing the assessment…"
+		"writing": "Writing the assessment…",
+		"strands_one": "{{count}} strand",
+		"strands_other": "{{count}} strands"
 	},
 	"steerCard": {
 		"unreadable": "A sub-agent finished, but its result could not be displayed.",
@@ -80,7 +83,8 @@
 			"demo": "demo",
 			"visual": "visual",
 			"pdf": "pdf",
-			"job": "job"
+			"job": "job",
+			"plugin": "plugin"
 		},
 		"aborted": "aborted by the learner",
 		"pdfComplete": "reading complete",
@@ -90,7 +94,8 @@
 		"researchComplete": "complete",
 		"sources": "{{count}} sources",
 		"viewBrief": "view brief",
-		"hideBrief": "hide brief"
+		"hideBrief": "hide brief",
+		"deliveryFailed": "Background job recovery/delivery failed"
 	},
 	"toolCallCard": {
 		"input": "Input",
@@ -135,7 +140,23 @@
 			"localUnset": "Set up local dictation",
 			"localReconnectFailed": "Local dictation reconnect failed",
 			"localConnectionLost": "Local dictation connection lost ({{code}})",
-			"localNotReady": "The dictation model isn't ready"
+			"localNotReady": "The dictation model isn't ready",
+			"activeElsewhere": "Dictation is active elsewhere",
+			"languageUnavailable": "Dictation language unavailable",
+			"transcriptNotApplied": "Dictation transcript could not be applied",
+			"localFailed": "Local dictation failed"
 		}
+	},
+	"imageCard": {
+		"unreadable": "Image shown, but it could not be displayed.",
+		"loadFailed": "Image snapshot could not be loaded.",
+		"loading": "Loading image…",
+		"label": "Image",
+		"download": "Download image",
+		"openAria": "Open image fullscreen"
+	},
+	"pluginWorkerCard": {
+		"taskDetails": "Task details",
+		"formatFailed": "Result formatting failed: {{error}}"
 	}
 }

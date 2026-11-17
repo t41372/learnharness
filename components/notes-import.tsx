@@ -1,14 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ChangeEvent } from "react";
+import { WaypointsIcon } from "lucide-react";
+import { Hint } from "@/components/ui/hint";
+import { IMPORT_ACCEPT } from "@/lib/notes-import-limits.ts";
+import { useInteractionLayer, useInteractionLayers } from "@/components/interaction-layers";
+import { INTERACTION_LAYER_Z_BASE } from "@/components/host-dialog";
+import { createNotesImportQueue, EMPTY_IMPORT_QUEUE, notesPath } from "./notes-import-queue";
 import { i18n, useT, type TFunction } from "@/components/i18n";
-import {
-	AUTH_PROVIDER_KEYS,
-	MODELS_NOT_CONFIGURED_CODE,
-	PROVIDER_KEY_MISSING_CODE,
-	modelsNotConfigured,
-	providerKeyMissing,
-} from "@/src/core";
+
+export { MAX_IMPORT_BYTES } from "@/lib/notes-import-limits.ts";
+export { notesPath } from "./notes-import-queue";
 
 // Transport-only types: never import the server's extraction/agent module here.
 export interface NotesImportResult {
@@ -22,14 +24,15 @@ export interface NotesImportResult {
 	missing?: string[];
 	provider?: string;
 	slots?: string[];
+	notice?: string;
 }
 
 /** The English copy for callers without the hook's `t` (tests, the
  * reference) — the running language arrives from useNotesImport. */
 const EN = i18n.getFixedT("en", "graph");
 
-/** Validate the entire response before applying any row: a malformed index
- * must never attribute another file's success to this file (same names included). */
+/** Contributor's strict attribution: validate the complete response before
+ * applying any row, even when several files have identical basenames. */
 export function parseNotesImportResults(body: unknown, files: readonly File[], t: TFunction<"graph"> = EN): NotesImportResult[] {
 	const invalid = () => new Error(t("notesImport.invalidResponse"));
 	if (!body || typeof body !== "object" || !("results" in body) || !Array.isArray(body.results) || body.results.length !== files.length) throw invalid();
@@ -37,13 +40,13 @@ export function parseNotesImportResults(body: unknown, files: readonly File[], t
 	for (const raw of body.results) {
 		if (!raw || typeof raw !== "object") throw invalid();
 		const r = raw as NotesImportResult;
-		if (!Number.isInteger(r.requestIndex) || r.requestIndex < 0 || r.requestIndex >= files.length || seen.has(r.requestIndex) || r.filePath !== files[r.requestIndex]!.name) throw invalid();
+		if (!Number.isInteger(r.requestIndex) || r.requestIndex < 0 || r.requestIndex >= files.length || seen.has(r.requestIndex) || r.filePath !== notesPath(files[r.requestIndex]!)) throw invalid();
 		seen.add(r.requestIndex);
 		if (!["completed", "failed", "partial", "aborted", "busy"].includes(r.outcome) || typeof r.ok !== "boolean" || r.ok !== (r.outcome === "completed")) throw invalid();
 		if (r.stats !== undefined && (!r.stats || typeof r.stats !== "object" || !Number.isFinite(r.stats.nodes) || r.stats.nodes < 0 || (r.stats.chains !== undefined && (!Number.isFinite(r.stats.chains) || r.stats.chains < 0)))) throw invalid();
 		if (r.ok && !r.stats) throw invalid();
 		if (!r.ok && typeof r.error !== "string") throw invalid();
-		for (const field of ["error", "code", "provider"] as const) if (r[field] !== undefined && typeof r[field] !== "string") throw invalid();
+		for (const field of ["error", "code", "provider", "notice"] as const) if (r[field] !== undefined && typeof r[field] !== "string") throw invalid();
 		for (const field of ["missing", "slots"] as const) if (r[field] !== undefined && (!Array.isArray(r[field]) || !r[field]!.every((v) => typeof v === "string"))) throw invalid();
 	}
 	return body.results as NotesImportResult[];
@@ -51,7 +54,10 @@ export function parseNotesImportResults(body: unknown, files: readonly File[], t
 
 export async function postNotesImport(files: readonly File[], t: TFunction<"graph"> = EN): Promise<NotesImportResult[]> {
 	const form = new FormData();
-	for (const file of files) form.append("files", file);
+	for (const file of files) {
+		form.append("files", file);
+		form.append("paths", notesPath(file));
+	}
 	const response = await fetch("/api/graph/import", { method: "POST", body: form });
 	let body: unknown;
 	try { body = await response.json(); }
@@ -60,61 +66,88 @@ export async function postNotesImport(files: readonly File[], t: TFunction<"grap
 		const detail = body && typeof body === "object" && "error" in body && typeof body.error === "string" ? body.error : null;
 		throw new Error(detail === null
 			? t("notesImport.requestFailed", { status: response.status })
-			: t("notesImport.requestFailedDetail", { status: response.status, detail }));
+			// A server line that already ends its sentence gets no extra period.
+			: /[.!?]$/.test(detail)
+				? t("notesImport.requestFailedDetailEnded", { status: response.status, detail })
+				: t("notesImport.requestFailedDetail", { status: response.status, detail }));
 	}
 	return parseNotesImportResults(body, files, t);
 }
 
-/** A refusal's human line in the interface language: the two config
- * refusals carry a machine code AND their envelope's exact English line
- * (src/core/settings.ts) — matched on both, so any other text (a
- * reworded server line, free-form failures) still renders as received. */
-function failureLine(r: NotesImportResult, t: TFunction<"graph">): string | undefined {
-	if (r.code === MODELS_NOT_CONFIGURED_CODE && r.error === modelsNotConfigured([]).error) {
-		return t("notesImport.modelsNotConfigured");
-	}
-	if (r.code === PROVIDER_KEY_MISSING_CODE && r.provider && r.error === providerKeyMissing(r.provider, []).error) {
-		const provider = AUTH_PROVIDER_KEYS.find((p) => p.id === r.provider)?.label ?? r.provider;
-		return t("notesImport.providerKeyMissing", { provider });
-	}
-	return r.error;
-}
-
-/** Only error text survives a request; selected Files stay request-local. */
+// Client module singleton: shared by both home views and successive selections.
+// SSR never appends Files, and uses the immutable empty server snapshot.
+// The transport's own failure lines speak the language of the latest
+// mounted hook (the queue outlives any one component).
+let queueT: TFunction<"graph"> = EN;
+const pageImportQueue = createNotesImportQueue((files) => postNotesImport(files, queueT));
 export function useNotesImport(callbacks: { onStart?: () => void; onFinish?: () => void } = {}) {
 	const { t } = useT("graph");
-	const [errors, setErrors] = useState<string[]>([]);
-	const [importing, setImporting] = useState(false);
-	const pending = useRef(false);
-	const submit = async (files: File[]) => {
-		if (pending.current || files.length === 0) return;
-		pending.current = true;
-		setImporting(true);
-		setErrors([]);
-		try {
-			callbacks.onStart?.();
-			const results = await postNotesImport(files, t);
-			setErrors(results
-				.filter((result) => !result.ok)
-				.sort((a, b) => a.requestIndex - b.requestIndex)
-				.map((r) => `${r.filePath}: ${failureLine(r, t)}${r.code ? `\n${r.code}${r.provider ? ` — ${r.provider}` : ""}${r.missing?.length ? ` — ${r.missing.join(", ")}` : ""}${r.slots?.length ? ` — ${r.slots.join(", ")}` : ""}` : ""}`));
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error);
-			setErrors(files.map((file) => `${file.name}: ${message}`));
-		} finally {
-			pending.current = false;
-			setImporting(false);
-			callbacks.onFinish?.();
+	useEffect(() => {
+		queueT = t;
+	}, [t]);
+	const snapshot = useSyncExternalStore(pageImportQueue.subscribe, pageImportQueue.getSnapshot, () => EMPTY_IMPORT_QUEUE);
+	const latest = useRef(callbacks);
+	latest.current = callbacks;
+	const seenCompletion = useRef(snapshot.completion);
+	useEffect(() => {
+		if (seenCompletion.current !== snapshot.completion) {
+			seenCompletion.current = snapshot.completion;
+			latest.current.onFinish?.();
 		}
-	};
+	}, [snapshot.completion]);
 	return {
-		errors, importing,
-		onImportFiles: (files: FileList | null) => { if (files) void submit(Array.from(files)); },
+		errors: snapshot.errors, notices: snapshot.notices, importing: snapshot.importing,
+		onImportFiles: (files: FileList | null) => {
+			if (!files || files.length === 0) return;
+			latest.current.onStart?.();
+			pageImportQueue.append(Array.from(files));
+		},
 	};
+}
+
+/** PR198's shared Files / Folder native picker. Unlike the donor, it remains
+ * available while work is running; later selections join the SAME queue. */
+export function NotesImportControl({ importing, onImportFiles }: { importing: boolean; onImportFiles: (files: FileList | null) => void }) {
+	const { t } = useT("graph");
+	const filesRef = useRef<HTMLInputElement>(null);
+	const folderRef = useRef<HTMLInputElement>(null);
+	const [open, setOpen] = useState(false);
+	const hintId = useId();
+	const onChange = (event: ChangeEvent<HTMLInputElement>) => {
+		onImportFiles(event.target.files);
+		event.target.value = "";
+	};
+	const rootRef = useRef<HTMLDivElement>(null);
+	const panelRef = useRef<HTMLDivElement>(null);
+	const interactions = useInteractionLayers();
+	const popupLayer = useInteractionLayer({ kind: "popup", enabled: open, rootRef: panelRef, anchorRef: rootRef,
+		onClose: () => { setOpen(false); return "closed"; } });
+	const choices = [[t("notesImport.control.files"), filesRef], [t("notesImport.control.folder"), folderRef]] as const;
+	return (
+		<div ref={rootRef} className="relative shrink-0 rounded-xl border bg-card/85 px-1 py-[3px] shadow-lg backdrop-blur"
+			onBlur={(event) => { if (interactions.isElementEligible(panelRef.current) && !event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
+			<input ref={filesRef} type="file" multiple accept={IMPORT_ACCEPT} className="hidden" onChange={onChange} />
+			<input ref={folderRef} type="file" {...{ webkitdirectory: "" }} className="hidden" onChange={onChange} />
+			<Hint label={t("notesImport.control.hint")} side="bottom">
+				<button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" data-testid="import-notes"
+					className="flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent">
+					<WaypointsIcon className="size-3" />{importing ? t("notesImport.control.extracting") : t("notesImport.control.button")}
+				</button>
+			</Hint>
+			{open && (
+				<div ref={panelRef} role="menu" aria-label={t("notesImport.control.hint")} aria-describedby={hintId} style={{ zIndex: INTERACTION_LAYER_Z_BASE + popupLayer.order }} className="absolute right-0 top-full mt-1 w-52 rounded-lg border bg-card p-1 shadow-lg">
+					<div role="none"><p id={hintId} className="px-2 py-1.5 text-xs leading-relaxed text-muted-foreground">{t("notesImport.control.lessonsHint")}</p></div>
+					{choices.map(([label, input]) => <button key={label} type="button" role="menuitem" className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-accent"
+						onClick={() => { setOpen(false); input.current?.click(); }}>{label}</button>)}
+				</div>
+			)}
+		</div>
+	);
 }
 
 export function NotesImportErrors({ errors }: { errors: readonly string[] }) {
-	return <>{errors.map((error, i) => (
-		<p key={i} role="alert" className="max-w-full whitespace-pre-wrap break-words text-xs text-red-400">{error}</p>
-	))}</>;
+	return <>{errors.map((error, i) => <p key={i} role="alert" className="max-w-full whitespace-pre-wrap break-words text-xs text-error">{error}</p>)}</>;
+}
+export function NotesImportNotices({ notices }: { notices: readonly string[] }) {
+	return <>{notices.map((notice, i) => <p key={i} role="status" className="max-w-full whitespace-pre-wrap break-words text-xs text-muted-foreground">{notice}</p>)}</>;
 }

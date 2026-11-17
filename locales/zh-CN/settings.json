@@ -6,7 +6,9 @@
 		"graph": "图谱",
 		"keyboard": "快捷键",
 		"general": "常规",
-		"dictation": "语音输入"
+		"dictation": "语音输入",
+		"corePlugins": "核心插件",
+		"communityPlugins": "社区插件"
 	},
 	"dialog": {
 		"title": "设置",
@@ -14,7 +16,9 @@
 		"closeAria": "关闭设置",
 		"navAria": "设置分区",
 		"loading": "设置加载中…",
-		"loadFailed": "无法加载设置，请刷新后重试。"
+		"loadFailed": "无法加载设置，请刷新后重试。",
+		"loadingPlugins": "插件加载中…",
+		"confirmFailed": "无法确认设置已保存，你的输入已保留。"
 	},
 	"actions": {
 		"save": "保存",
@@ -57,7 +61,15 @@
 			"modelAria": "{{slot}}模型",
 			"thinkingAria": "{{slot}}思考强度",
 			"footerNoModels": "暂无模型——请先在“服务商”中添加 API 密钥",
-			"footer": "此档位的所有 Agent 都使用该模型"
+			"footer": "此档位的所有 Agent 都使用该模型",
+			"showAdvanced": "显示高级设置",
+			"hideAdvanced": "隐藏高级设置",
+			"cacheAria": "{{slot}}缓存保留",
+			"workerConcurrency": {
+				"label": "后台任务并发请求数",
+				"hint": "后台任务可同时发出的模型请求上限。直接进行的会话不受此限制。",
+				"invalid": "请输入可安全表示的正整数。"
+			}
 		},
 		"tools": {
 			"group": "工具",
@@ -89,6 +101,19 @@
 				"automatic": "自动",
 				"hasKey": "✓ 有密钥",
 				"noKey": "· 无密钥"
+			},
+			"fileAccess": {
+				"label": "文件访问",
+				"hintBroad": "可广泛访问本地来源，受保护的位置除外",
+				"hintListed": "仅限列出的文件夹及其子文件夹。",
+				"hintNone": "已限制：未允许任何文件夹。添加文件夹即可开放访问。",
+				"restrict": "仅限列出的文件夹",
+				"inputAria": "允许的文件夹路径",
+				"placeholder": "绝对路径或 ~/文件夹",
+				"add": "添加文件夹",
+				"removeAria": "移除 {{folder}}",
+				"remove": "移除",
+				"invalidFolder": "请输入绝对路径或 ~/文件夹。"
 			}
 		},
 		"context": {
@@ -97,6 +122,10 @@
 				"label": "压缩阈值",
 				"hint": "{{tokens}} token",
 				"aria": "压缩阈值"
+			},
+			"reasoning": {
+				"label": "在 token 估算中计入推理（仅限 OpenAI Responses）",
+				"hint": "对匹配的 OpenAI Responses 模型，用已保存的输出 token 用量计入回放的推理内容。关闭时使用原有的基于文本的估算。"
 			}
 		},
 		"prompts": {
@@ -106,7 +135,7 @@
 				"teacher": "老师",
 				"prober": "摸底老师",
 				"shared": "共用",
-				"sharedHint": "两位老师都会用到"
+				"practice": "练习"
 			},
 			"inUse": "正在使用你的版本",
 			"toggle": "提示词 {{path}}",
@@ -120,11 +149,14 @@
 			"saved": "已保存",
 			"deleted": "已删除",
 			"saveFailed": "保存失败：{{detail}}",
-			"deleteFailed": "删除失败：{{status}}"
+			"deleteFailed": "删除失败：{{status}}",
+			"usedBy": "由{{agents}}使用",
+			"listSeparator": "、",
+			"listLast": "{{rest}}和{{last}}"
 		},
 		"instructions": {
 			"group": "你的指令",
-			"hint": "附加在每个 Agent 指令的末尾——老师、练习、研究、演示、图示和知识图谱都会遵循。从下一次回复起生效。",
+			"hint": "附加在每个 Agent 指令的末尾——老师、练习、旁支提问、研究、演示、图示、知识图谱和插件都会遵循。从下一次回复起生效。",
 			"aria": "给所有 Agent 的指令",
 			"placeholder": "例如：始终用简体中文回复。",
 			"save": "保存",
@@ -133,18 +165,6 @@
 	},
 	"appearance": {
 		"emptyEquals": "留空时为 {{value}}",
-		"emptySameAsText": "留空时与正文相同",
-		"sameAsText": "与正文相同",
-		"mode": {
-			"label": "模式",
-			"hint": "即将推出",
-			"aria": "模式",
-			"dark": "深色"
-		},
-		"background": {
-			"label": "背景",
-			"aria": "背景色值"
-		},
 		"font": {
 			"label": "阅读字体",
 			"tooltip": "从已安装的字体中选择",
@@ -164,13 +184,48 @@
 			"label": "标题字重",
 			"aria": "标题字重"
 		},
-		"boldColor": {
-			"label": "粗体颜色",
-			"aria": "粗体颜色"
+		"typography": "排版",
+		"codeLigatures": {
+			"label": "代码连字"
 		},
-		"italicColor": {
-			"label": "斜体颜色",
-			"aria": "斜体颜色"
+		"colors": {
+			"group": "颜色",
+			"groupHint": "· 覆盖主题的颜色，切换主题时保留",
+			"resetAll": "全部重置",
+			"hexAria": "{{label}}十六进制色值",
+			"labels": {
+				"background": "背景",
+				"accent": "强调色",
+				"surface": "表面",
+				"bold": "粗体",
+				"border": "边框",
+				"italic": "斜体",
+				"text": "文字",
+				"code": "行内代码",
+				"textMuted": "次要文字",
+				"error": "错误",
+				"success": "成功",
+				"warning": "警告"
+			},
+			"notes": {
+				"accent": "焦点框、开关、选中项",
+				"surface": "卡片、输入框、侧栏"
+			}
+		},
+		"theme": {
+			"label": "主题",
+			"hint": "{{name}} · {{mode}} · 决定下方所有颜色",
+			"modes": {
+				"dark": "深色",
+				"light": "浅色"
+			},
+			"custom": "自定义",
+			"export": "导出 JSON",
+			"import": "导入 JSON",
+			"remove": "移除 {{name}}",
+			"invalidJson": "{{name}} 不是有效的 JSON",
+			"importFailed": "导入失败（{{status}}）",
+			"importFailedNetwork": "导入失败（网络错误）"
 		}
 	},
 	"graph": {
@@ -202,7 +257,12 @@
 		"rebind": "重新绑定",
 		"reset": "重置",
 		"storageNote": "保存在此设备上（lh:keymap），只记录改动过的快捷键。",
-		"resetAll": "全部恢复默认"
+		"resetAll": "全部恢复默认",
+		"pluginBindingInvalid": "请使用 Mod/Alt 组合键或功能键。Escape、Tab 和 Enter 为保留键。",
+		"pluginUnavailable": "此插件操作已不可用。",
+		"inactive": "未生效：{{reason}}",
+		"unbound": "未绑定",
+		"clear": "清除"
 	},
 	"keys": {
 		"loading": "密钥加载中…",
@@ -210,13 +270,14 @@
 			"providerKeys": "模型 API 密钥",
 			"subscriptions": "订阅",
 			"dictation": "语音输入",
-			"search": "搜索"
+			"search": "搜索",
+			"externalCli": "外部 CLI"
 		},
 		"pastePlaceholder": "粘贴密钥…",
 		"inputAria": "{{provider}} 密钥",
 		"getKey": "获取密钥 ↗",
 		"saveFailed": "保存失败（{{status}}）",
-		"addProvider": "+ 添加服务商密钥",
+		"addProvider": "+ 添加服务商",
 		"status": {
 			"notSet": "未设置",
 			"env": "环境变量"
@@ -238,7 +299,11 @@
 		"useFamily": "使用“{{family}}”",
 		"custom": "自定义",
 		"retry": "重试",
-		"catalogFailed": "无法加载模型列表。请检查连接后重试。"
+		"catalogFailed": "无法加载模型列表。请检查连接后重试。",
+		"unpriced": "未定价",
+		"cliBilling": "由 CLI 计费",
+		"cliBillingTitle": "费用由你的 Claude Code 配置决定，LearnHarness 不做估算。",
+		"priceUnavailable": "暂无价格"
 	},
 	"connections": {
 		"connect": "连接",
@@ -389,5 +454,130 @@
 		"checkingLabel": "正在检查更新",
 		"autoLabel": "自动更新",
 		"autoToggle": "自动更新"
+	},
+	"cacheRetention": {
+		"title": "缓存保留",
+		"intro": "控制发送给 Pi 的缓存保留偏好。是否支持以及保留多久取决于服务商和模型，也不保证命中缓存。",
+		"label": "缓存：{{value}}",
+		"options": {
+			"default": {
+				"compact": "默认",
+				"label": "Pi 默认",
+				"description": "不设置此选项，沿用 Pi 的常规行为及环境变量覆盖。"
+			},
+			"none": {
+				"compact": "不请求",
+				"label": "不请求缓存",
+				"description": "传递 Pi 原生的 none 偏好。服务商仍可能自动缓存。"
+			},
+			"short": {
+				"compact": "短",
+				"label": "短期保留",
+				"description": "传递 Pi 原生的 short 偏好。保留时长取决于服务商和模型。"
+			},
+			"long": {
+				"compact": "长",
+				"label": "长期保留",
+				"description": "传递 Pi 原生的 long 偏好。缓存写入费用可能更高。"
+			}
+		}
+	},
+	"claudeCode": {
+		"status": {
+			"notFound": "未找到",
+			"meetsMinimum": "版本 {{version}} · 满足最低要求",
+			"updateRequired": "版本 {{version}} · 需要更新",
+			"unchecked": "无法检查版本"
+		},
+		"loadFailed": "无法加载 Claude Code 设置。",
+		"saveFailed": "无法保存 Claude Code 设置。",
+		"checking": "检查中…",
+		"checkAgain": "重新检查",
+		"setupIntro": "<strong>请先在终端中安装并登录 Claude Code，然后在这里选择 Claude Code 模型。</strong>LearnHarness 会在需要时启动它，无需常驻后台进程。",
+		"scope": "仅检查安装和版本，不检查登录状态、模型权限或额度。费用由 Claude Code 控制。需要 v{{version}} 或更高版本。",
+		"setupLink": "安装说明 ↗",
+		"verifyClaims": "请自行核实 AI 的说法——它们可能不准确、不完整、有误导性或已过时。"
+	},
+	"plugins": {
+		"trustWarning": "只启用你信任的插件。插件以受信任的本地代码运行，拥有广泛的文件和网络访问权限，不在沙箱中运行。出问题的插件可能需要重启 LearnHarness。",
+		"install": {
+			"summary": "如何安装插件",
+			"copy": "将插件克隆或复制到下方目录，并以插件 ID 作为文件夹名。",
+			"build": "源码项目请按仓库说明安装依赖，然后运行 <code>npm run build</code>。预构建包已包含 <code>dist/manifest.json</code>，无需构建。",
+			"enable": "刷新列表，然后启用插件。新插件默认处于停用状态。",
+			"restart": "修改已加载的代码后请重启 LearnHarness。更新时请保留 <code>dist/</code> 旁边的 <code>data/</code>。"
+		},
+		"authoring": {
+			"title": "开发插件",
+			"intro": "为你的编程 Agent 下载插件开发技能。",
+			"download": "下载开发技能"
+		},
+		"directory": "插件目录",
+		"refresh": "刷新插件",
+		"noCore": "没有可用的核心插件。",
+		"noCommunity": "尚未安装社区插件。",
+		"status": {
+			"saving": "保存中…",
+			"error": "出错",
+			"loading": "加载中…",
+			"enabled": "已启用",
+			"disabled": "已停用"
+		},
+		"settingsFor": "{{name}} 设置",
+		"enable": "启用 {{name}}",
+		"page": {
+			"loading": "插件设置加载中…",
+			"loadFailed": "无法加载插件设置。",
+			"empty": "没有可用的设置。",
+			"mountLabel": "{{name}} 设置"
+		},
+		"rowOutOfRange": "数值超出允许范围。"
+	},
+	"customEndpoint": {
+		"name": "自定义端点",
+		"loadFailed": "无法加载自定义端点配置。",
+		"loading": "自定义端点配置加载中…",
+		"modelCount_other": "{{count}} 个模型",
+		"status": {
+			"keyless": "无需密钥",
+			"apiKey": "API 密钥",
+			"apiKeyMissing": "缺少 API 密钥"
+		},
+		"disconnectFailed": "断开连接失败。",
+		"disconnectFailedNetwork": "断开连接失败，请检查网络连接。",
+		"inspectFailed": "无法检查当前生效的密钥。请重新加载配置后重试。",
+		"saveFailedNetwork": "保存失败，请检查网络连接。",
+		"connectFailed": "连接失败（{{status}}）",
+		"connectFailedNetwork": "连接失败，请检查网络连接。",
+		"baseUrlPlaceholder": "基础 URL，例如 http://localhost:11434/v1",
+		"baseUrlAria": "自定义端点的基础 URL",
+		"modelsPlaceholder": "模型 ID，用逗号分隔——可选；端点没有 /models 列表时必填",
+		"modelsAria": "自定义端点的模型 ID",
+		"authentication": "认证方式",
+		"authAria": "自定义端点的认证方式",
+		"keyless": "无需密钥",
+		"apiKey": "API 密钥",
+		"envOwned": "当前生效的密钥来自环境变量。如需替换，请修改环境变量。",
+		"reuseKey": "允许此 URL 复用当前生效的现有密钥",
+		"keyPlaceholderKeep": "留空则保留当前生效的密钥",
+		"keyAria": "自定义端点的 API 密钥",
+		"connecting": "连接中…",
+		"pins": {
+			"line": "上下文：{{contextLimit}} · 输出：{{outputLimit}}",
+			"userPin": "用户设定",
+			"reported": "端点报告 {{value}}",
+			"fallback": "后备值 {{value}}",
+			"contextAria": "{{id}} 的上下文窗口（token）",
+			"maxTokensAria": "{{id}} 的最大输出 token 数",
+			"reasoningAria": "{{id}} 的思考强度支持",
+			"reasoningReported": "思考强度：按端点报告",
+			"reasoningSupported": "思考强度：支持",
+			"reasoningUnsupported": "思考强度：不支持",
+			"saving": "保存中…",
+			"save": "保存限制"
+		},
+		"budgetHelp": "这些预算设定不会改变后端的实际上下文大小。留空时先用端点报告的限制，否则使用后备值（上下文 {{contextLimit}} / 输出 {{outputLimit}}）。自定义端点的价格未知。",
+		"reasoningHelp": "思考支持只是能力声明。思考强度选择器中的 Off 未必能关闭自定义后端默认的思考。",
+		"reload": "重新加载配置"
 	}
 }

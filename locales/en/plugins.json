@@ -1,0 +1,68 @@
+{
+	"view": {
+		"notInstalled": "Plugin is not installed.",
+		"disabled": "This plugin is disabled.",
+		"unavailable": "This plugin view is not available.",
+		"fallbackTitle": "Plugin",
+		"settings": "Plugin settings",
+		"loading": "Loading plugin…",
+		"backHome": "Back to home"
+	},
+	"chrome": {
+		"graphActions": "Plugin graph actions",
+		"moreActions": "More plugin actions"
+	},
+	"surface": {
+		"close": "Close"
+	},
+	"dialog": {
+		"closeAria": "Close dialog"
+	},
+	"renderers": {
+		"codeBlock": "Plugin code block ({{language}})",
+		"tool": "Plugin tool ({{toolName}})"
+	},
+	"question": {
+		"prediction": "Prediction",
+		"preparing": "Preparing question…",
+		"unavailable": "Question unavailable",
+		"dismissed": "Question dismissed",
+		"thinking": "Your thinking",
+		"yourThinking": "YOUR THINKING",
+		"keys": "↵ submits · ⇧↵ newline",
+		"dismiss": "Dismiss question",
+		"submit": "Submit answer"
+	},
+	"problem": {
+		"preparing": "Preparing problem…",
+		"unavailable": "Problem unavailable",
+		"fallbackLabel": "Problem"
+	},
+	"knowledgePicker": {
+		"label": "Pick nodes"
+	},
+	"modelPicker": {
+		"model": "Model selector",
+		"thinking": "Thinking",
+		"noThinkingLevels": "No thinking levels.",
+		"loading": "Loading…"
+	},
+	"composer": {
+		"placeholder": "Message…"
+	},
+	"workerResult": {
+		"tooltip": "{{label}}: {{status}}",
+		"status": {
+			"succeeded": "succeeded",
+			"failed": "failed",
+			"cancelled": "cancelled",
+			"interrupted": "interrupted"
+		}
+	},
+	"shortcutScope": {
+		"app": "App-wide",
+		"teaching": "Teaching",
+		"practice": "Practice",
+		"views": "Views: {{views}}"
+	}
+}
