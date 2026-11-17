@@ -9,17 +9,19 @@ import { MinimalHome } from "@/components/minimal-home";
 import { SetupDialog } from "@/components/setup-dialog";
 import { ComposerActions, NodePickerControl } from "@/components/composer-actions";
 import { useModelSetup, selectedModelUnavailable, openModelPicker, ZeroKeysPill } from "@/components/setup-cta";
-import { DictationBar, joinDictation, useDictation } from "@/components/dictation";
+import { DICTATION_PREVIEW_MAIN, DictationBar, joinDictation, useDictation, useDictationPreview } from "@/components/dictation";
 import { useFieldCycle } from "@/components/field-cycle";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
 import { SidebarToggle } from "@/components/sidebar";
 import { StatsBar } from "@/components/stats-bar";
-import { OPENING_PROMPT_FAILURE } from "@/components/opening-prompt";
 import { PathInput } from "@/components/path-input";
 import { AttachFilesButton } from "@/components/attach-files-button";
 import { SessionStarter } from "@/components/start-session";
+import { StagedImageStrip, stagedImagePasteHandler } from "@/components/staged-image-strip";
+import { OPENING_IMAGE_KEY, handOverOpeningImages } from "@/components/staged-images";
 import type { TurnUsage } from "@/src/core";
+import { useT } from "@/components/i18n";
 
 /**
  * Home — the knowledge graph is the main view, full-bleed edge to edge
@@ -39,6 +41,7 @@ export function Home({
 }) {
 	const controller = useOptionalInteractionLayers();
 	const router = useRouter();
+	const { t } = useT(["shell", "common"]);
 	const pathname = usePathname();
 	const bodyRef = useRef<HTMLDivElement>(null);
 	const surfaceTarget = usePageSurfaceBoundary({ active: pathname === "/", viewKey: "/", bodyRef });
@@ -61,12 +64,14 @@ export function Home({
 	const dictation = useDictation({
 		// Ref-first: the join reads the mirror so the send resuming after
 		// `await finish()` sees the dictated tail.
-		append: (t) => {
-			const v = joinDictation(topicRef.current, t);
+		append: (text) => {
+			const v = joinDictation(topicRef.current, text);
 			topicRef.current = v;
 			setTopic(v);
 		},
 	});
+	// The local engine's live words, painted after the topic draft.
+	const livePreview = useDictationPreview(DICTATION_PREVIEW_MAIN);
 	const [busy, setBusy] = useState(false);
 	const startingRef = useRef(false);
 	const starterRef = useRef(new SessionStarter());
@@ -119,8 +124,8 @@ export function Home({
 		void dictation.finish().then(() => begin());
 	};
 	const begin = async () => {
-		const t = topicRef.current.trim();
-		if (!t || startingRef.current) return;
+		const title = topicRef.current.trim();
+		if (!title || startingRef.current) return;
 		// Unconfigured: the send INTERCEPTS into the setup flow (the draft
 		// stays in the textarea; the learner sends it after Save).
 		if (!configured) {
@@ -153,10 +158,13 @@ export function Home({
 			// before the learner's first user message, propositions + the
 			// chains among them); the prompt stays the learner's own words.
 			const target = await starterRef.current.start({
-				title: t,
+				title,
 				...(mode === "practice" ? { kind: "practice" } : {}),
 				...(practiceProps.length > 0 ? { graphContext: { propositions: practiceProps } } : {}),
 			}, fetch, JSON.stringify(catalog?.slots.strong));
+			// Pasted images ride into the created chat's composer draft; its
+			// opening delivery sends them and clears them on acceptance.
+			await handOverOpeningImages(target);
 			router.push(target);
 		} catch {
 			startingRef.current = false;
@@ -236,23 +244,27 @@ export function Home({
 									onClick={() => setSetupOpen(true)}
 									className="rounded-sm border border-border bg-card px-3 py-1.5 font-ui text-xs text-foreground transition-colors hover:border-muted-foreground/50 hover:bg-accent cursor-pointer"
 								>
-									Set up your models
+									{t("draft.setupModels")}
 								</button>
 							)
 						)}
 					/>
-					{startError && <p role="alert" className="mb-2 text-sm text-destructive">{OPENING_PROMPT_FAILURE}</p>}
+					{startError && <p role="alert" className="mb-2 text-sm text-destructive">{t("common:openingPromptFailure")}</p>}
 					<form
 						data-attachment-composer=""
-						className="flex items-end gap-1.5 rounded-2xl border bg-card p-1.5 shadow-lg"
+						className="flex flex-wrap items-end gap-1.5 rounded-2xl border bg-card p-1.5 shadow-lg"
 					onSubmit={(e) => {
 						e.preventDefault();
 						void start();
 					}}
 				>
+					<StagedImageStrip draftKey={OPENING_IMAGE_KEY} className="basis-full" />
 					<PathInput
 						ref={topicInputRef}
+						data-staged-image-key={OPENING_IMAGE_KEY}
+						onPaste={stagedImagePasteHandler(OPENING_IMAGE_KEY)}
 						value={topic}
+						dictationPreview={livePreview}
 						onValueChange={(value) => {
 							topicRef.current = value;
 							setTopic(value);
@@ -275,16 +287,16 @@ export function Home({
 								void start();
 							}
 						}}
-						placeholder={mode === "practice" ? "What do you want to practice?" : "What do you want to learn?"}
+						placeholder={mode === "practice" ? t("draft.practicePlaceholder") : t("draft.learnPlaceholder")}
 						autoFocus
 						className="field-sizing-content lh-input max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
 					/>
-					<AttachFilesButton editorRef={topicInputRef} />
+					<AttachFilesButton editorRef={topicInputRef} imageDraftKey={OPENING_IMAGE_KEY} />
 					{/* No tooltip on the start square — the ↵ glyph is the
 					    affordance (owner, subtlety round 2026-09-25). */}
 					<button
 						type="submit"
-						aria-label="Start session"
+						aria-label={t("home.start")}
 						disabled={(!topic.trim() && !dictation.active) || busy}
 						className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-primary text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-40"
 					>
@@ -314,7 +326,7 @@ export function Home({
 										}
 									>
 										{m === "practice" ? <DumbbellIcon aria-hidden="true" className="size-3" /> : null}
-										{m === "teach" ? "Teach" : "Practice"}
+										{m === "teach" ? t("home.mode.teach") : t("home.mode.practice")}
 									</button>
 								))}
 							</div>

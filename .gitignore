@@ -21,6 +21,9 @@ dist/
 /core-plugins/
 /.core-plugins-*/
 
+# the uv the desktop app ships (scripts/fetch-uv.mjs)
+vendor/
+
 # dev auth/keys store (auth-keys wave): repo-root auth.json — secrets never committed
 auth.json
 chatgpt-credentials.json*
@@ -29,3 +32,5 @@ xai-credentials.json*
 
 # dev-fresh launcher scratch (fresh-user sim): disposable per launch
 .fresh-data/
+# Python bytecode (the dictation bridge)
+__pycache__/

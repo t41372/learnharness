@@ -9,6 +9,7 @@ import {
 import { scrollSessionTarget, type SessionScrollContext } from "@/components/session-navigation";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { hasLegacyInteractionForeground, isInteractionScopeEligible } from "./plugin-input-focus";
+import { useT } from "@/components/i18n";
 
 export const SESSION_FIND_HIGHLIGHT = "lh-session-find";
 export const SESSION_FIND_ACTIVE_HIGHLIGHT = "lh-session-find-active";
@@ -60,6 +61,7 @@ export function SessionFind({ scopeRef, scrollContextRef }: {
 	scopeRef: RefObject<HTMLDivElement | null>;
 	scrollContextRef: RefObject<SessionScrollContext | null>;
 }) {
+	const { t } = useT("shell");
 	const controller = useOptionalInteractionLayers();
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
@@ -159,7 +161,7 @@ export function SessionFind({ scopeRef, scrollContextRef }: {
 	return (
 		<div
 			role="search"
-			aria-label="Session Find"
+			aria-label={t("find.aria")}
 			data-testid="session-find"
 			className="lh-no-drag flex h-10 shrink-0 items-center gap-2 border-b border-border px-6 font-ui text-sm"
 			onKeyDown={(event) => {
@@ -180,8 +182,8 @@ export function SessionFind({ scopeRef, scrollContextRef }: {
 			<SearchIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
 			<input
 				ref={inputRef}
-				aria-label="Find in session"
-				placeholder="Find in session…"
+				aria-label={t("find.input")}
+				placeholder={t("find.placeholder")}
 				value={query}
 				onChange={(event) => setQuery(event.target.value)}
 				spellCheck={false}
@@ -190,15 +192,15 @@ export function SessionFind({ scopeRef, scrollContextRef }: {
 			<output aria-live="polite" data-testid="session-find-count" className="shrink-0 text-xs tabular-nums text-muted-foreground">
 				{query ? `${result.index + 1}/${result.count}` : ""}
 			</output>
-			<button type="button" aria-label="Previous match" title="Previous match (Shift+Enter)" className={buttonClass}
+			<button type="button" aria-label={t("find.previous")} title={t("find.previousTitle")} className={buttonClass}
 				disabled={!result.count} onMouseDown={(event) => event.preventDefault()} onClick={() => step(-1)}>
 				<ChevronUpIcon className="size-4" aria-hidden />
 			</button>
-			<button type="button" aria-label="Next match" title="Next match (Enter)" className={buttonClass}
+			<button type="button" aria-label={t("find.next")} title={t("find.nextTitle")} className={buttonClass}
 				disabled={!result.count} onMouseDown={(event) => event.preventDefault()} onClick={() => step(1)}>
 				<ChevronDownIcon className="size-4" aria-hidden />
 			</button>
-			<button type="button" aria-label="Close Find" title="Close Find (Esc)" className={buttonClass} onClick={close}>
+			<button type="button" aria-label={t("find.close")} title={t("find.closeTitle")} className={buttonClass} onClick={close}>
 				<XIcon className="size-4" aria-hidden />
 			</button>
 		</div>

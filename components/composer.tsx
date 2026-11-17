@@ -2,9 +2,12 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { ArrowRightIcon, CornerDownLeftIcon, SquareIcon } from "lucide-react";
+import { DICTATION_PREVIEW_MAIN, useDictationPreview } from "@/components/dictation";
 import { cn } from "@/lib/utils";
 import { PathInput } from "@/components/path-input";
 import { AttachFilesButton } from "@/components/attach-files-button";
+import { StagedImageStrip, stagedImagePasteHandler, useStagedImages } from "@/components/staged-image-strip";
+import { useT } from "@/components/i18n";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
 
@@ -61,6 +64,7 @@ export function ChatSessionComposer({
 	nextProblem,
 	onNext,
 	pendingInput = false,
+	imageDraftKey,
 }: {
 	busy: boolean;
 	value: string;
@@ -77,10 +81,14 @@ export function ChatSessionComposer({
 	nextProblem?: boolean;
 	onNext?: () => void;
 	pendingInput?: boolean;
+	/** The chat composer's staged-image draft (text and steer share it). */
+	imageDraftKey?: string;
 }) {
 	const [draft, setDraft] = useState(value);
 	useLayoutEffect(() => { setDraft(value); }, [revision, value]);
-	const canSend = sendAllowed && (draft.trim().length > 0 || dictationActive || pendingInput);
+	// Staged images alone make a sendable message (upstream accepts image-only text).
+	const stagedImageCount = useStagedImages(imageDraftKey).images.length;
+	const canSend = sendAllowed && (draft.trim().length > 0 || dictationActive || pendingInput || stagedImageCount > 0);
 	const applyDraft = useCallback((next: string) => {
 		setDraft(next);
 		onChange(next);
@@ -100,6 +108,7 @@ export function ChatSessionComposer({
 			placeholder={placeholder}
 			nextProblem={nextProblem}
 			onNext={onNext}
+			imageDraftKey={imageDraftKey}
 		/>
 	);
 }
@@ -114,11 +123,13 @@ export function Composer({
 	autoFocus,
 	inputRef,
 	onEscape,
-	placeholder = "Ask, answer, or steer the lesson…",
+	placeholder,
 	nextProblem = false,
 	onNext,
 	defaultDropTarget = true,
 	fileInsertion = true,
+	dictationPreviewKey = DICTATION_PREVIEW_MAIN,
+	imageDraftKey,
 }: {
 	busy: boolean;
 	value: string;
@@ -147,8 +158,18 @@ export function Composer({
 	/** Neutral plugin composers opt out without changing core defaults. */
 	defaultDropTarget?: boolean;
 	fileInsertion?: boolean;
+	/** Whose dictation run's live words show here (useDictationPreview):
+	 *  the page composer by default; a plugin composer passes its own
+	 *  controller's key, or null for none. */
+	dictationPreviewKey?: string | null;
+	/** Opt-in pasted-image staging (built-in composers only): the strip
+	 *  above the row, paste, browser drop and the browser paperclip. */
+	imageDraftKey?: string;
 }) {
+	const { t } = useT("chat");
 	const controller = useOptionalInteractionLayers();
+	// The local engine's live words, while a run's destination is this field.
+	const livePreview = useDictationPreview(dictationPreviewKey);
 	const act = () => {
 		const action = enterAction({ busy, canSend, nextProblem });
 		if (action === "stop") onStop();
@@ -160,15 +181,19 @@ export function Composer({
 	return (
 		<form
 			data-testid="composer"
-			className="flex items-end gap-1.5 p-1.5"
+			className={cn("flex items-end gap-1.5 p-1.5", imageDraftKey !== undefined && "flex-wrap")}
 			onSubmit={(e) => {
 				e.preventDefault();
 				act();
 			}}
 		>
+			<StagedImageStrip draftKey={imageDraftKey} className="basis-full" />
 			<PathInput
 				ref={editorRef}
+				data-staged-image-key={imageDraftKey}
+				onPaste={stagedImagePasteHandler(imageDraftKey)}
 				value={value}
+				dictationPreview={livePreview}
 				onValueChange={onChange}
 				defaultDropTarget={defaultDropTarget}
 				fileInsertion={fileInsertion}
@@ -193,11 +218,11 @@ export function Composer({
 						act();
 					}
 				}}
-				placeholder={placeholder}
+				placeholder={placeholder ?? t("composer.placeholder")}
 				autoFocus={autoFocus}
 				className="field-sizing-content lh-input max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
 			/>
-			<AttachFilesButton editorRef={editorRef} />
+			<AttachFilesButton editorRef={editorRef} imageDraftKey={imageDraftKey} />
 			{/* The button follows the text (owner report 2026-10-03): while
 				 a turn runs WITH text typed it stays the SEND affordance
 				 (click = steer — steering must be clickable, not Enter-only);
@@ -216,16 +241,16 @@ export function Composer({
 					<button
 						type="submit"
 						data-testid="next-problem-button"
-						aria-label="Next problem"
+						aria-label={t("composer.nextProblem")}
 						className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-success px-4 font-ui text-xs font-medium uppercase tracking-wide text-background transition-colors hover:bg-success/85"
 					>
-						Next problem
+						{t("composer.nextProblem")}
 						<ArrowRightIcon className="size-4" />
 					</button>
 				) : (
 					<button
 						type="submit"
-						aria-label={busy && !canSend ? "Stop" : "Send"}
+						aria-label={busy && !canSend ? t("composer.stop") : t("composer.send")}
 						disabled={!busy && !canSend}
 						className={cn(
 							"flex size-10 shrink-0 items-center justify-center rounded-[10px] transition-colors",

@@ -6,10 +6,11 @@ import { PaperclipIcon } from "lucide-react";
 import { directoryReferencePath, quoteFilePath } from "@/src/core";
 import { Hint } from "@/components/ui/hint";
 import { INSERT_FILE_PATHS_EVENT } from "@/components/path-input";
-import { BROWSER_NOTICE } from "@/components/file-path-drop-zone";
+import { useT } from "@/components/i18n";
 import { InteractionLayerOwner, useInteractionLayer, useInteractionLayers, useOptionalInteractionLayers } from "./interaction-layers";
 import { INTERACTION_LAYER_Z_BASE } from "./host-dialog";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
+import { STAGED_IMAGE_ACCEPT, splitImageFiles, stagedImages } from "./staged-images";
 
 /** Picked files → the rooted paths an editor chips (issue #285), via the
  *  desktop bridge. Same validity rule as drops: a file without a usable
@@ -81,15 +82,26 @@ function AttachmentPopup({ anchorRef, rootRef, open, close, children }: {
  * folder choice returns the directory itself, including an empty directory.
  * aria-disabled, not disabled, so the tooltip still shows.
  */
-export function AttachFilesButton({ editorRef }: { editorRef: React.RefObject<HTMLDivElement | null> }) {
+/** The passive notice the popup shows instead of the choice menu (its
+ *  copy resolves at render, in the interface language). */
+type AttachNotice = "" | "browser" | "folderFailed";
+
+/**
+ * In the browser, an input with a staged-image draft (`imageDraftKey`) turns
+ * the paperclip into an image picker: picked images are staged as inline
+ * images, other files get the browser notice. The desktop is unchanged.
+ */
+export function AttachFilesButton({ editorRef, imageDraftKey }: { editorRef: React.RefObject<HTMLDivElement | null>; imageDraftKey?: string }) {
+	const { t } = useT("chat");
 	const controller = useOptionalInteractionLayers();
 	const pickerRef = useRef<HTMLInputElement>(null);
 	const desktop = useDesktopPaths();
+	const browserImages = !desktop && imageDraftKey !== undefined;
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const popupRef = useRef<HTMLDivElement>(null);
 	const choosingFolder = useRef(false);
 	const [open, setOpen] = useState(false);
-	const [notice, setNotice] = useState("");
+	const [notice, setNotice] = useState<AttachNotice>("");
 	const [placement, setPlacement] = useState<ReturnType<typeof attachmentPopupPlacement> | null>(null);
 	const positioned = placement !== null;
 	// Like MenuShell, portal to body with viewport-capped, reanchored placement.
@@ -130,14 +142,14 @@ export function AttachFilesButton({ editorRef }: { editorRef: React.RefObject<HT
 		const choose = window.lh?.chooseAttachmentFolder;
 		setOpen(false);
 		setNotice("");
-		if (!choose) { setNotice(BROWSER_NOTICE); return; }
+		if (!choose) { setNotice("browser"); return; }
 		choosingFolder.current = true;
 		try {
 			const chosen = await choose();
 			if (chosen === null) return; // Native cancellation leaves the draft intact.
 			const path = directoryReferencePath(chosen);
 			if (editor?.isConnected && editor === editorRef.current) editor.dispatchEvent(new CustomEvent(INSERT_FILE_PATHS_EVENT, { detail: [path] }));
-		} catch { setNotice("Could not choose a folder. Try again."); }
+		} catch { setNotice("folderFailed"); }
 		finally { choosingFolder.current = false; }
 	};
 	return (
@@ -148,31 +160,42 @@ export function AttachFilesButton({ editorRef }: { editorRef: React.RefObject<HT
 				type="file"
 				multiple
 				hidden
+				accept={browserImages ? STAGED_IMAGE_ACCEPT : undefined}
 				data-testid="attach-files-input"
 				onChange={(e) => {
 					const resolve = window.lh?.getPathForFile;
+					if (!resolve && imageDraftKey !== undefined) {
+						const { images, others } = splitImageFiles(Array.from(e.currentTarget.files ?? []));
+						if (images.length) void stagedImages.add(imageDraftKey, images);
+						setNotice(others.length ? "browser" : "");
+						e.currentTarget.value = "";
+						return;
+					}
 					const { paths } = resolve ? pathsForFiles(Array.from(e.currentTarget.files ?? []), resolve) : { paths: [] };
 					if (paths.length > 0) editorRef.current?.dispatchEvent(new CustomEvent(INSERT_FILE_PATHS_EVENT, { detail: paths }));
 					e.currentTarget.value = ""; // allow re-picking the same file
 				}}
 			/>
-			<Hint label={desktop ? "Attach files or a folder" : BROWSER_NOTICE}>
+			<Hint label={desktop ? t("filePaths.attachMenu") : browserImages ? t("attachments.attachImages") : t("filePaths.browserNotice")}>
 				<button
 					ref={buttonRef}
 					type="button"
-					aria-label="Attach files"
-					aria-disabled={!desktop}
-					aria-haspopup="menu"
-					aria-expanded={open}
+					aria-label={browserImages ? t("attachments.attachImages") : t("filePaths.attach")}
+					aria-disabled={!desktop && !browserImages}
+					aria-haspopup={browserImages ? undefined : "menu"}
+					aria-expanded={browserImages ? undefined : open}
 					data-testid="attach-files"
-					onClick={() => { if (desktop) { setNotice(""); setOpen(!open); } }}
+					onClick={() => {
+						if (desktop) { setNotice(""); setOpen(!open); }
+						else if (browserImages) { setNotice(""); pickerRef.current?.click(); }
+					}}
 					className="flex size-10 shrink-0 items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground aria-disabled:cursor-default aria-disabled:opacity-40 aria-disabled:hover:bg-transparent aria-disabled:hover:text-muted-foreground"
 				>
 					<PaperclipIcon className="size-4" />
 				</button>
 			</Hint>
 			{(open || notice) && <AttachmentPopup anchorRef={buttonRef} rootRef={popupRef} open={open} close={() => setOpen(false)}><div ref={popupRef} role={open ? "menu" : "status"}
-				aria-label={open ? "Attach files or a folder" : undefined}
+				aria-label={open ? t("filePaths.attachMenu") : undefined}
 				data-testid="attachment-popup"
 				style={{ position: "fixed", zIndex: 60, ...(placement ?? { left: 0, top: 0, visibility: "hidden" }), overflowY: "auto" }}
 				className={open ? "w-max rounded-lg border bg-card p-1 shadow-lg" : "w-64 rounded-lg border bg-card p-2 text-xs text-muted-foreground shadow-lg"}
@@ -184,10 +207,10 @@ export function AttachFilesButton({ editorRef }: { editorRef: React.RefObject<HT
 				}}>
 				{open ? <>
 					<button type="button" role="menuitem" className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-accent"
-						onClick={() => { setOpen(false); pickerRef.current?.click(); }}>Files</button>
+						onClick={() => { setOpen(false); pickerRef.current?.click(); }}>{t("filePaths.files")}</button>
 					<button type="button" role="menuitem" className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-accent"
-						onClick={() => { void chooseFolder(); }}>Folder</button>
-				</> : notice}
+						onClick={() => { void chooseFolder(); }}>{t("filePaths.folder")}</button>
+				</> : notice === "browser" ? t("filePaths.browserNotice") : t("filePaths.folderFailed")}
 			</div></AttachmentPopup>}
 		</div>
 	);

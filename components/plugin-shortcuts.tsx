@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { KEYBOARD_ACTIONS, KEYMAP_CHANGED_EVENT, loadOverrides, pluginShortcutId, pluginShortcutMatches, resolvePluginShortcuts, eventBinding, isTypingSurface, type PluginPageActionContext, type PluginShortcutCandidate, type KeymapOverrides } from "@/src/core";
 import { usePlugins } from "./plugins";
+import type { TFunction } from "@/components/i18n";
 import type { FrontendPlugin, PluginFrontendManager } from "./plugin-manager";
 import type { InteractionLayersController } from "./interaction-layers";
 import { findCurrentSurfaceBoundary } from "./plugin-surface-targets";
@@ -40,9 +41,11 @@ export function usePluginShortcutPage(pathname: string, read: () => PluginPageAc
 	const latest = useRef(read); latest.current = read;
 	useLayoutEffect(() => manager?.registerShortcutPage(pathname, () => latest.current()), [manager, pathname]);
 }
-export function pluginShortcutScopeLabel(candidate: PluginShortcutCandidate): string {
+export function pluginShortcutScopeLabel(candidate: PluginShortcutCandidate, t?: TFunction<"plugins">): string {
 	const scope = candidate.shortcut.scope;
-	return scope === "app" ? "App-wide" : [...(scope.sessions ?? []).map(kind => kind === "teaching" ? "Teaching" : "Practice"), ...(scope.views?.length ? [`Views: ${scope.views.join(", ")}`] : [])].join(" · ");
+	const label = (key: "app" | "teaching" | "practice", english: string) => t ? t(`shortcutScope.${key}`) : english;
+	const views = (list: string) => t ? t("shortcutScope.views", { views: list }) : `Views: ${list}`;
+	return scope === "app" ? label("app", "App-wide") : [...(scope.sessions ?? []).map(kind => kind === "teaching" ? label("teaching", "Teaching") : label("practice", "Practice")), ...(scope.views?.length ? [views(scope.views.join(", "))] : [])].join(" · ");
 }
 
 /** Window-bubble fallback only; never an independent low-level plugin listener. */

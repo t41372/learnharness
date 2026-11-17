@@ -1,0 +1,68 @@
+{
+	"view": {
+		"notInstalled": "插件未安装。",
+		"disabled": "此插件已停用。",
+		"unavailable": "此插件视图不可用。",
+		"fallbackTitle": "插件",
+		"settings": "插件设置",
+		"loading": "正在加载插件…",
+		"backHome": "返回首页"
+	},
+	"chrome": {
+		"graphActions": "插件图谱操作",
+		"moreActions": "更多插件操作"
+	},
+	"surface": {
+		"close": "关闭"
+	},
+	"dialog": {
+		"closeAria": "关闭对话框"
+	},
+	"renderers": {
+		"codeBlock": "插件代码块（{{language}}）",
+		"tool": "插件工具（{{toolName}}）"
+	},
+	"question": {
+		"prediction": "预测",
+		"preparing": "正在准备问题…",
+		"unavailable": "问题不可用",
+		"dismissed": "问题已舍弃",
+		"thinking": "你的思路",
+		"yourThinking": "你的思路",
+		"keys": "↵ 提交 · ⇧↵ 换行",
+		"dismiss": "舍弃问题",
+		"submit": "提交回答"
+	},
+	"problem": {
+		"preparing": "正在准备题目…",
+		"unavailable": "题目不可用",
+		"fallbackLabel": "题目"
+	},
+	"knowledgePicker": {
+		"label": "选择节点"
+	},
+	"modelPicker": {
+		"model": "模型选择器",
+		"thinking": "思考强度",
+		"noThinkingLevels": "没有可用的思考强度。",
+		"loading": "加载中…"
+	},
+	"composer": {
+		"placeholder": "输入消息…"
+	},
+	"workerResult": {
+		"tooltip": "{{label}}：{{status}}",
+		"status": {
+			"succeeded": "已完成",
+			"failed": "失败",
+			"cancelled": "已取消",
+			"interrupted": "已中断"
+		}
+	},
+	"shortcutScope": {
+		"app": "全局",
+		"teaching": "教学",
+		"practice": "练习",
+		"views": "视图：{{views}}"
+	}
+}
