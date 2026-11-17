@@ -1,0 +1,12 @@
+# Personal macOS builds: no signing credentials or notarization.
+# desktop:dist selects ZIP explicitly instead of the inherited release targets.
+# Keep the shared payload and fork update source in electron-builder.yml.
+extends: ./electron-builder.yml
+forceCodeSigning: false
+mac:
+  identity: "-"
+  notarize: false
+  icon: build/icon.icns
+  hardenedRuntime: true
+  entitlements: build/entitlements.adhoc.mac.plist
+  entitlementsInherit: build/entitlements.adhoc.mac.plist

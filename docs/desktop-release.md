@@ -2,6 +2,14 @@
 
 This is a maintainer reference. For installation and normal use, start with [Getting started](getting-started.md).
 
+## Fork preview builds
+
+The fork uses `main` only to track upstream, and `fork-preview` to preview all registered feature branches. Run `npm run desktop:dist` from a clean, committed `fork-preview`. It first clears `dist` and `.next/standalone`, then its gate fetches both repositories, verifies the upstream baseline and every registered feature head, and writes `dist/fork-preview-manifest.json`. Incomplete previews are rejected before compiling, so a failed gate leaves no packaged app in `dist`.
+
+Local builds produce `dist/mac-arm64/LearnHarness.app` and `dist/LearnHarness-<version>-arm64-mac.zip` with ad hoc signatures. `electron-builder.local.yml` disables notarization and uses `build/icon.icns`; the command selects ZIP explicitly and passes `--publish never`. It needs no Developer ID, notary profile, Icon Composer, or DMG device.
+
+Updates are configured only for `t41372/learnharness` Releases. Updating this source does not alter an already installed app; replace it with a new preview build. Future releases must be built from a verified `fork-preview`. The remaining release tooling below is inherited and is not the fork's current delivery method.
+
 ## Platforms and prerequisites
 
 | Platform | Release runner | Packages | In-app update |
@@ -40,7 +48,7 @@ The release workflow also checks providers from the **packaged** payload under h
 
 ### Local packages
 
-`npm run desktop:dist` is the local **signed macOS** path using the `LH_NOTARY` keychain profile and Xcode `DEVELOPER_DIR`. It clears `dist` and `.next/standalone`, builds, checks the fresh provider trace, curates, runs the server smoke under **host Node**, and packages. It does not itself run the Electron-Node/post-package gates or the tag-upload workflow.
+In this fork, `npm run desktop:dist` is the local **ad hoc signed macOS** path described in [Fork preview builds](#fork-preview-builds). It clears `dist` and `.next/standalone`, verifies the preview, builds, checks the fresh provider trace, curates, runs the server smoke under **host Node**, and packages. It does not itself run the Electron-Node/post-package gates or the tag-upload workflow.
 
 For Windows/Linux, perform steps 1–6 on that OS, then:
 
