@@ -8,7 +8,7 @@ import type { QuestionRendererRegistration } from "./plugin-manager";
 import { usePlugins } from "./plugins";
 import { QuestionDockBar } from "./question-dock";
 import { PathInput } from "./path-input";
-import { finishDictation, joinDictation, usePluginQuestionDictationTarget } from "./dictation";
+import { DICTATION_PREVIEW_QUESTION, finishDictation, joinDictation, useDictationPreview, usePluginQuestionDictationTarget } from "./dictation";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
 import { useEnterSubmits } from "./enter-submits";
@@ -140,6 +140,8 @@ export function PluginQuestionDockContent({ viewReader, snapshot, chatId, draft,
 		else if (!failed && speechLease === lease.current && now.registration && leaseRegistration.current === now.registration && now.available) await speechLease?.append(text);
 	}, [key, snapshot.showThinking, speechLease, reveal, failed, draft]);
 	usePluginQuestionDictationTarget(append, !reveal);
+	// The local engine's live words land in host Thinking only when it shows.
+	const livePreview = useDictationPreview(DICTATION_PREVIEW_QUESTION, !reveal && snapshot.showThinking);
 	const micAvailable = reveal || snapshot.showThinking || (!!registration && leaseRegistration.current === registration && !!lease.current?.speech && available && !failed);
 	useEffect(() => { onMicAvailable(micAvailable); return () => onMicAvailable(false); }, [micAvailable, onMicAvailable]);
 	const unavailable = canonicalReady && (!available || !registration || failed);
@@ -160,7 +162,7 @@ export function PluginQuestionDockContent({ viewReader, snapshot, chatId, draft,
 					className={snapshot.showThinking ? "rounded-[10px] border border-border/70 bg-background/60 transition-colors focus-within:border-primary/50" : undefined}>
 					{snapshot.showThinking && <>
 						<div className="px-2.5 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Your thinking</div>
-						<PathInput ref={thinking} value={draft.thinking} onValueChange={value => { draft.thinking = value; render(); }} onKeyDown={event => {
+						<PathInput ref={thinking} value={draft.thinking} dictationPreview={livePreview} onValueChange={value => { draft.thinking = value; render(); }} onKeyDown={event => {
 							if (composingQuestionKey(event) || pluginQuestionKeySuppressed(event)) return;
 							if (!isInteractionScopeEligible(event.currentTarget, controller)) return;
 							if (event.key === "Enter" && !event.altKey && (!event.shiftKey || event.metaKey || event.ctrlKey)) { event.preventDefault(); void submit(); }

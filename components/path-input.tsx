@@ -32,7 +32,18 @@ export type PathInputProps = Omit<React.HTMLAttributes<HTMLDivElement>, "childre
 	fileInsertion?: boolean;
 	/** Native text-input semantics: strip CR/LF and leave Enter to the caller. */
 	singleLine?: boolean;
+	/** Live dictation words (the local engine's preview), painted faded after
+	 *  the text by CSS from a data attribute — never part of the editable DOM
+	 *  or of the value. Empty or absent: nothing is painted. */
+	dictationPreview?: string;
 };
+
+/** The painted preview: a separating space unless the text already ends in
+ *  whitespace (or is empty) — the same rule the flush's join uses. */
+export function dictationPreviewAttribute(value: string, preview: string | undefined): string | undefined {
+	if (!preview) return undefined;
+	return value && !/\s$/.test(value) ? ` ${preview}` : preview;
+}
 
 type Controller = {
 	external: (value: string) => void;
@@ -44,7 +55,7 @@ type Controller = {
  * views of it. React never reconciles the editable DOM after a native mutation.
  */
 export const PathInput = React.forwardRef<HTMLDivElement, PathInputProps>(function PathInput({
-	value, onValueChange, placeholder, autoFocus, defaultDropTarget = false, fileInsertion = true, singleLine = false, className,
+	value, onValueChange, placeholder, autoFocus, defaultDropTarget = false, fileInsertion = true, singleLine = false, dictationPreview, className,
 	onKeyDown, onFocus, onBlur, onInput, onPaste, onCopy, onCut,
 	onCompositionStart, onCompositionEnd, ...props
 }, forwardedRef) {
@@ -331,6 +342,7 @@ export const PathInput = React.forwardRef<HTMLDivElement, PathInputProps>(functi
 			data-empty={initial.current.value.length === 0 ? "true" : "false"}
 			data-file-path-default={fileInsertion && defaultDropTarget ? "" : undefined}
 			data-placeholder={placeholder}
+			data-dictation-preview={dictationPreviewAttribute(value, dictationPreview)}
 			className={cn("block w-full min-w-0 outline-none data-[empty=true]:before:pointer-events-none data-[empty=true]:before:text-muted-foreground data-[empty=true]:before:content-[attr(data-placeholder)]", singleLine ? "whitespace-pre break-normal overflow-x-auto overflow-y-hidden" : "whitespace-pre-wrap break-words overflow-y-auto", className)}
 			onKeyDown={(event) => {
 				if (composing.current || event.nativeEvent.isComposing || event.keyCode === 229) { event.stopPropagation(); return; }

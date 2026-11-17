@@ -57,6 +57,7 @@ describe("SettingsDialog (the designed surface, SSR)", () => {
 		const expected = [
 			["keys", "Providers", "key"],
 			["agent", "Agent", "bot"],
+			["dictation", "Dictation", "mic"],
 			["appearance", "Appearance", "palette"],
 			["graph", "Graph", "waypoints"],
 			["keyboard", "Keyboard", "keyboard"],

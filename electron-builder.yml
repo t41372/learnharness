@@ -99,6 +99,14 @@ extraResources:
     to: server
     filter:
       - "standalone/**/*"
+  # uv for local dictation's speech environment (scripts/fetch-uv.mjs; the
+  # server finds it through LH_UV_PATH, set in electron/main.cjs).
+  - from: vendor/uv
+    to: uv
+    filter:
+      - uv
+      - uv.exe
+      - LICENSE-*
 mac:
   # The backend's --require runs before Next loads. Keep this resource
   # outside app.asar so early Node-mode loading needs no ASAR support.

@@ -33,7 +33,7 @@ import {
 	type ReactNode,
 	type RefObject,
 } from "react";
-import { BotIcon, KeyIcon, KeyboardIcon, PaletteIcon, PlugIcon, PuzzleIcon, SettingsIcon, WaypointsIcon, type LucideIcon } from "lucide-react";
+import { BotIcon, KeyIcon, KeyboardIcon, MicIcon, PaletteIcon, PlugIcon, PuzzleIcon, SettingsIcon, WaypointsIcon, type LucideIcon } from "lucide-react";
 import { HostDialog } from "@/components/host-dialog";
 import { useInteractionLayers, type CloseOutcome } from "@/components/interaction-layers";
 import {
@@ -41,6 +41,7 @@ import {
 	type AgentSettings,
 	type AppearanceSettings,
 	type CompactionSettings,
+	type DictationSettings,
 	type GraphSettings,
 	type UserSettings,
 } from "@/src/core";
@@ -55,6 +56,7 @@ import { KeysSection } from "./keys-section.tsx";
 import { Hint } from "@/components/ui/hint";
 import { AppearanceSection, GraphSection } from "./appearance-section.tsx";
 import { KeyboardSection } from "./keyboard-section.tsx";
+import { DictationSection } from "./dictation-section.tsx";
 import { PluginsSection } from "./plugins-section.tsx";
 import { PluginSettingsPage } from "./plugin-settings-page.tsx";
 import { usePlugins } from "@/components/plugins";
@@ -67,6 +69,7 @@ import { NativeSubscriptionUIProvider } from "./subscription-connections.tsx";
 const SECTIONS = [
 	{ id: "keys", label: "Providers", icon: KeyIcon },
 	{ id: "agent", label: "Agent", icon: BotIcon },
+	{ id: "dictation", label: "Dictation", icon: MicIcon },
 	{ id: "appearance", label: "Appearance", icon: PaletteIcon },
 	{ id: "graph", label: "Graph", icon: WaypointsIcon },
 	{ id: "keyboard", label: "Keyboard", icon: KeyboardIcon, hint: "Stored on this device" },
@@ -295,7 +298,7 @@ export function SettingsDialogBody({
 	 *  schema mistake caught by the validation surface). */
 	const write = useCallback(
 		async (
-			section: "general" | "agent" | "models" | "appearance" | "graph" | "compaction",
+			section: "general" | "agent" | "models" | "appearance" | "graph" | "compaction" | "dictation",
 			body: object,
 		): Promise<boolean> => {
 			const ticket = ++writeOrder.current.issued;
@@ -481,6 +484,15 @@ export function SettingsDialogBody({
 										onCompactionChange={(next: CompactionSettings) =>
 											write("compaction", next)
 										}
+									/>
+								</SettingsSection>
+							)}
+							{active === "dictation" && (
+								<SettingsSection title="Dictation" testid="section-dictation">
+									<DictationSection
+										dictation={record.dictation}
+										initialRow={initialRow ?? undefined}
+										onChange={(next: DictationSettings) => void write("dictation", next)}
 									/>
 								</SettingsSection>
 							)}

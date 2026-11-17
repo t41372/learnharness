@@ -2,11 +2,11 @@ import React, { act } from "react";
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { parseHTML } from "linkedom";
-import { finishDictation, useDictation, useDictationTarget, type Dictation } from "../components/dictation.tsx";
+import { DICTATION_PREVIEW_MAIN, DICTATION_PREVIEW_QUESTION, finishDictation, useDictation, useDictationPreview, useDictationTarget, type Dictation } from "../components/dictation.tsx";
 import { notifySettingsSaved } from "../components/settings-signal.ts";
 import { useDictationLanguage } from "../components/dictation-preference.ts";
 import { isDictationActive, useDictationActive } from "../components/dictation-state.ts";
-import type { UserSettings } from "../src/core/index.ts";
+import type { DictationSession, UserSettings } from "../src/core/index.ts";
 
 function deferred<T>() {
 	let resolve!: (value: T) => void;
@@ -26,6 +26,9 @@ class Socket extends EventTarget {
 	close() { this.readyState = 3; }
 	open() { this.readyState = Socket.OPEN; this.dispatchEvent(new Event("open")); }
 	end(code = 1000) { this.close(); this.dispatchEvent(Object.assign(new Event("close"), { code })); }
+	bridge(message: unknown) {
+		this.dispatchEvent(Object.assign(new Event("message"), { data: JSON.stringify(message) }));
+	}
 	final(text: string) {
 		this.dispatchEvent(Object.assign(new Event("message"), {
 			data: JSON.stringify({ type: "Results", is_final: true, channel: { alternatives: [{ transcript: text }] } }),
@@ -59,6 +62,8 @@ async function fixture(language: "pl" | "en" = "pl", delayedRead?: Promise<Respo
 		stops: 0,
 		appends: [] as string[],
 		claimed: undefined as ((text: string) => void) | undefined,
+		session: { engine: "deepgram", token: "test-token" } as DictationSession,
+		previews: { main: "", question: "", side: "" },
 	};
 	Socket.all = [];
 	const previous = new Map<string, PropertyDescriptor | undefined>();
@@ -72,7 +77,7 @@ async function fixture(language: "pl" | "en" = "pl", delayedRead?: Promise<Respo
 		WebSocket: Socket, AudioContext: AudioGraph, AudioWorkletNode: Worklet,
 		IS_REACT_ACT_ENVIRONMENT: true,
 		fetch: async (url: string, init?: RequestInit) => {
-			if (url === "/api/stt/token") return Response.json({ token: "test-token" });
+			if (url === "/api/stt/session") return Response.json(state.session);
 			if (url === "/api/settings") {
 				state.reads++;
 				if (state.nextRead) { const response = state.nextRead; state.nextRead = undefined; return response; }
@@ -103,6 +108,11 @@ async function fixture(language: "pl" | "en" = "pl", delayedRead?: Promise<Respo
 		latest = useDictation({ append: (text) => state.appends.push(text) });
 		setting = useDictationLanguage();
 		state.active = useDictationActive();
+		state.previews = {
+			main: useDictationPreview(DICTATION_PREVIEW_MAIN),
+			question: useDictationPreview(DICTATION_PREVIEW_QUESTION, !!claimed),
+			side: useDictationPreview("side:first"),
+		};
 		return null;
 	}
 	let root = createRoot(document.getElementById("root")!);
@@ -373,4 +383,42 @@ test("microphone permission resolving after unmount immediately stops the late s
 	assert.equal(f.state.stops, 1);
 	assert.equal(Socket.all.length, 0);
 	assert.equal(isDictationActive(), false);
+});
+
+test("the local engine's live words follow the run's fixed destination, then give way to the flushed text", async () => {
+	const local: DictationSession = { engine: "standard-asr", url: "ws://127.0.0.1:9/asr", token: "launch", model: "speech/small", language: "en" };
+	const f = await fixture("en");
+	f.state.session = local;
+	await f.mount();
+	const run = async (start: () => void, expect: "main" | "question" | "side") => {
+		await act(async () => { start(); });
+		const socket = Socket.all.at(-1)!;
+		await act(async () => { socket.open(); });
+		assert.equal(JSON.parse(socket.sent[0] as string).type, "start");
+		await act(async () => {
+			socket.bridge({ type: "ready" });
+			socket.bridge({ type: "event", event: { type: "partial", segment_id: "a", text: "live words" } });
+		});
+		for (const key of ["main", "question", "side"] as const) {
+			assert.equal(f.state.previews[key], key === expect ? "live words" : "", `${expect} run: ${key} preview`);
+		}
+		await act(async () => { f.dictation.stop(); });
+		assert.equal(JSON.parse(socket.sent.at(-1) as string).type, "end");
+		await act(async () => { socket.bridge({ type: "transcript", text: "live words." }); socket.end(); });
+		assert.deepEqual(f.state.previews, { main: "", question: "", side: "" });
+	};
+
+	await run(() => f.dictation.toggle(), "main");
+	assert.deepEqual(f.state.appends, ["live words."]);
+
+	const side: string[] = [];
+	await run(() => f.dictation.toggleFor({ id: "side:first", append: (text) => { side.push(text); } }), "side");
+	assert.deepEqual(side, ["live words."]);
+
+	const question: string[] = [];
+	f.state.claimed = (text) => question.push(text);
+	await f.mount();
+	await run(() => f.dictation.toggle(), "question");
+	assert.deepEqual(question, ["live words."]);
+	assert.deepEqual(f.state.appends, ["live words."]);
 });

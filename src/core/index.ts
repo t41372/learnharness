@@ -75,6 +75,9 @@ export * from "./file-access.ts";
 // presets and the theme → CSS-token adapter — pure, shared by the layout,
 // the provider, Settings and the themes API.
 export * from "./themes.ts";
+// Local dictation through Standard ASR (2026-10-25): the shared status and
+// session shapes + the transcript reducer. Pure, browser-safe.
+export * from "./standard-asr.ts";
 export * from "./dictation.ts";
 // graph-deletion.ts (wave 6): the whole module is PURE but storage-port
 // driven — the deletion RUNS server-side only. The shell needs exactly one

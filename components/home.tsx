@@ -9,7 +9,7 @@ import { MinimalHome } from "@/components/minimal-home";
 import { SetupDialog } from "@/components/setup-dialog";
 import { ComposerActions, NodePickerControl } from "@/components/composer-actions";
 import { useModelSetup, selectedModelUnavailable, openModelPicker, ZeroKeysPill } from "@/components/setup-cta";
-import { DictationBar, joinDictation, useDictation } from "@/components/dictation";
+import { DICTATION_PREVIEW_MAIN, DictationBar, joinDictation, useDictation, useDictationPreview } from "@/components/dictation";
 import { useFieldCycle } from "@/components/field-cycle";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
@@ -67,6 +67,8 @@ export function Home({
 			setTopic(v);
 		},
 	});
+	// The local engine's live words, painted after the topic draft.
+	const livePreview = useDictationPreview(DICTATION_PREVIEW_MAIN);
 	const [busy, setBusy] = useState(false);
 	const startingRef = useRef(false);
 	const starterRef = useRef(new SessionStarter());
@@ -253,6 +255,7 @@ export function Home({
 					<PathInput
 						ref={topicInputRef}
 						value={topic}
+						dictationPreview={livePreview}
 						onValueChange={(value) => {
 							topicRef.current = value;
 							setTopic(value);

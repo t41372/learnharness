@@ -5,7 +5,7 @@ import type { ViewReaderRef } from "./session-view-readers";
 import { ChevronRightIcon } from "lucide-react";
 import { ToolContentResponse } from "@/components/ai-elements/message";
 import { Button } from "@/components/ui/button";
-import { joinDictation, useDictationTarget } from "@/components/dictation";
+import { DICTATION_PREVIEW_QUESTION, joinDictation, useDictationPreview, useDictationTarget } from "@/components/dictation";
 import { useEnterSubmits } from "@/components/enter-submits";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
@@ -95,6 +95,8 @@ export function PracticeDock({ viewReader, problemCallId, input, expanded, onExp
 		),
 		true,
 	);
+	// The local engine's live words — this field always claims the run.
+	const livePreview = useDictationPreview(DICTATION_PREVIEW_QUESTION);
 
 	useLayoutEffect(() => { viewReader?.changed?.(); }, [viewReader, thinking]);
 	const submit = () => {
@@ -166,6 +168,7 @@ export function PracticeDock({ viewReader, problemCallId, input, expanded, onExp
 				</div>
 				<PathInput
 					value={thinking}
+					dictationPreview={livePreview}
 					onValueChange={(value) => {
 						thinkingRef.current = value; editRevision.current++;
 						setThinking(value);

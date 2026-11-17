@@ -33,6 +33,7 @@ import {
 	ROLE_SLOT,
 	type AgentSettings,
 	type BackgroundModelRole,
+	type DictationEngine,
 	type FactorySettings,
 	type GeneralSettings,
 	type DictationSettings,
@@ -73,7 +74,6 @@ export type EffectiveAppearance = FactorySettings["appearance"];
 /** The concrete view: every knob resolved, no absent fields. */
 export interface EffectiveSettings {
 	general: Required<GeneralSettings>;
-	dictation: Required<DictationSettings>;
 	agent: {
 		workerRequestConcurrency: number;
 		models: Record<BackgroundModelRole, EffectiveModelSpec | undefined>;
@@ -102,6 +102,9 @@ export interface EffectiveSettings {
 	/** Custom endpoint, resolved concrete: baseUrl defaults "", models and
 	 *  user pins default to empty. */
 	customProvider: { baseUrl: string; models: CustomModel[]; overrides: Record<string, CustomModelOverride>; manualModels: string[] };
+	/** Dictation (local dictation, 2026-10-25): engine defaults to
+	 *  Deepgram; model null until one is chosen; language "auto". */
+	dictation: { engine: DictationEngine; model: string | null; language: string };
 }
 
 /** The conversation pair's chain (BYOK, owner 2026-09-22): the chat's own
@@ -198,9 +201,6 @@ export function resolveSettings(record: UserSettings | null): EffectiveSettings 
 		general: {
 			autoUpdate: record?.general?.autoUpdate ?? FACTORY_SETTINGS.general.autoUpdate,
 		},
-		dictation: {
-			language: record?.dictation?.language ?? FACTORY_SETTINGS.dictation.language,
-		},
 		agent: {
 			workerRequestConcurrency: agent.workerRequestConcurrency ?? FACTORY_SETTINGS.agent.workerRequestConcurrency,
 			models,
@@ -240,6 +240,11 @@ export function resolveSettings(record: UserSettings | null): EffectiveSettings 
 			// (pre-redesign record, fresh install) resolves to the factory
 			// 4096; the sanitizer has already clamped/floored any stored value.
 			extractionChunkTokens: graph.extractionChunkTokens ?? FACTORY_SETTINGS.graph.extractionChunkTokens,
+		},
+		dictation: {
+			engine: record?.dictation?.engine ?? "deepgram",
+			model: record?.dictation?.model ?? null,
+			language: record?.dictation?.language ?? (record?.dictation?.engine === "standard-asr" ? "auto" : FACTORY_SETTINGS.dictation.language),
 		},
 		compaction: {
 			thresholdTokens: record?.compaction?.thresholdTokens ?? FACTORY_SETTINGS.compaction.thresholdTokens,

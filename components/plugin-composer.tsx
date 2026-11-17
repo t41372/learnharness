@@ -47,11 +47,13 @@ function run(callback: () => void | Promise<void>, report: (error: unknown) => v
 	try { void Promise.resolve(callback()).catch(report); } catch (error) { report(error); }
 }
 
-/** The exact core composer, with its learning/file defaults explicitly disabled. */
-export function PluginComposer({ value, onChange, onSend, busy = false, onStop, canSend, placeholder = "Message…", autoFocus, onError = reportDefault }: PluginComposerProps & Extra) {
+/** The exact core composer, with its learning/file defaults explicitly disabled.
+ *  It shows no core dictation preview: only the standard preset passes its
+ *  own controller's key (`dictationPreviewKey`). */
+export function PluginComposer({ value, onChange, onSend, busy = false, onStop, canSend, placeholder = "Message…", autoFocus, onError = reportDefault, dictationPreviewKey = null }: PluginComposerProps & Extra & { dictationPreviewKey?: string | null }) {
 	return <Composer value={value} onChange={(next) => run(() => onChange(next), onError)} onSend={() => run(onSend, onError)}
 		onStop={() => run(() => onStop?.(), onError)} busy={busy} canSend={canSend ?? value.trim().length > 0}
-		placeholder={placeholder} autoFocus={autoFocus} defaultDropTarget={false} fileInsertion={false} />;
+		placeholder={placeholder} autoFocus={autoFocus} defaultDropTarget={false} fileInsertion={false} dictationPreviewKey={dictationPreviewKey} />;
 }
 
 export function PluginDictation({ onTranscript, disabled, onError = reportDefault, actionRef, signal }: PluginDictationProps & Extra & { actionRef?: RefObject<Dictation | null> }) {
@@ -91,7 +93,7 @@ export function PluginStandardComposer({ composer, model, thinking, dictation: d
 	});
 	return <div ref={root} data-plugin-standard-composer="">
 		<div className="overflow-hidden rounded-2xl border bg-card shadow-lg">
-			<PluginComposer {...composer} canSend={composer.canSend ?? (composer.value.trim().length > 0 || dictation.active)}
+			<PluginComposer {...composer} dictationPreviewKey={dictation.previewId} canSend={composer.canSend ?? (composer.value.trim().length > 0 || dictation.active)}
 				onSend={async () => { await dictation.finish(); await latest.current.composer.onSend(); }} onError={onError} />
 		</div>
 		{/* Like the native dock, controls sit below the text-only shell. */}

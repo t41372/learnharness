@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { ViewReaderRef, NativeQuestionViewState } from "./session-view-readers";
 import { ArrowDownIcon, ChevronRightIcon, PlayIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { finishDictation, isDictationActive, joinDictation, useDictationTarget } from "@/components/dictation";
+import { DICTATION_PREVIEW_QUESTION, finishDictation, isDictationActive, joinDictation, useDictationPreview, useDictationTarget, useDictationTerms } from "@/components/dictation";
 import { useEnterSubmits } from "@/components/enter-submits";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
@@ -391,6 +391,11 @@ function QuestionDockForm({
 		// the reading-thinking field owns dictated speech during the reading.
 		dictationClaim,
 	);
+	// The local engine's live words, shown in whichever field the claim
+	// flushes into (the answer in text mode, else "Your thinking").
+	const livePreview = useDictationPreview(DICTATION_PREVIEW_QUESTION, dictationClaim);
+	// The question on screen is the likeliest vocabulary of the answer.
+	useDictationTerms(useMemo(() => (qd.mode === "text" ? [] : qd.options.map((o) => o.label)), [qd]));
 
 	const toggle = (idx: number) => setSel(toggleOption(selectMode, sel, idx));
 
@@ -909,6 +914,7 @@ function QuestionDockForm({
 					{qd.mode === "text" ? (
 						<PathInput
 							value={text}
+							dictationPreview={livePreview}
 							onValueChange={(value) => {
 								answerTextRef.current = value;
 								setText(value);
@@ -939,6 +945,7 @@ function QuestionDockForm({
 						<PathInput
 							ref={thinkingRef}
 							value={thinking}
+							dictationPreview={livePreview}
 							onValueChange={(value) => {
 								thinkingTextRef.current = value;
 								setThinking(value);

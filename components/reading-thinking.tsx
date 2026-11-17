@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { joinDictation, useDictationTarget } from "@/components/dictation";
+import { DICTATION_PREVIEW_QUESTION, joinDictation, useDictationPreview, useDictationTarget } from "@/components/dictation";
 import { composingQuestionKey, pluginQuestionKeySuppressed } from "./plugin-question-keys";
 import { PathInput } from "@/components/path-input";
 import { useOptionalInteractionLayers } from "./interaction-layers";
@@ -60,6 +60,8 @@ export function ReadingThinkingField({
 		useCallback((text: string) => applyDraft(joinDictation(draftRef.current, text)), [applyDraft]),
 		claim,
 	);
+	// The local engine's live words, while this field holds the claim.
+	const livePreview = useDictationPreview(DICTATION_PREVIEW_QUESTION, claim);
 	return (
 		<div
 			data-testid="reading-thinking-field"
@@ -72,6 +74,7 @@ export function ReadingThinkingField({
 				ref={inputRef}
 				value={draft}
 				onValueChange={applyDraft}
+				dictationPreview={livePreview}
 				/* py-0.5 (owner round, 2026-10-07): the scrollbar fix. Source
 				   Sans 3's font box is 22px at 16px; lh-input's 1.25 leading
 				   gives a 20px line box — the content area sticks 1px below the

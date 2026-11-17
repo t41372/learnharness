@@ -42,7 +42,7 @@ import { clearOpeningPrompt, readOpeningPromptEntry, stashOpeningPrompt, OPENING
 import { forwardDockWheel, useDockHeight } from "@/components/dock-height";
 import { createDockMorph } from "@/components/dock-morph";
 import { QueuedSteersBody, type QueuedSteerLine } from "@/components/queued-steers";
-import { DictationBar, finishDictation, joinDictation, useDictation, type Dictation } from "@/components/dictation";
+import { DictationBar, finishDictation, joinDictation, useDictation, useDictationTerms, type Dictation } from "@/components/dictation";
 import { useFieldCycle } from "@/components/field-cycle";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
@@ -953,6 +953,7 @@ export function Chat({
 		phase: recording.destinationId === "main" ? recording.phase : "idle",
 		active: recording.destinationId === "main" && recording.active,
 		error: recording.destinationId === "main" ? recording.error : null,
+		errorDetail: recording.destinationId === "main" ? recording.errorDetail : null,
 		blocked: recording.destinationId !== "main" && recording.active,
 	};
 	/* When a dictation run ends, the bare composer takes focus (owner
@@ -1267,6 +1268,10 @@ export function Chat({
 	// The session's live plan (drives the top-bar chip; the marginalia
 	// derives its own from the same transcript).
 	const planTree = useMemo(() => latestTree(messages), [messages]);
+	// The session's vocabulary for the local dictation engine: its title and
+	// the plan's step names (the words a learner is likely to say here).
+	const dictationTerms = useMemo(() => [titleText, ...(planTree?.nodes.map((n) => n.title) ?? [])], [titleText, planTree]);
+	useDictationTerms(dictationTerms);
 
 	// ── Session usage (wave-4 stats bar) ──
 	// The money channel: the record's turns log and read-time server Pi

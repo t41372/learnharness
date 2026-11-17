@@ -2,6 +2,7 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { ArrowRightIcon, CornerDownLeftIcon, SquareIcon } from "lucide-react";
+import { DICTATION_PREVIEW_MAIN, useDictationPreview } from "@/components/dictation";
 import { cn } from "@/lib/utils";
 import { PathInput } from "@/components/path-input";
 import { AttachFilesButton } from "@/components/attach-files-button";
@@ -119,6 +120,7 @@ export function Composer({
 	onNext,
 	defaultDropTarget = true,
 	fileInsertion = true,
+	dictationPreviewKey = DICTATION_PREVIEW_MAIN,
 }: {
 	busy: boolean;
 	value: string;
@@ -147,8 +149,14 @@ export function Composer({
 	/** Neutral plugin composers opt out without changing core defaults. */
 	defaultDropTarget?: boolean;
 	fileInsertion?: boolean;
+	/** Whose dictation run's live words show here (useDictationPreview):
+	 *  the page composer by default; a plugin composer passes its own
+	 *  controller's key, or null for none. */
+	dictationPreviewKey?: string | null;
 }) {
 	const controller = useOptionalInteractionLayers();
+	// The local engine's live words, while a run's destination is this field.
+	const livePreview = useDictationPreview(dictationPreviewKey);
 	const act = () => {
 		const action = enterAction({ busy, canSend, nextProblem });
 		if (action === "stop") onStop();
@@ -169,6 +177,7 @@ export function Composer({
 			<PathInput
 				ref={editorRef}
 				value={value}
+				dictationPreview={livePreview}
 				onValueChange={onChange}
 				defaultDropTarget={defaultDropTarget}
 				fileInsertion={fileInsertion}
