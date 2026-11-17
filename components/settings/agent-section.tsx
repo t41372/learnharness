@@ -1142,7 +1142,7 @@ export function InstructionsEditor({ value, onSave }: { value: string; onSave: (
 						Saved
 					</p>
 				)}
-				<p className={cn("ml-auto text-xs tabular-nums", over ? "text-red-500" : "text-muted-foreground/50")}>
+				<p className={cn("ml-auto text-xs tabular-nums", over ? "text-error" : "text-muted-foreground/50")}>
 					{text.length} / {LEARNER_INSTRUCTIONS_MAX_CHARS}
 				</p>
 			</div>
