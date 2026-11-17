@@ -14,8 +14,6 @@ import { ChainTableOverlay } from "@/components/chain-table.tsx";
 import { ComposerActions, NodePickerControl } from "@/components/composer-actions";
 import { OPENING_PROMPT_FAILURE } from "@/components/opening-prompt";
 import { SessionStarter } from "@/components/start-session";
-import { useAttachmentDraft, type AttachmentDraft } from "@/components/attachments";
-import type { Attachment } from "@/src/core";
 import type { ChatSettings, GraphSnapshot } from "@/src/core";
 import { useT } from "@/components/i18n";
 
@@ -50,21 +48,19 @@ export async function startDraftSession(
 	picks?: readonly DraftPick[],
 	starter = new SessionStarter(),
 	settingsIdentity?: string,
-	attachments: readonly Attachment[] = [],
 ): Promise<string | null> {
 	const t = text.trim();
-	if (!t && !attachments.length) return null;
+	if (!t) return null;
 	// THE PICKS RIDE THE CREATE (owner round 10): a practice draft seeded
 	// from the pick bar creates its session WITH the graph context — the
 	// same contract as the home screen's practice send (the marker with
 	// [id] name: statement lines, target validation's truth set).
 	return starter.start(
 		mode === "practice"
-			? { title: t || attachments[0]!.name, kind: "practice", ...(picks && picks.length > 0 ? { graphContext: { propositions: picks } } : {}) }
-			: { title: t || attachments[0]!.name },
+			? { title: t, kind: "practice", ...(picks && picks.length > 0 ? { graphContext: { propositions: picks } } : {}) }
+			: { title: t },
 		fetchLike,
 		settingsIdentity,
-		{ text: t, attachments },
 	);
 }
 
@@ -79,7 +75,6 @@ export function DraftShell({
 	onChange,
 	onSend,
 	startError = false,
-	attachmentDraft,
 	setupCta,
 	mode = "teach",
 	picks = [],
@@ -92,7 +87,6 @@ export function DraftShell({
 	onChange: (v: string) => void;
 	onSend: () => void;
 	startError?: boolean;
-	attachmentDraft?: AttachmentDraft;
 	/** The practice draft (owner, 2026-10-04): ?mode=practice — the
 	 *  created session carries kind:"practice" and the copy changes
 	 *  (the practice agent opens; no probing). */
@@ -132,7 +126,7 @@ export function DraftShell({
 	// round, owner 2026-10-01): the spoken text is deferred in the run's
 	// buffer — Enter must reach the finish-first send, not be gated out by
 	// an empty textarea. Nothing said → the send no-ops.
-	const canSend = (text.trim().length > 0 || dictation.active || !!attachmentDraft?.items.length) && !attachmentDraft?.pending;
+	const canSend = text.trim().length > 0 || dictation.active;
 	/* FINISH DICTATION FIRST (owner, 2026-10-01): stop the run, let the
 	 * last finals land through onChange, THEN call the parent's send —
 	 * which reads its REF mirror, so the post-await timing of React's
@@ -195,7 +189,6 @@ export function DraftShell({
 								{startError && <p role="alert" className="pointer-events-auto mb-2 text-sm text-destructive">{OPENING_PROMPT_FAILURE}</p>}
 								<div className="pointer-events-auto overflow-hidden rounded-2xl border bg-card shadow-lg">
 									<Composer
-										attachmentDraft={attachmentDraft}
 										busy={busy}
 										value={text}
 										onChange={onChange}
@@ -238,7 +231,6 @@ export function NewSession({ initialConfigured, mode = "teach" }: { initialConfi
 	const router = useRouter();
 	const { t } = useT("shell");
 	const [text, setText] = useState("");
-	const attachments = useAttachmentDraft();
 	/* The draft MIRROR ("nothing gets lost" round, 2026-10-01): the shell's
 	 * finish-first send calls THIS send after the dictation flush — which
 	 * landed via setState and may not have re-rendered yet. The send reads
@@ -289,7 +281,7 @@ export function NewSession({ initialConfigured, mode = "teach" }: { initialConfi
 
 	const send = useCallback(() => {
 		const draft = textRef.current.trim();
-		if ((!draft && !attachments.current().length) || startingRef.current || attachments.pending) return;
+		if (!draft || startingRef.current) return;
 		if (!configured) {
 			setSetupOpen(true);
 			return;
@@ -313,7 +305,7 @@ export function NewSession({ initialConfigured, mode = "teach" }: { initialConfi
 		setBusy(true);
 		setStartError(false);
 		void startDraftSession(draft, fetch, mode === "practice" ? "practice" : undefined, mode === "practice" ? picksRef.current : undefined,
-			starterRef.current, JSON.stringify(catalog?.slots.strong), attachments.current())
+			starterRef.current, JSON.stringify(catalog?.slots.strong))
 			.then((target) => {
 				if (target) router.push(target);
 				else { startingRef.current = false; setBusy(false); }
@@ -323,12 +315,11 @@ export function NewSession({ initialConfigured, mode = "teach" }: { initialConfi
 				setBusy(false);
 				setStartError(true);
 			});
-	}, [router, configured, zeroKeys, catalog, mode, attachments]);
+	}, [router, configured, zeroKeys, catalog, mode]);
 
 	return (
 		<>
 			<DraftShell
-				attachmentDraft={attachments}
 				busy={busy}
 				startError={startError}
 				text={text}

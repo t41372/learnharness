@@ -32,8 +32,6 @@ Instead of just giving you an explanation, it uses your answers and thinking to 
 
 The agent can also research questions in the background, create visual explanations, and build interactive demonstrations.
 
-Paste images or attach PDFs, text, and code while chatting or answering questions. Previews and files stay available in the conversation history. See [attachment support](docs/attachments.md) for formats and limits.
-
 ## Knowledge that carries forward
 
 What you are taught accumulates as propositions and reasoning chains: individual claims and the premises that lead to them. The graph shows this structure, with links back to the source sessions. You can also import notes.
@@ -82,5 +80,3 @@ Questions, bug reports, and feature requests: [GitHub Issues](https://github.com
 [AGPL-3.0](LICENSE)
 
 The app is free and open forever. If we ever charge for anything, it will be for convenience — managed keys, hosting — never for features you can run locally.
-
-Spaced review: new knowledge joins the review queue automatically. Add existing propositions from the knowledge map, open **Reviews**, and start a due item. After practicing, rate your recall to schedule the next review with FSRS.

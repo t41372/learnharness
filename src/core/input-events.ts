@@ -28,7 +28,6 @@
  * turn rides one composition.
  */
 
-import { parseAttachments, type Attachment } from "./attachments.ts";
 import type { QuestionAnswerData } from "./question-core.ts";
 import type { LhMessage } from "./native-messages.ts";
 import {
@@ -46,7 +45,7 @@ import { QUESTION_TOOLS, toolQuestionKind } from "./pending.ts";
 
 /** One client-originated input event (the POST body's `input`). */
 export type ChatInput =
-	| { type: "text"; text: string; attachments?: Attachment[] }
+	| { type: "text"; text: string }
 	| { type: "answer"; toolCallId: string; answer: QuestionAnswerData }
 	| { type: "continue" }
 	/** The failed-turn retry (issue #110): the banner's Retry button. */
@@ -55,7 +54,7 @@ export type ChatInput =
 	 *  thinking on the ACTIVE problem — one lane (owner 2026-10-05):
 	 *  whether it claims an answer is read from the text. One
 	 *  problem may carry many submissions; each is its own turn. */
-	| { type: "thinking"; problemCallId: string; text: string; attachments?: Attachment[] }
+	| { type: "thinking"; problemCallId: string; text: string }
 	/** The practice move-on signal (owner round 16): the learner's
 	 *  explicit go-ahead during the between-problems pause — the Next
 	 *  chip or Enter on an empty composer. Practice sessions only, and
@@ -116,7 +115,7 @@ export function parseDismissInput(input: unknown): DismissInput {
  *  (a send with no live turn is a plain text send, which already exists).
  *  The id is client-minted (steer_<localid>): the queued indicator keys on
  *  it, and the drain's message events upsert the real card by the same id. */
-export type UserSteerInput = { type: "steer"; id: string; text: string; attachments?: Attachment[] };
+export type UserSteerInput = { type: "steer"; id: string; text: string };
 
 /** Parse and validate a steer event off a request body. */
 export function parseUserSteerInput(input: unknown): UserSteerInput {
@@ -126,11 +125,10 @@ export function parseUserSteerInput(input: unknown): UserSteerInput {
 	if (typeof i.id !== "string" || i.id.length === 0) {
 		throw new ChatInputError("steer input requires a client-minted id");
 	}
-	const attachments = inputAttachments(i.attachments);
-	if (typeof i.text !== "string" || (i.text.trim().length === 0 && attachments.length === 0)) {
+	if (typeof i.text !== "string" || i.text.trim().length === 0) {
 		throw new ChatInputError("steer input requires non-empty text");
 	}
-	return { type: "steer", id: i.id, text: i.text, ...(attachments.length ? { attachments } : {}) };
+	return { type: "steer", id: i.id, text: i.text };
 }
 
 /** The native appends a dismissal makes (pure — same orphan discipline
@@ -157,22 +155,16 @@ export function dismissAppends(record: { messages: LhMessage[] }, input: Dismiss
 /** A malformed input event (the honest 400 — the orphan-trap discipline). */
 export class ChatInputError extends Error {}
 
-function inputAttachments(value: unknown): Attachment[] {
-	try { return parseAttachments(value); }
-	catch (error) { throw new ChatInputError((error as Error).message); }
-}
-
 /** Parse and validate an input event off a request body. */
 export function parseChatInput(input: unknown): ChatInput {
 	if (typeof input !== "object" || input === null) throw new ChatInputError("input must be an object");
 	const i = input as Record<string, unknown>;
-	const attachments = inputAttachments(i.attachments);
 	switch (i.type) {
 		case "text":
-			if (typeof i.text !== "string" || ((i.text as string).trim().length === 0 && attachments.length === 0)) {
+			if (typeof i.text !== "string" || (i.text as string).trim().length === 0) {
 				throw new ChatInputError("text input requires non-empty text");
 			}
-			return { type: "text", text: i.text, ...(attachments.length ? { attachments } : {}) };
+			return { type: "text", text: i.text };
 		case "answer":
 			if (typeof i.toolCallId !== "string" || i.toolCallId.length === 0) {
 				throw new ChatInputError("answer input requires toolCallId");
@@ -180,11 +172,7 @@ export function parseChatInput(input: unknown): ChatInput {
 			if (typeof i.answer !== "object" || i.answer === null) {
 				throw new ChatInputError("answer input requires the graded answer object");
 			}
-			{
-				const answer = i.answer as QuestionAnswerData;
-				const refs = inputAttachments(answer.attachments);
-				return { type: "answer", toolCallId: i.toolCallId, answer: refs.length ? { ...answer, attachments: refs } : answer };
-			}
+			return { type: "answer", toolCallId: i.toolCallId, answer: i.answer as QuestionAnswerData };
 		case "continue":
 			return { type: "continue" };
 		case "retry":
@@ -193,10 +181,10 @@ export function parseChatInput(input: unknown): ChatInput {
 			if (typeof i.problemCallId !== "string" || i.problemCallId.length === 0) {
 				throw new ChatInputError("thinking input requires problemCallId");
 			}
-			if (typeof i.text !== "string" || (i.text.trim().length === 0 && attachments.length === 0)) {
+			if (typeof i.text !== "string" || i.text.trim().length === 0) {
 				throw new ChatInputError("thinking input requires non-empty text");
 			}
-			return { type: "thinking", problemCallId: i.problemCallId, text: i.text, ...(attachments.length ? { attachments } : {}) };
+			return { type: "thinking", problemCallId: i.problemCallId, text: i.text };
 		case "next":
 			return { type: "next" };
 		default:
@@ -219,7 +207,7 @@ export function inputAppends(
 ): LhMessage[] {
 	switch (input.type) {
 		case "text":
-			return [...dismissalConclusion(record), newUserMessage(input.text, input.attachments)];
+			return [...dismissalConclusion(record), newUserMessage(input.text)];
 		case "answer": {
 			const pending = danglingQuestionOf(record.messages);
 			if (!pending || pending.toolCallId !== input.toolCallId) {
@@ -238,7 +226,7 @@ export function inputAppends(
 			if (!active || active.toolCallId !== input.problemCallId) {
 				throw new ChatInputError("thinking input targets no active problem");
 			}
-			return [...dismissalConclusion(record), newThinkingMessage(input.problemCallId, input.text, input.attachments)];
+			return [...dismissalConclusion(record), newThinkingMessage(input.problemCallId, input.text)];
 		}
 		case "next": {
 			// Honest 400s, the thinking gate's discipline: the signal is a

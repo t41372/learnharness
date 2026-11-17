@@ -5,8 +5,6 @@
  */
 
 export * from "./chat-handler.ts";
-export * from "./reviews.ts";
-export * from "./attachments.ts";
 export * from "./events-stream.ts";
 export * from "./chats.ts";
 export * from "./graph.ts";

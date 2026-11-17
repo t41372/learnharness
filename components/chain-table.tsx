@@ -69,7 +69,6 @@ import {
 } from "lucide-react";
 import { chainsForSelection, formatChainLine, fuzzyScore } from "@/src/core";
 import type { GraphChain, GraphNode } from "@/src/core";
-import { AddToReviewButton } from "@/components/reviews";
 import { TopBar } from "@/components/top-bar";
 import { DeleteNodeDialog } from "@/components/delete-node-dialog";
 import { LatexGlyph } from "@/components/latex-glyph";
@@ -518,7 +517,6 @@ export function ChainTableBody({
 						>
 							{t("chainTable.selection.clear")}
 						</button>
-						<AddToReviewButton nodeIds={[...selection]} />
 						{selectMode ? (
 							<button
 								type="button"

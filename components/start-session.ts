@@ -1,4 +1,3 @@
-import type { Attachment } from "@/src/core";
 import { clearOpeningPrompt, OPENING_PROMPT_FAILURE, stashOpeningPrompt } from "./opening-prompt";
 
 interface SessionCreation {
@@ -14,8 +13,8 @@ interface SessionCreation {
 export class SessionStarter {
 	private created?: { identity: string; id: string };
 
-	async start(body: SessionCreation, fetchLike: typeof fetch, settingsIdentity?: string, opening?: { text: string; attachments?: readonly Attachment[] }): Promise<string> {
-		const identity = JSON.stringify([body, settingsIdentity, opening]);
+	async start(body: SessionCreation, fetchLike: typeof fetch, settingsIdentity?: string): Promise<string> {
+		const identity = JSON.stringify([body, settingsIdentity]);
 		if (this.created?.identity !== identity) {
 			if (this.created) clearOpeningPrompt(this.created.id);
 			this.created = undefined;
@@ -29,7 +28,7 @@ export class SessionStarter {
 			if (typeof result.id !== "string" || !/^[A-Za-z0-9_-]+$/.test(result.id)) throw new Error(OPENING_PROMPT_FAILURE);
 			this.created = { identity, id: result.id };
 		}
-		if (!stashOpeningPrompt(this.created.id, opening?.text ?? body.title, false, opening?.attachments)) throw new Error(OPENING_PROMPT_FAILURE);
+		if (!stashOpeningPrompt(this.created.id, body.title)) throw new Error(OPENING_PROMPT_FAILURE);
 		return `/chat/${this.created.id}`;
 	}
 }
