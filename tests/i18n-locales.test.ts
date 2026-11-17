@@ -11,6 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { LANGUAGES } from "../src/core/language.ts";
+import { NAMESPACES } from "../components/i18n/resources.ts";
 
 const ROOT = path.join(import.meta.dirname, "..", "locales");
 const PLURAL = /_(zero|one|two|few|many|other)$/;
@@ -48,6 +49,10 @@ const namespaces = fs
 	.sort();
 
 describe("locale files", () => {
+	it("the registered namespaces are exactly the English files", () => {
+		assert.deepEqual([...NAMESPACES].sort(), namespaces);
+	});
+
 	it("every language ships the same namespaces as English", () => {
 		for (const lang of LANGUAGES) {
 			const files = fs.readdirSync(path.join(ROOT, lang)).filter((f) => f.endsWith(".json")).sort();

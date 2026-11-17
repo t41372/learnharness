@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useT, type TFunction } from "@/components/i18n";
 import { Toggle, toggleTestid } from "./controls";
 import { useChatGPTBridge } from "./subscription-client";
+import type { CloseOutcome } from "@/components/interaction-layers";
 
 // The English copy constants stay the identities the logic and the copy
 // pins compare against; the UI renders the settings namespace's chatgpt.*
@@ -163,10 +164,10 @@ export function ChatGPTUIProvider({ children }: { children: React.ReactNode }) {
 		setDismissedError(status.error);
 		showDialog({ kind: "connect" });
 	}
-	function close() {
-		if (operation.current === "disconnect" || operation.current === "change" || operation.current === "cancel") return;
+	function close(): CloseOutcome {
+		if (operation.current === "disconnect" || operation.current === "change" || operation.current === "cancel") return "blocked";
 		const current = dialogRef.current;
-		if (current?.kind === "manage" && current.confirm) { showDialog({ ...current, confirm: false }); setError(null); return; }
+		if (current?.kind === "manage" && current.confirm) { showDialog({ ...current, confirm: false }); setError(null); return "handled-without-close"; }
 		const cancel = loginAttempt.current !== null || statusRef.current.pending;
 		const intent = ++generation.current;
 		const owner = dialogRef.current;
@@ -195,7 +196,9 @@ export function ChatGPTUIProvider({ children }: { children: React.ReactNode }) {
 			}).catch(() => { if (mounted.current && generation.current === intent) setError(CONTROL_ERROR); }).finally(() => {
 				if (mounted.current && generation.current === intent) { operation.current = null; setBusy(false); }
 			});
+			return "pending";
 		}
+		return "closed";
 	}
 	async function control(kind: "change" | "disconnect", action: () => Promise<ChatGPTStatus>, target?: string) {
 		if (operation.current) return;
@@ -275,10 +278,10 @@ export function ChatGPTUIProvider({ children }: { children: React.ReactNode }) {
 				<p role="alert" className="rounded-sm border border-border px-3 py-2 text-xs text-foreground" data-testid="chatgpt-revocation-warning">{t("chatgpt.revocationWarning")}</p>
 				<div className="mt-4 flex justify-end"><Button variant="outline" size="sm" onClick={() => { context.dismissWarning(); showDialog(null); }}>{t("actions.dismiss")}</Button></div>
 			</> : dialog.kind === "manage" && dialog.confirm ? <div data-testid="chatgpt-disconnect-confirmation">
-				<p className="mt-3 text-sm font-semibold text-red-400">{t("chatgpt.disconnectTitle")}</p>
+				<p className="mt-3 text-sm font-semibold text-error">{t("chatgpt.disconnectTitle")}</p>
 				<p className="mt-3 text-xs text-foreground">{managed?.email || t("chatgpt.account")}</p>
 				<p className="mt-3 text-xs text-muted-foreground">{t(web ? "chatgpt.disconnectWebBody" : "chatgpt.disconnectBody")}</p>
-				{context.error && <p role="alert" className="mt-3 text-xs text-red-400">{chatgptMessage(t, context.error)}</p>}
+				{context.error && <p role="alert" className="mt-3 text-xs text-error">{chatgptMessage(t, context.error)}</p>}
 				<div className="mt-4 flex items-center justify-end gap-2">
 					<Button variant="ghost" size="sm" disabled={busy} onClick={close}>{t("actions.cancel")}</Button>
 					<Button variant="destructive" size="sm" data-testid="chatgpt-confirm-disconnect" disabled={busy || !managedPresent} onClick={() => bridge && managed && void control("disconnect", () => bridge.disconnect(managed.id), managed.id)}>{t("chatgpt.disconnectAccount")}</Button>
@@ -307,7 +310,7 @@ export function ChatGPTUIProvider({ children }: { children: React.ReactNode }) {
 				</div>
 				{!status.available && <p className="mt-3 text-xs text-muted-foreground">{t("chatgpt.desktopOnly")}</p>}
 				{status.pending && <p role="status" className="mt-3 text-xs text-muted-foreground">{t("chatgpt.waiting")}</p>}
-				{context.error && <p role="alert" className="mt-3 text-xs text-red-400">{chatgptMessage(t, context.error)}</p>}
+				{context.error && <p role="alert" className="mt-3 text-xs text-error">{chatgptMessage(t, context.error)}</p>}
 				{dialog.kind === "manage" && managed && <div className="mt-4 flex flex-wrap items-center justify-between gap-3" data-testid="chatgpt-account-strip">
 					<div data-testid="chatgpt-managed-identity" className="flex min-w-0 items-center gap-2 text-xs text-foreground">
 						{status.accounts.length > 1 && managedPresent && !busy ? <select aria-label={t("chatgpt.manageAccountAria")} value={managed.id} onChange={(event) => context.manage(event.target.value)} className="min-w-0 rounded-sm border border-border bg-background px-2 py-1.5">
@@ -317,7 +320,7 @@ export function ChatGPTUIProvider({ children }: { children: React.ReactNode }) {
 					<Button variant="ghost" size="sm" data-testid="chatgpt-add-accounts" className="cursor-pointer text-muted-foreground disabled:cursor-not-allowed" onClick={() => openConnect()} disabled={busy || status.pending || !status.available}>{t("chatgpt.addAccounts")}</Button>
 				</div>}
 				<ConnectionFooter testid="chatgpt-account-footer" leading={dialog.kind === "manage" && <div data-testid="chatgpt-account-actions">
-					<Button variant="ghost" size="sm" className="cursor-pointer text-red-400 hover:bg-red-500/10 hover:text-red-300" data-testid="chatgpt-disconnect" disabled={busy || status.pending || !managedPresent} onClick={() => showDialog({ ...dialog, confirm: true })}>{t("actions.disconnect")}</Button>
+					<Button variant="ghost" size="sm" className="cursor-pointer text-error hover:bg-error/10 hover:text-error" data-testid="chatgpt-disconnect" disabled={busy || status.pending || !managedPresent} onClick={() => showDialog({ ...dialog, confirm: true })}>{t("actions.disconnect")}</Button>
 				</div>}>
 					{dialog.kind === "manage" && managedPresent && managed && !managed.connected && managed.canSignInAgain === true && status.available && <Button variant="outline" size="sm" disabled={busy || status.pending || !status.available} onClick={() => openConnect(managed.id)}>{t("actions.signInAgain")}</Button>}
 					<Button variant={dialog.kind === "manage" ? "outline" : "ghost"} size="sm" onClick={close} disabled={busy && operation.current !== "login"}>{dialog.kind === "connect" ? t("actions.cancel") : t("actions.close")}</Button>
@@ -338,7 +341,7 @@ function ContinueButton({ onClick, disabled, testid = "chatgpt-login" }: { onCli
 	</Button>;
 }
 
-function AccountDialog({ children, onClose, busy }: { children: React.ReactNode; onClose: () => void; busy: boolean }) {
+function AccountDialog({ children, onClose, busy }: { children: React.ReactNode; onClose: () => CloseOutcome; busy: boolean }) {
 	const { t } = useT("settings");
 	return <ConnectionDialog label={t("chatgpt.account")} testid="chatgpt-account-dialog" backdropTestid="chatgpt-dialog-backdrop" onClose={onClose} busy={busy}>{children}</ConnectionDialog>;
 }
@@ -350,12 +353,12 @@ export function ChatGPTConnection({ labelClassName }: { setup?: boolean; labelCl
 	const active = ui.status.accounts.find((a) => a.id === ui.status.activeId && a.connected);
 	const accounts = ui.status.accounts.filter((a) => a.connected);
 	return <div className="flex flex-col gap-2" data-testid="chatgpt-connection">
-		<ConnectionRow label="ChatGPT" labelClassName={labelClassName} actionTestid={active ? undefined : "chatgpt-login"} action={active ? "manage" : "connect"} disabled={!ui.status.available || ui.busy || ui.status.pending} onAction={() => active ? ui.manage(active.id) : ui.connect()}>
+		<ConnectionRow label="ChatGPT" labelClassName={labelClassName} actionTestid={active ? undefined : "chatgpt-login"} action={active ? t("connections.manage") : t("connections.connect")} actionVariant={active ? "ghost" : "outline"} disabled={!ui.status.available || ui.busy || ui.status.pending} onAction={() => active ? ui.manage(active.id) : ui.connect()}>
 			{active && <select aria-label={t("chatgpt.account")} value={active.id} disabled={ui.busy || ui.status.pending} onChange={(event) => ui.select(event.target.value)} className="min-w-0 rounded-sm border border-border bg-background px-2 py-1 text-xs text-foreground">
 				{accounts.map((a) => <option key={a.id} value={a.id}>{a.email || t("chatgpt.account")}</option>)}
 			</select>}
 		</ConnectionRow>
-		{ui.inlineError && <p role="alert" className="text-xs text-red-400">{chatgptMessage(t, ui.inlineError)}</p>}
+		{ui.inlineError && <p role="alert" className="text-xs text-error">{chatgptMessage(t, ui.inlineError)}</p>}
 		{ui.warning && <div role="alert" data-testid="chatgpt-revocation-warning" className="rounded-sm border border-border px-3 py-2 text-xs text-muted-foreground">{chatgptMessage(t, ui.warning)}<button type="button" className="ml-2 cursor-pointer underline underline-offset-2" onClick={ui.dismissWarning}>{t("actions.dismiss")}</button></div>}
 	</div>;
 }

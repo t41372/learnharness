@@ -15,7 +15,9 @@
 		"thinkingLabel": "Thinking",
 		"thinking": "THINKING…",
 		"setupModels": "Set up your models",
-		"nextPlaceholder": "Ask anything, or press Enter for the next one."
+		"nextPlaceholder": "Ask anything, or press Enter for the next one.",
+		"evaluatingLabel": "Evaluating",
+		"evaluating": "EVALUATING…"
 	},
 	"errors": {
 		"banner": "Something went wrong: {{message}}",
@@ -28,7 +30,12 @@
 		"dismissFailed": "The dismissal failed ({{status}}).",
 		"modelsNotConfigured": "No model configured — set up your models first",
 		"providerKeyMissing": "No {{provider}} key is set — add one in Settings → Keys",
-		"retry": "Retry"
+		"retry": "Retry",
+		"streamDropped": "The connection dropped before the turn completed.",
+		"syncFailed": "Could not sync the saved session.",
+		"pluginDismissFailed": "The dismissal failed.",
+		"thinkingRequired": "Thinking text or images are required. Your input has been kept.",
+		"messageRequired": "Message text or images are required. Your input has been kept."
 	},
 	"composer": {
 		"placeholder": "Ask, answer, or steer the lesson…",
@@ -51,7 +58,6 @@
 		"question": "Question"
 	},
 	"questionDock": {
-		"malformed": "This question arrived malformed — the transcript keeps the retry.",
 		"revealTitle": "Check your understanding",
 		"revealOpen": "Open",
 		"answer": "Answer",
@@ -65,7 +71,8 @@
 		"yourAnswer": "Your answer",
 		"answerPlaceholder": "Type your answer…",
 		"thinkingPlaceholder": "Why this answer? Whatever comes to mind.",
-		"submit": "Submit answer"
+		"submit": "Submit answer",
+		"retryBlocked": "Answer or discard the remaining question first."
 	},
 	"dock": {
 		"compacting": "compacting session…",
@@ -79,7 +86,7 @@
 		"didntKnow": "didn't know",
 		"correct": "correct",
 		"incorrect": "incorrect",
-		"quote": "“{{text}}”",
+		"quote": "“<text/>”",
 		"answeredDontKnow": "Answered “I don't know”.",
 		"why": "Why",
 		"hideWhy": "Hide why",
@@ -149,7 +156,8 @@
 			"yes": "yes",
 			"no": "no",
 			"separator": ", "
-		}
+		},
+		"submitCustom": "Submit"
 	},
 	"spinner": {
 		"working": "Working"
@@ -181,5 +189,90 @@
 		"loading": "Loading preview…",
 		"previewError": "Could not preview this file. You can still download it.",
 		"previewTruncated": "Preview shortened. Download the file to see its full contents."
+	},
+	"sync": {
+		"retry": "Retry syncing"
+	},
+	"pluginQuestion": {
+		"preparing": "Preparing question…",
+		"unavailable": "Question unavailable",
+		"dismiss": "Dismiss question"
+	},
+	"malformed": {
+		"line": "This question could not be displayed.",
+		"lineRetry": "This question could not be displayed. Retry it or send a message to continue.",
+		"retryTitle": "Requests a replacement from the model.",
+		"retry": "Retry question"
+	},
+	"sideThread": {
+		"ask": "Ask a side question",
+		"openConversation": "Open side conversation",
+		"askAction": "Ask",
+		"askActionAria": "Ask a side question about this selection",
+		"placeholderPassage": "Ask about this passage…",
+		"placeholderFollowUp": "Ask a follow-up…",
+		"placeholderNew": "Ask a side question…",
+		"showQuote": "Show the quoted tutor text",
+		"showInLesson": "Show in the lesson",
+		"inputLevel": "Microphone input level",
+		"title": "Side question",
+		"dock": "Dock side conversation",
+		"float": "Float side conversation",
+		"pin": "Pin to side",
+		"unpin": "Unpin to float",
+		"close": "Close side conversation",
+		"closeShort": "Close",
+		"stopped": "Stopped",
+		"answering": "Answering",
+		"retry": "Retry answer",
+		"currentStep": "Go to current step",
+		"dictationStop": "Stop side dictation",
+		"dictationStart": "Start side dictation",
+		"dictate": "Dictate side question",
+		"stopAnswer": "Stop side answer",
+		"send": "Send side question",
+		"errors": {
+			"unreachable": "The side conversation could not be reached.",
+			"noStream": "The side answer had no response stream.",
+			"failed": "The side answer failed.",
+			"disconnected": "The side answer disconnected. Reopen the conversation to reconnect."
+		}
+	},
+	"selection": {
+		"toolbar": "Selection actions",
+		"shorten": "Shorten selection"
+	},
+	"citation": {
+		"cite": "Cite",
+		"citeAria": "Cite selection in your input",
+		"goToSource": "Go to source",
+		"viewCited": "View cited tutor text: {{label}}",
+		"quoted": "Quoted tutor text: {{label}}",
+		"editComment": "Edit citation comment",
+		"addComment": "Add comment to citation",
+		"commentAria": "Comment on selected text",
+		"commentKeys": "Enter to save the citation comment; Command/Ctrl+Enter to save and send; Shift+Enter for a new line.",
+		"commentPlaceholder": "Add an optional comment...",
+		"commentTooLong": "Comments can contain up to 8,000 characters.",
+		"cancel": "Cancel",
+		"shortenComment": "Shorten comment",
+		"save": "Save"
+	},
+	"images": {
+		"submitted": "Submitted image",
+		"openFullscreen": "Open submitted image fullscreen"
+	},
+	"filePaths": {
+		"attach": "Attach files",
+		"attachMenu": "Attach files or a folder",
+		"files": "Files",
+		"folder": "Folder",
+		"folderFailed": "Could not choose a folder. Try again.",
+		"browserNotice": "Local file paths can only be attached in the desktop app. You can paste a full path instead.",
+		"dropHere": "Drop to attach file paths",
+		"noPaths": "No local file paths were available. Drop existing files or folders from your computer.",
+		"noChat": "Open a chat to attach file paths.",
+		"skipped": "Some dropped items had no available file path.",
+		"dismissNotice": "Dismiss attachment notice"
 	}
 }

@@ -2,7 +2,8 @@
 	"graphView": {
 		"empty": {
 			"title": "知识图谱",
-			"body": "开始会话或导入笔记，即可构建你的图谱。"
+			"body": "开始会话，即可开始学习。",
+			"attachHint": "用回形针按钮添加附件，或直接拖放材料。"
 		},
 		"search": {
 			"label": "搜索节点",
@@ -12,11 +13,6 @@
 		"chains": {
 			"hint": "所有推理链",
 			"button": "推理链"
-		},
-		"import": {
-			"hint": "将笔记导入图谱",
-			"button": "导入笔记…",
-			"importing": "导入中…"
 		},
 		"contextMenu": {
 			"delete": "删除"
@@ -120,7 +116,18 @@
 			"done": "完成",
 			"doneLabel_other": "完成选择——已选 {{count}} 个命题",
 			"delete": "删除",
-			"deleteLabel_other": "删除选中的 {{count}} 个节点"
+			"sourcesAndFolders": "{{sources}} · {{folders}}",
+			"deleteSourcesLabel": "删除选中的来源和文件夹"
+		},
+		"sourceCount_other": "{{count}} 个来源",
+		"folderCount_other": "{{count}} 个文件夹",
+		"addFolder": "新建文件夹",
+		"selectSource": "选中来源“{{label}}”",
+		"expandSource": "展开来源“{{label}}”",
+		"sources": {
+			"readFailed": "无法读取来源的文件夹结构。",
+			"saveFailed": "无法保存来源的文件夹结构。",
+			"deleteFailed": "无法删除来源。"
 		}
 	},
 	"deleteNode": {
@@ -134,12 +141,18 @@
 			"extractionRunning": "有提取任务正在运行——请等活动面板中的任务完成后再试。",
 			"notFound": "节点不存在",
 			"http": "删除失败（{{status}}）",
-			"network": "删除失败——网络错误，请重试。"
+			"network": "删除失败——网络错误，请重试。",
+			"folderUnavailable": "无法移除文件夹。"
 		},
 		"retry": "重试",
 		"cancel": "取消",
 		"confirm": "删除",
-		"deleting": "删除中…"
+		"deleting": "删除中…",
+		"titleNodesAndFolders": "删除节点并移除空文件夹？",
+		"titleFolders": "移除空文件夹？",
+		"emptyFolders": "空文件夹：{{names}}",
+		"kept": "会话、导入的来源记录和非空文件夹都会保留。",
+		"keptWithFolders": "只会移除上面列出的空文件夹。会话、导入的来源记录和非空文件夹都会保留。"
 	},
 	"coverage": {
 		"extracting": "提取中…",
@@ -167,9 +180,18 @@
 		}
 	},
 	"notesImport": {
-		"invalidResponse": "导入响应无效，请重新导入该文件。",
-		"requestFailed": "导入请求失败（HTTP {{status}}），请重新导入该文件。",
-		"requestFailedDetail": "导入请求失败（HTTP {{status}}）：{{detail}}。请重新导入该文件。",
+		"invalidResponse": "导入响应无效。重试前请先检查图谱。",
+		"requestFailed": "导入请求失败（HTTP {{status}}）。重试前请先检查图谱。",
+		"requestFailedDetail": "导入请求失败（HTTP {{status}}）：{{detail}}。重试前请先检查图谱。",
+		"requestFailedDetailEnded": "导入请求失败（HTTP {{status}}）：{{detail}} 重试前请先检查图谱。",
+		"control": {
+			"hint": "将文件提取到图谱",
+			"button": "提取文件…",
+			"extracting": "提取中…",
+			"lessonsHint": "如要用于课程，请改为在会话中添加附件。",
+			"files": "文件",
+			"folder": "文件夹"
+		},
 		"modelsNotConfigured": "尚未配置模型——请先设置模型",
 		"providerKeyMissing": "未设置 {{provider}} 密钥——请在“设置 → 服务商”中添加"
 	},

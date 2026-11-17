@@ -17,7 +17,7 @@ import type { JobRecord } from "../src/core/contracts.ts";
 import { JobsContext } from "../components/jobs-context.ts";
 import { DispatchCard } from "../components/artifacts/dispatch-card.tsx";
 import { SubagentSteerCard } from "../components/artifacts/steer-card.tsx";
-import { DictationBar, type Dictation, type DictationError } from "../components/dictation.tsx";
+import { DICTATION_KEYLESS, DictationBar, type Dictation } from "../components/dictation.tsx";
 
 function inLanguage(language: Language, node: React.ReactNode): string {
 	return renderToStaticMarkup(
@@ -65,8 +65,13 @@ const researchSteer = {
 	],
 };
 
-const dictation = (error: DictationError | null): Dictation => ({
+// The failure stays the English line (callers compare it by value); the bar
+// renders the client-authored lines in the interface language.
+const dictation = (error: string | null): Dictation => ({
 	phase: "idle",
+	destinationId: "main",
+	toggleFor: () => {},
+	finishFor: async () => {},
 	error,
 	errorDetail: null,
 	levelRef: { current: 0 },
@@ -105,15 +110,15 @@ describe("artifacts in Chinese", () => {
 	it("the idle dictation button, and its failure lines", () => {
 		assert.ok(inLanguage("zh-CN", <DictationBar dictation={dictation(null)} />).includes("开始语音输入"));
 		assert.ok(inLanguage("zh-TW", <DictationBar dictation={dictation(null)} />).includes("語音輸入"));
-		const keyless = inLanguage("zh-CN", <DictationBar dictation={dictation({ kind: "keyless" })} />);
+		const keyless = inLanguage("zh-CN", <DictationBar dictation={dictation(DICTATION_KEYLESS)} />);
 		assert.ok(keyless.includes("语音输入需要 Deepgram 密钥"));
-		const lost = inLanguage("zh-TW", <DictationBar dictation={dictation({ kind: "connectionLost", engine: "deepgram", code: 1006 })} />);
+		const lost = inLanguage("zh-TW", <DictationBar dictation={dictation("Deepgram connection lost (1006)")} />);
 		assert.ok(lost.includes("Deepgram 連線中斷（1006）"));
 		// Text the browser wrote is shown as given.
-		const raw = inLanguage("zh-CN", <DictationBar dictation={dictation({ kind: "message", text: "Requested device not found" })} />);
+		const raw = inLanguage("zh-CN", <DictationBar dictation={dictation("Requested device not found")} />);
 		assert.ok(raw.includes("Requested device not found"));
 		// English without a provider: the pinned keyless line.
-		const en = renderToStaticMarkup(<DictationBar dictation={dictation({ kind: "keyless" })} />);
+		const en = renderToStaticMarkup(<DictationBar dictation={dictation(DICTATION_KEYLESS)} />);
 		assert.ok(en.includes("Dictation needs a Deepgram key"));
 		assert.ok(en.includes("Dictation failed: Dictation needs a Deepgram key"));
 	});

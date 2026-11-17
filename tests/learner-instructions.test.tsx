@@ -29,6 +29,7 @@ import {
 } from "../src/agent/learner-instructions.ts";
 import { composeInstructions, createPracticeAgent, createProberAgent, createTeacherAgent, type AgentBuildOptions } from "../src/agent/teacher-agent.ts";
 import { runSubagent } from "../src/agent/subagents/pi-run.ts";
+import { toClaudeInput } from "../src/agent/claude-code/transcript.ts";
 import { LEARNER_INSTRUCTIONS_MAX_CHARS, sanitizeUserSettings } from "../src/core/settings.ts";
 import { resolveSettings } from "../src/core/settings-resolution.ts";
 import { parseAgentSettingsBody } from "../src/server/settings-body.ts";
@@ -118,6 +119,12 @@ describe("every agent reads it through its engine", () => {
 		const { engine, prompts } = recordingEngine();
 		await runSubagent([], { role: "researcher", prompt: "find it", engine: withLearnerInstructions(engine, TEXT), systemPrompt: "You research.", maxTurns: 1 });
 		assert.equal(prompts[0], appendLearnerInstructions("You research.", TEXT));
+	});
+
+	it("the Claude Code CLI receives the block in its system prompt", () => {
+		const context = normalizeContext({ systemPrompt: "Base.", messages: [{ role: "user", content: "hi", timestamp: 1 }] });
+		const input = toClaudeInput(withLearnerSection(context, learnerInstructionsBlock(TEXT)!).messages);
+		assert.equal(input.systemPrompt, appendLearnerInstructions("Base.", TEXT));
 	});
 
 	it("without instructions the prompt is byte-identical to before", async () => {

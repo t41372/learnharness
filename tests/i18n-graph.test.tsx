@@ -13,6 +13,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { I18nProvider, i18n } from "../components/i18n/index.ts";
+import { InteractionLayersProvider } from "../components/interaction-layers.tsx";
 import type { Language } from "../src/core/language.ts";
 import { GraphChromeRow } from "../components/graph-view.tsx";
 import type { GraphRenderSettings } from "../components/graph-canvas.ts";
@@ -25,7 +26,7 @@ import type { GraphChain, GraphNode } from "../src/core/contracts.ts";
 function inLanguage(language: Language, element: React.ReactElement): string {
 	return renderToStaticMarkup(
 		<I18nProvider setting={language} language={language}>
-			{element}
+			<InteractionLayersProvider>{element}</InteractionLayersProvider>
 		</I18nProvider>,
 	);
 }
@@ -39,7 +40,6 @@ const chrome = (
 		noMatch
 		importing={false}
 		searchInputRef={ref}
-		fileInputRef={ref}
 		onImportFiles={() => {}}
 		settings={{} as GraphRenderSettings}
 		changeSettings={() => {}}
@@ -62,7 +62,7 @@ const NODES = [node("a", "Premise one", "chat1"), node("c", "Conclusion", "chat1
 const CHAINS: GraphChain[] = [
 	{ id: "c", premises: ["a"], conclusion: "c", provenance: [], createdAt: "2026-09-20T10:00:00.000Z" },
 ] as GraphChain[];
-const chainTable = (
+const chainTable = (over: Partial<React.ComponentProps<typeof ChainTableBody>> = {}) => (
 	<ChainTableBody
 		nodes={NODES}
 		chains={CHAINS}
@@ -81,8 +81,13 @@ const chainTable = (
 		onClear={() => {}}
 		onDelete={() => {}}
 		onClose={() => {}}
+		{...over}
 	/>
 );
+// Picking for practice: the bar counts nodes → chains. Managing: it counts
+// the selected sources and offers the delete fence.
+const pickTable = chainTable({ selectMode: true });
+const manageTable = chainTable({ selectedSources: new Set(["chat1"]) });
 
 const deleteBody = (
 	<DeleteNodeBody
@@ -106,21 +111,24 @@ const coverage: SessionCoverage = {
 const coverageBody = <CoverageMenuBody coverage={coverage} extracting={false} onExtract={() => {}} />;
 
 describe("graph namespace — Simplified Chinese", () => {
-	it("the graph chrome: search, chains, import", () => {
+	it("the graph chrome: search, chains, file extraction", () => {
 		const html = inLanguage("zh-CN", chrome);
 		assert.ok(html.includes("搜索节点…"));
 		assert.ok(html.includes("没有匹配的节点。"));
 		assert.ok(html.includes("推理链"));
-		assert.ok(html.includes("导入笔记…"));
-		assert.ok(!html.includes("Import notes…"));
+		assert.ok(html.includes("提取文件…"));
+		assert.ok(!html.includes("Extract files…"));
 	});
 	it("the chain table: counts, columns, the selection bar; names stay data", () => {
-		const html = inLanguage("zh-CN", chainTable);
+		const html = inLanguage("zh-CN", pickTable);
 		assert.ok(html.includes("1 条链 · 2 个节点"));
 		assert.ok(html.includes("名称") && html.includes("创建时间"));
 		assert.ok(html.includes("2 个节点 → 1 条链"));
-		assert.ok(html.includes('aria-label="删除选中的 2 个节点"'));
+		assert.ok(html.includes("完成"));
 		assert.ok(html.includes("Ethics lesson"), "the session title is user data");
+		const manage = inLanguage("zh-CN", manageTable);
+		assert.ok(manage.includes("1 个来源"));
+		assert.ok(manage.includes('aria-label="删除选中的来源和文件夹"'));
 	});
 	it("the delete dialog: title, permanence, the known 409 line", () => {
 		const html = inLanguage("zh-CN", deleteBody);
@@ -142,11 +150,11 @@ describe("graph namespace — Traditional Chinese (Taiwan vocabulary)", () => {
 	it("the graph chrome", () => {
 		const html = inLanguage("zh-TW", chrome);
 		assert.ok(html.includes("搜尋節點…"));
-		assert.ok(html.includes("匯入筆記…"));
+		assert.ok(html.includes("擷取檔案…"));
 		assert.ok(html.includes("推理鏈"));
 	});
 	it("the chain table", () => {
-		const html = inLanguage("zh-TW", chainTable);
+		const html = inLanguage("zh-TW", pickTable);
 		assert.ok(html.includes("1 條鏈 · 2 個節點"));
 		assert.ok(html.includes("建立時間"));
 	});
@@ -160,7 +168,7 @@ describe("graph namespace — Traditional Chinese (Taiwan vocabulary)", () => {
 
 describe("notes-import copy outside React", () => {
 	it("defaults to the English reference; a passed t speaks its language", () => {
-		assert.throws(() => parseNotesImportResults({ results: [] }, [new File(["x"], "a.md")]), /Please retry the file/);
+		assert.throws(() => parseNotesImportResults({ results: [] }, [new File(["x"], "a.md")]), /Check the graph before retrying/);
 		assert.throws(
 			() => parseNotesImportResults({ results: [] }, [new File(["x"], "a.md")], i18n.getFixedT("zh-TW", "graph")),
 			/匯入回應無效/,

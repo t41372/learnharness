@@ -74,3 +74,51 @@ The interface ships in English (the reference), Simplified Chinese (`zh-CN`) and
 | stop | 停止 | 停止 |
 | send / submit | 发送 / 提交 | 傳送 / 送出 |
 | update (app) | 更新 | 更新 |
+| plugin | 插件 | 外掛 |
+| core plugins / community plugins | 核心插件 / 社区插件 | 核心外掛 / 社群外掛 |
+| theme | 主题 | 主題 |
+| light / dark / system (appearance mode) | 浅色 / 深色 / 跟随系统 | 淺色 / 深色 / 跟隨系統 |
+| side question | 旁支提问 | 旁支提問 |
+| side conversation / side thread | 旁支对话 | 旁支對話 |
+| Ask (on selected text) | 提问 | 提問 |
+| cite / citation / quote | 引用 | 引用 |
+| comment (on a citation) | 评论 | 評論 |
+| source (of notes) | 来源 | 來源 |
+| folder | 文件夹 | 資料夾 |
+| file / file path | 文件 / 文件路径 | 檔案 / 檔案路徑 |
+| attach / attachment | 添加附件 / 附件 | 加入附件 / 附件 |
+| image | 图片 | 圖片 |
+| annotate / annotation | 标注 | 標註 |
+| External CLI | 外部 CLI | 外部 CLI |
+| cache retention | 缓存保留 | 快取保留 |
+| custom endpoint | 自定义端点 | 自訂端點 |
+| background worker | 后台任务 | 背景任務 |
+| deck (flashcards) | 卡组 | 卡組 |
+| snapshot | 快照 | 快照 |
+| plugin worker | 插件后台任务 | 外掛背景任務 |
+| unbound (shortcut) | 未绑定 | 未綁定 |
+| inactive (shortcut) | 未生效 | 未生效 |
+| cache hit rate | 缓存命中率 | 快取命中率 |
+| context window | 上下文窗口 | 上下文視窗 |
+| evaluating | 评估中 | 評估中 |
+| tutor text (the cited original) / go to source | 老师原文 / 前往原文 | 老師原文 / 前往原文 |
+| dock / float (side conversation) | 停靠到侧边 / 浮动 | 停靠到側邊 / 浮動 |
+| follow-up | 追问 | 追問 |
+| desktop app | 桌面应用 | 桌面應用程式 |
+| local (on this computer) | 本地 | 本機 |
+| file access | 文件访问 | 檔案存取 |
+| typography | 排版 | 排版 |
+| code ligatures | 代码连字 | 程式碼連字 |
+| accent / surface (theme colors) | 强调色 / 表面 | 強調色 / 表面 |
+| advanced settings | 高级设置 | 進階設定 |
+| concurrent worker requests | 后台任务并发请求数 | 背景任務並行請求數 |
+| authentication / keyless | 认证方式 / 无需密钥 | 驗證方式 / 不需金鑰 |
+| user pin (custom model limits) | 用户设定 | 使用者設定 |
+| fallback / reported (custom model limits) | 后备值 / 端点报告 | 備用值 / 端點回報 |
+| authoring skill (plugins) | 开发技能 | 開發技能 |
+| base URL | 基础 URL | 基礎 URL |
+| reasoning (model output, compaction) | 推理 | 推理 |
+| strand (a part the probe measures) | 方面 | 面向 |
+| Extract files (import) | 提取文件 | 擷取檔案 |
+| source organization | 文件夹结构 | 資料夾結構 |
+| dialog | 对话框 | 對話方塊 |

@@ -25,13 +25,14 @@ const KIND_KEY = {
 	demo: "dispatchCard.kind.demo",
 	visual: "dispatchCard.kind.visual",
 	pdf: "dispatchCard.kind.pdf",
+	plugin: "dispatchCard.kind.plugin",
 } as const satisfies Record<JobKind, string>;
 
 export function DispatchCard({ toolCallId, kind }: { toolCallId: string; kind: JobKind }) {
 	const { t } = useT("artifacts");
 	const jobs = useContext(JobsContext);
 	const job = jobs.find((j) => j.toolCallId === toolCallId) ?? null;
-	const label = t(KIND_KEY[kind]);
+	const label = kind === "plugin" ? job?.plugin?.label || job?.plugin?.toolName || t(KIND_KEY.plugin) : t(KIND_KEY[kind]);
 
 	if (!job || job.status === "running") {
 		return <DispatchActivityCard job={job} label={label} />;
@@ -66,7 +67,7 @@ export function DispatchCard({ toolCallId, kind }: { toolCallId: string; kind: J
 			className="flex items-center gap-2 text-xs text-muted-foreground"
 			data-testid="dispatch-settled"
 		>
-			{failed ? <XIcon className="size-3.5 text-red-500" /> : <CheckIcon className="size-3.5" />}
+			{failed ? <XIcon className="size-3.5 text-error" /> : <CheckIcon className="size-3.5" />}
 			<span className="font-medium uppercase tracking-wide">{label}</span>
 			<span>{failed ? t("shared.failed") : t("dispatchCard.finished")}</span>
 		</div>

@@ -22,7 +22,10 @@ import { parseDictationSettingsBody } from "../src/server/settings-body.ts";
 import { commandError, findUv, pipInstallArgs } from "../src/server/standard-asr/environment.ts";
 import { CORE_REQUIREMENT, recommendedEngine, STANDARD_ASR_COMMIT } from "../src/server/standard-asr/pins.ts";
 import { parseStandardAsrCommand } from "../src/server/dictation.ts";
-import { collectDictationTerms, DictationField } from "../components/dictation.tsx";
+import { collectDictationTerms } from "../components/dictation.tsx";
+import { dictationPreviewAttribute, PathInput } from "../components/path-input.tsx";
+import { readPathInput } from "../components/path-input-dom.ts";
+import { parseHTML } from "linkedom";
 import { filesLine, modelCapabilities, progressLine } from "../components/settings/dictation-section.tsx";
 
 const fold = (events: AsrEvent[]) => events.reduce(reduceAsrEvent, EMPTY_ASR_TRANSCRIPT);
@@ -191,16 +194,30 @@ describe("the Dictation page's lines", () => {
 });
 
 describe("the live-preview field", () => {
-	const textarea = <textarea value="I think" readOnly className="field-sizing-content px-2 py-2" />;
-	it("without a preview the textarea lays out as before", () => {
-		const html = renderToStaticMarkup(<DictationField value="I think" preview="" layout="px-2 py-2">{textarea}</DictationField>);
-		assert.ok(html.includes('class="field-sizing-content px-2 py-2"'));
-		assert.ok(!html.includes("dictation-field-live"));
+	it("without a preview the input carries no preview attribute", () => {
+		const html = renderToStaticMarkup(<PathInput value="I think" onValueChange={() => {}} dictationPreview="" />);
+		assert.ok(!html.includes("data-dictation-preview"));
+		assert.ok(html.includes(">I think</div>"));
 	});
-	it("with one, the faded live words follow the text and the textarea overlays the mirror", () => {
-		const html = renderToStaticMarkup(<DictationField value="I think" preview="it is energy" layout="px-2 py-2">{textarea}</DictationField>);
-		assert.ok(html.includes('data-testid="dictation-field-live"'));
-		assert.match(html, /<span class="invisible">I think<\/span><span class="text-muted-foreground\/60"> (<!-- -->)?it is energy<\/span>/);
-		assert.match(html, /<textarea[^>]*class="field-sizing-content px-2 py-2 absolute inset-0/);
+	it("with one, the faded live words ride a data attribute after the text, never in the editable text", () => {
+		const html = renderToStaticMarkup(<PathInput value="I think" onValueChange={() => {}} dictationPreview="it is energy" />);
+		assert.ok(html.includes('data-dictation-preview=" it is energy"'));
+		assert.ok(html.includes(">I think</div>"));
+		const { document } = parseHTML(`<html><body><div id="host">${html}</div></body></html>`);
+		const root = document.getElementById("host")!.firstElementChild as unknown as HTMLElement;
+		assert.ok(root.hasAttribute("data-dictation-preview"));
+		assert.equal(readPathInput(root), "I think");
+	});
+	it("the separating space follows the join rule", () => {
+		assert.equal(dictationPreviewAttribute("I think", "it is"), " it is");
+		assert.equal(dictationPreviewAttribute("I think ", "it is"), "it is");
+		assert.equal(dictationPreviewAttribute("", "it is"), "it is");
+		assert.equal(dictationPreviewAttribute("I think", ""), undefined);
+		assert.equal(dictationPreviewAttribute("I think", undefined), undefined);
+	});
+	it("the global stylesheet paints it faded and hides the placeholder", () => {
+		const css = fs.readFileSync(path.join(import.meta.dirname, "../app/globals.css"), "utf8");
+		assert.match(css, /\[contenteditable\]\[data-dictation-preview\]::after\s*\{[^}]*content: attr\(data-dictation-preview\)/);
+		assert.match(css, /\[contenteditable\]\[data-dictation-preview\]::before\s*\{[^}]*content: none/);
 	});
 });

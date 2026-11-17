@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { I18nProvider } from "../components/i18n/index.ts";
+import { InteractionLayersProvider } from "../components/interaction-layers.tsx";
 import { AgentSection } from "../components/settings/agent-section.tsx";
 import { GraphSection } from "../components/settings/appearance-section.tsx";
 import { KeyboardSection } from "../components/settings/keyboard-section.tsx";
@@ -22,18 +23,18 @@ import { SettingsDialogBody } from "../components/settings/settings-dialog.tsx";
 import type { Language } from "../src/core/index.ts";
 
 function render(language: Language, node: React.ReactNode): string {
-	return renderToStaticMarkup(<I18nProvider setting={language} language={language}>{node}</I18nProvider>);
+	return renderToStaticMarkup(<InteractionLayersProvider><I18nProvider setting={language} language={language}>{node}</I18nProvider></InteractionLayersProvider>);
 }
 
-const agent = <AgentSection agent={undefined} models={undefined} graph={undefined} compaction={undefined} onSectionChange={() => {}} onModelsChange={() => {}} onCompactionChange={() => {}} />;
+const agent = <AgentSection agent={undefined} models={undefined} graph={undefined} compaction={undefined} onSectionChange={() => true} onModelsChange={() => {}} onCompactionChange={() => true} />;
 
 describe("the settings dialog in Chinese", () => {
 	it("zh-CN: the frame, the nav and the loading line use mainland vocabulary", () => {
 		const html = render("zh-CN", <SettingsDialogBody onClose={() => {}} />);
 		assert.ok(html.includes(">设置</h2>"), "the header");
 		assert.ok(html.includes('aria-label="关闭设置"'));
-		assert.ok(html.includes(">服务商</button>"), "Providers → 服务商");
-		assert.ok(html.includes(">快捷键</button>"));
+		assert.ok(html.includes(">服务商</span>"), "Providers → 服务商");
+		assert.ok(html.includes(">快捷键</span>"));
 		assert.ok(html.includes("设置加载中…"));
 		assert.ok(!html.includes("Loading settings"), "no English left in the frame");
 	});
@@ -41,8 +42,8 @@ describe("the settings dialog in Chinese", () => {
 	it("zh-TW: the same frame in Taiwan vocabulary", () => {
 		const html = render("zh-TW", <SettingsDialogBody onClose={() => {}} />);
 		assert.ok(html.includes(">設定</h2>"));
-		assert.ok(html.includes(">供應商</button>"), "Providers → 供應商");
-		assert.ok(html.includes(">快速鍵</button>"));
+		assert.ok(html.includes(">供應商</span>"), "Providers → 供應商");
+		assert.ok(html.includes(">快速鍵</span>"));
 		assert.ok(html.includes("設定載入中…"));
 	});
 
@@ -60,7 +61,7 @@ describe("the settings dialog in Chinese", () => {
 	});
 
 	it("the graph section keeps its toggle testids under a Chinese label", () => {
-		const html = render("zh-TW", <GraphSection graph={undefined} onSectionChange={() => {}} />);
+		const html = render("zh-TW", <GraphSection graph={undefined} onSectionChange={() => true} />);
 		assert.ok(html.includes(">擷取<"), "Extraction → 擷取");
 		assert.ok(html.includes('data-testid="toggle-extraction-enabled"'));
 		assert.ok(html.includes('data-testid="toggle-graph-rendering-enabled"'));
