@@ -1,21 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { SurfaceRegion, usePageSurfaceBoundary, useSurfaceChromeStyle } from "./plugin-surfaces";
 import { Conversation, ConversationContent, ConversationEmptyState } from "@/components/ai-elements/conversation";
 import { Composer } from "@/components/composer";
 import { DictationBar, joinDictation, useDictation } from "@/components/dictation";
 import { useFieldCycle } from "@/components/field-cycle";
+import { useOptionalInteractionLayers } from "./interaction-layers";
+import { isInteractionScopeEligible } from "./plugin-input-focus";
 import { SidebarToggle } from "@/components/sidebar";
 import { SetupDialog } from "@/components/setup-dialog";
 import { useModelSetup, selectedModelUnavailable, openModelPicker, ZeroKeysPill } from "@/components/setup-cta";
 import { StatsBar } from "@/components/stats-bar";
 import { ChainTableOverlay } from "@/components/chain-table.tsx";
 import { ComposerActions, NodePickerControl } from "@/components/composer-actions";
-import { OPENING_PROMPT_FAILURE } from "@/components/opening-prompt";
 import { SessionStarter } from "@/components/start-session";
-import { useAttachmentDraft, type AttachmentDraft } from "@/components/attachments";
-import type { Attachment } from "@/src/core";
+import { OPENING_IMAGE_KEY, handOverOpeningImages } from "@/components/staged-images";
 import type { ChatSettings, GraphSnapshot } from "@/src/core";
 import { useT } from "@/components/i18n";
 
@@ -50,21 +51,19 @@ export async function startDraftSession(
 	picks?: readonly DraftPick[],
 	starter = new SessionStarter(),
 	settingsIdentity?: string,
-	attachments: readonly Attachment[] = [],
 ): Promise<string | null> {
 	const t = text.trim();
-	if (!t && !attachments.length) return null;
+	if (!t) return null;
 	// THE PICKS RIDE THE CREATE (owner round 10): a practice draft seeded
 	// from the pick bar creates its session WITH the graph context — the
 	// same contract as the home screen's practice send (the marker with
 	// [id] name: statement lines, target validation's truth set).
 	return starter.start(
 		mode === "practice"
-			? { title: t || attachments[0]!.name, kind: "practice", ...(picks && picks.length > 0 ? { graphContext: { propositions: picks } } : {}) }
-			: { title: t || attachments[0]!.name },
+			? { title: t, kind: "practice", ...(picks && picks.length > 0 ? { graphContext: { propositions: picks } } : {}) }
+			: { title: t },
 		fetchLike,
 		settingsIdentity,
-		{ text: t, attachments },
 	);
 }
 
@@ -79,7 +78,6 @@ export function DraftShell({
 	onChange,
 	onSend,
 	startError = false,
-	attachmentDraft,
 	setupCta,
 	mode = "teach",
 	picks = [],
@@ -92,7 +90,6 @@ export function DraftShell({
 	onChange: (v: string) => void;
 	onSend: () => void;
 	startError?: boolean;
-	attachmentDraft?: AttachmentDraft;
 	/** The practice draft (owner, 2026-10-04): ?mode=practice — the
 	 *  created session carries kind:"practice" and the copy changes
 	 *  (the practice agent opens; no probing). */
@@ -115,14 +112,19 @@ export function DraftShell({
 	 *  Passed as a node so the pick state stays in NewSession. */
 	overlay?: ReactNode;
 }) {
-	const { t } = useT("shell");
+	const { t } = useT(["shell", "common"]);
+	const controller = useOptionalInteractionLayers();
+	const pathname = usePathname();
+	const bodyRef = useRef<HTMLDivElement>(null);
+	const surfaceTarget = usePageSurfaceBoundary({ active: pathname === "/chat/new", viewKey: "/chat/new", bodyRef });
+	const chromeStyle = useSurfaceChromeStyle(surfaceTarget);
 	// Voice dictation (STT wave, 2026-09-17): finals append at the end of the
 	// draft text (via the parent's onChange — the truth lives there); the
 	// strip lives in the stats bar's middle slot.
 	// Tab navigates INTO the composer (owner, keyboard round 2026-10-06):
 	// the only text field on this surface — the cycle's whole chain.
 	const cycleComposer = useCallback((): readonly HTMLElement[] =>
-		Array.from(document.querySelectorAll<HTMLElement>('[data-testid="composer"] textarea')),
+		Array.from(document.querySelectorAll<HTMLElement>('[data-testid="composer"] [data-file-path-input]')),
 		[]);
 	useFieldCycle(cycleComposer);
 	const dictation = useDictation({
@@ -132,7 +134,7 @@ export function DraftShell({
 	// round, owner 2026-10-01): the spoken text is deferred in the run's
 	// buffer — Enter must reach the finish-first send, not be gated out by
 	// an empty textarea. Nothing said → the send no-ops.
-	const canSend = (text.trim().length > 0 || dictation.active || !!attachmentDraft?.items.length) && !attachmentDraft?.pending;
+	const canSend = text.trim().length > 0 || dictation.active;
 	/* FINISH DICTATION FIRST (owner, 2026-10-01): stop the run, let the
 	 * last finals land through onChange, THEN call the parent's send —
 	 * which reads its REF mirror, so the post-await timing of React's
@@ -146,16 +148,16 @@ export function DraftShell({
 	};
 	/* Run end focuses the composer (owner, 2026-10-01): the hands are on
 	 * the keyboard from the stop — falling edge of `active` only. */
-	const composerInputRef = useRef<HTMLTextAreaElement>(null);
+	const composerInputRef = useRef<HTMLDivElement>(null);
 	const dictationWasActiveRef = useRef(false);
 	useEffect(() => {
 		if (dictation.active) {
 			dictationWasActiveRef.current = true;
 		} else if (dictationWasActiveRef.current) {
 			dictationWasActiveRef.current = false;
-			composerInputRef.current?.focus();
+			if (isInteractionScopeEligible(composerInputRef.current, controller)) composerInputRef.current!.focus();
 		}
-	}, [dictation.active]);
+	}, [dictation.active, controller]);
 	return (
 		/* CHROME-LESS CREATION SURFACE (owner round 11, 2026-10-05): the
 		 * drafts join home's register — no TopBar, no title (the serif title
@@ -170,7 +172,7 @@ export function DraftShell({
 			    carved control later in the tree subtracts correctly). */}
 			<div className="lh-drag absolute inset-x-0 top-0 h-13" aria-hidden="true" />
 			<div className="flex min-w-0 flex-1 flex-col">
-				<div className="relative flex min-h-0 flex-1">
+				<div ref={bodyRef} className="relative flex min-h-0 flex-1">
 					{/* The pointer-events pattern (953b22b): the sticky wrapper is
 					    pointer-events-none so nothing here blocks the empty-state
 					    area; the blob and the stats row re-enable it themselves. */}
@@ -192,10 +194,9 @@ export function DraftShell({
 									)}
 									setup={setupCta}
 								/>
-								{startError && <p role="alert" className="pointer-events-auto mb-2 text-sm text-destructive">{OPENING_PROMPT_FAILURE}</p>}
-								<div className="pointer-events-auto overflow-hidden rounded-2xl border bg-card shadow-lg">
+								{startError && <p role="alert" className="pointer-events-auto mb-2 text-sm text-destructive">{t("common:openingPromptFailure")}</p>}
+								<div data-attachment-composer="" className="pointer-events-auto overflow-hidden rounded-2xl border bg-card shadow-lg">
 									<Composer
-										attachmentDraft={attachmentDraft}
 										busy={busy}
 										value={text}
 										onChange={onChange}
@@ -210,6 +211,7 @@ export function DraftShell({
 										// started yet, so the composer must not read like one is in
 										// flight.
 										placeholder={mode === "practice" ? t("draft.practicePlaceholder") : t("draft.learnPlaceholder")}
+										imageDraftKey={OPENING_IMAGE_KEY}
 									/>
 								</div>
 								<StatsBar
@@ -219,13 +221,15 @@ export function DraftShell({
 							</div>
 						</div>
 					</div>
-					{overlay}
+					<SurfaceRegion target={surfaceTarget}>
+						<div className="contents pointer-events-auto">{overlay}</div>
+					</SurfaceRegion>
 				</div>
 			</div>
 			{/* The floating reopen toggle — pointer-events-none except the
 			    toggle itself (home's pattern), painted AFTER the overlay's
 			    column so nothing of it blocks the canvas area. */}
-			<header className="pointer-events-none absolute inset-x-0 top-0 flex items-center gap-2 px-3 py-2">
+			<header style={chromeStyle} className="pointer-events-none absolute inset-x-0 top-0 flex items-center gap-2 px-3 py-2">
 				<div className="pointer-events-auto">
 					<SidebarToggle />
 				</div>
@@ -238,7 +242,6 @@ export function NewSession({ initialConfigured, mode = "teach" }: { initialConfi
 	const router = useRouter();
 	const { t } = useT("shell");
 	const [text, setText] = useState("");
-	const attachments = useAttachmentDraft();
 	/* The draft MIRROR ("nothing gets lost" round, 2026-10-01): the shell's
 	 * finish-first send calls THIS send after the dictation flush — which
 	 * landed via setState and may not have re-rendered yet. The send reads
@@ -289,7 +292,7 @@ export function NewSession({ initialConfigured, mode = "teach" }: { initialConfi
 
 	const send = useCallback(() => {
 		const draft = textRef.current.trim();
-		if ((!draft && !attachments.current().length) || startingRef.current || attachments.pending) return;
+		if (!draft || startingRef.current) return;
 		if (!configured) {
 			setSetupOpen(true);
 			return;
@@ -313,9 +316,10 @@ export function NewSession({ initialConfigured, mode = "teach" }: { initialConfi
 		setBusy(true);
 		setStartError(false);
 		void startDraftSession(draft, fetch, mode === "practice" ? "practice" : undefined, mode === "practice" ? picksRef.current : undefined,
-			starterRef.current, JSON.stringify(catalog?.slots.strong), attachments.current())
-			.then((target) => {
-				if (target) router.push(target);
+			starterRef.current, JSON.stringify(catalog?.slots.strong))
+			.then(async (target) => {
+				// Pasted images ride into the created chat's composer draft.
+				if (target) { await handOverOpeningImages(target); router.push(target); }
 				else { startingRef.current = false; setBusy(false); }
 			})
 			.catch(() => {
@@ -323,12 +327,11 @@ export function NewSession({ initialConfigured, mode = "teach" }: { initialConfi
 				setBusy(false);
 				setStartError(true);
 			});
-	}, [router, configured, zeroKeys, catalog, mode, attachments]);
+	}, [router, configured, zeroKeys, catalog, mode]);
 
 	return (
 		<>
 			<DraftShell
-				attachmentDraft={attachments}
 				busy={busy}
 				startError={startError}
 				text={text}

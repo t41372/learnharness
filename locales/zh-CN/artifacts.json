@@ -22,7 +22,8 @@
 			"research": "研究 Agent",
 			"demo": "演示 Agent",
 			"visual": "图示 Agent",
-			"pdf": "PDF 阅读器"
+			"pdf": "PDF 阅读器",
+			"plugin": "插件后台任务"
 		},
 		"refused": {
 			"modelsLine": "需要先设置模型",
@@ -68,10 +69,11 @@
 		}
 	},
 	"probeDoneCard": {
-		"title": "摸底完成——你的评估",
+		"title": "摸底评估",
 		"retried": "摸底 Agent 已重试：{{error}}",
 		"malformed": "评估格式有误——摸底 Agent 已用修正后的评估重试。",
-		"writing": "正在撰写评估…"
+		"writing": "正在撰写评估…",
+		"strands_other": "{{count}} 个方面"
 	},
 	"steerCard": {
 		"unreadable": "一个子 Agent 已完成，但无法显示其结果。",
@@ -80,7 +82,8 @@
 			"demo": "演示",
 			"visual": "图示",
 			"pdf": "PDF",
-			"job": "任务"
+			"job": "任务",
+			"plugin": "插件"
 		},
 		"aborted": "已由你中止",
 		"pdfComplete": "阅读完成",
@@ -89,7 +92,8 @@
 		"researchComplete": "已完成",
 		"sources": "{{count}} 个来源",
 		"viewBrief": "查看摘要",
-		"hideBrief": "收起摘要"
+		"hideBrief": "收起摘要",
+		"deliveryFailed": "后台任务的恢复或送达失败"
 	},
 	"toolCallCard": {
 		"input": "输入",
@@ -133,7 +137,23 @@
 			"localUnset": "请先设置本机语音输入",
 			"localReconnectFailed": "本机语音输入重新连接失败",
 			"localConnectionLost": "本机语音输入连接已断开（{{code}}）",
-			"localNotReady": "语音输入模型尚未就绪"
+			"localNotReady": "语音输入模型尚未就绪",
+			"activeElsewhere": "语音输入正在别处使用",
+			"languageUnavailable": "无法获取语音输入语言",
+			"transcriptNotApplied": "无法写入语音输入的文字",
+			"localFailed": "本机语音输入失败"
 		}
+	},
+	"imageCard": {
+		"unreadable": "图片已展示，但无法显示。",
+		"loadFailed": "无法加载图片快照。",
+		"loading": "正在加载图片…",
+		"label": "图片",
+		"download": "下载图片",
+		"openAria": "全屏打开图片"
+	},
+	"pluginWorkerCard": {
+		"taskDetails": "任务详情",
+		"formatFailed": "结果格式化失败：{{error}}"
 	}
 }

@@ -8,30 +8,35 @@
  * Namespaces follow the shell's areas so each area's copy lives in one
  * file: common (shared words, shortcut labels), shell (navigation, home,
  * setup, docks), chat (the session surface), graph (graph, chains, plan),
- * settings (the settings dialog), artifacts (cards, markdown, dictation).
+ * settings (the settings dialog), artifacts (cards, markdown, dictation),
+ * plugins (the host chrome around plugins — plugin-provided labels and
+ * content stay as the plugin gives them).
  */
 
 import enArtifacts from "@/locales/en/artifacts.json";
 import enChat from "@/locales/en/chat.json";
 import enCommon from "@/locales/en/common.json";
 import enGraph from "@/locales/en/graph.json";
+import enPlugins from "@/locales/en/plugins.json";
 import enSettings from "@/locales/en/settings.json";
 import enShell from "@/locales/en/shell.json";
 import zhCNArtifacts from "@/locales/zh-CN/artifacts.json";
 import zhCNChat from "@/locales/zh-CN/chat.json";
 import zhCNCommon from "@/locales/zh-CN/common.json";
 import zhCNGraph from "@/locales/zh-CN/graph.json";
+import zhCNPlugins from "@/locales/zh-CN/plugins.json";
 import zhCNSettings from "@/locales/zh-CN/settings.json";
 import zhCNShell from "@/locales/zh-CN/shell.json";
 import zhTWArtifacts from "@/locales/zh-TW/artifacts.json";
 import zhTWChat from "@/locales/zh-TW/chat.json";
 import zhTWCommon from "@/locales/zh-TW/common.json";
 import zhTWGraph from "@/locales/zh-TW/graph.json";
+import zhTWPlugins from "@/locales/zh-TW/plugins.json";
 import zhTWSettings from "@/locales/zh-TW/settings.json";
 import zhTWShell from "@/locales/zh-TW/shell.json";
 import type { Language } from "@/src/core";
 
-export const NAMESPACES = ["common", "shell", "chat", "graph", "settings", "artifacts"] as const;
+export const NAMESPACES = ["common", "shell", "chat", "graph", "settings", "artifacts", "plugins"] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
 /** The reference (English) resources — the source of the key types. */
@@ -42,6 +47,7 @@ export const EN_RESOURCES = {
 	graph: enGraph,
 	settings: enSettings,
 	artifacts: enArtifacts,
+	plugins: enPlugins,
 };
 
 export const RESOURCES: Record<Language, Record<Namespace, object>> = {
@@ -53,6 +59,7 @@ export const RESOURCES: Record<Language, Record<Namespace, object>> = {
 		graph: zhCNGraph,
 		settings: zhCNSettings,
 		artifacts: zhCNArtifacts,
+		plugins: zhCNPlugins,
 	},
 	"zh-TW": {
 		common: zhTWCommon,
@@ -61,5 +68,6 @@ export const RESOURCES: Record<Language, Record<Namespace, object>> = {
 		graph: zhTWGraph,
 		settings: zhTWSettings,
 		artifacts: zhTWArtifacts,
+		plugins: zhTWPlugins,
 	},
 };

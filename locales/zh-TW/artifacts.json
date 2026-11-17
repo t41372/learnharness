@@ -22,7 +22,8 @@
 			"research": "研究 Agent",
 			"demo": "示範 Agent",
 			"visual": "圖示 Agent",
-			"pdf": "PDF 閱讀器"
+			"pdf": "PDF 閱讀器",
+			"plugin": "外掛背景任務"
 		},
 		"refused": {
 			"modelsLine": "需要先設定模型",
@@ -68,10 +69,11 @@
 		}
 	},
 	"probeDoneCard": {
-		"title": "前測完成——你的評估",
+		"title": "前測評估",
 		"retried": "前測 Agent 已重試：{{error}}",
 		"malformed": "評估格式有誤——前測 Agent 已用修正後的評估重試。",
-		"writing": "正在撰寫評估…"
+		"writing": "正在撰寫評估…",
+		"strands_other": "{{count}} 個面向"
 	},
 	"steerCard": {
 		"unreadable": "一個子 Agent 已完成，但無法顯示它的結果。",
@@ -80,7 +82,8 @@
 			"demo": "示範",
 			"visual": "圖示",
 			"pdf": "PDF",
-			"job": "任務"
+			"job": "任務",
+			"plugin": "外掛"
 		},
 		"aborted": "已由你中止",
 		"pdfComplete": "閱讀完成",
@@ -89,7 +92,8 @@
 		"researchComplete": "已完成",
 		"sources": "{{count}} 個來源",
 		"viewBrief": "檢視摘要",
-		"hideBrief": "收合摘要"
+		"hideBrief": "收合摘要",
+		"deliveryFailed": "背景任務的復原或送達失敗"
 	},
 	"toolCallCard": {
 		"input": "輸入",
@@ -133,7 +137,23 @@
 			"localUnset": "請先設定本機語音輸入",
 			"localReconnectFailed": "本機語音輸入重新連線失敗",
 			"localConnectionLost": "本機語音輸入連線中斷（{{code}}）",
-			"localNotReady": "語音輸入模型尚未就緒"
+			"localNotReady": "語音輸入模型尚未就緒",
+			"activeElsewhere": "語音輸入正在其他地方使用",
+			"languageUnavailable": "無法取得語音輸入語言",
+			"transcriptNotApplied": "無法寫入語音輸入的文字",
+			"localFailed": "本機語音輸入失敗"
 		}
+	},
+	"imageCard": {
+		"unreadable": "圖片已展示，但無法顯示。",
+		"loadFailed": "無法載入圖片快照。",
+		"loading": "正在載入圖片…",
+		"label": "圖片",
+		"download": "下載圖片",
+		"openAria": "以全螢幕開啟圖片"
+	},
+	"pluginWorkerCard": {
+		"taskDetails": "任務詳細資料",
+		"formatFailed": "結果格式化失敗：{{error}}"
 	}
 }

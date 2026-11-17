@@ -1,0 +1,68 @@
+{
+	"view": {
+		"notInstalled": "外掛未安裝。",
+		"disabled": "此外掛已停用。",
+		"unavailable": "此外掛檢視無法使用。",
+		"fallbackTitle": "外掛",
+		"settings": "外掛設定",
+		"loading": "正在載入外掛…",
+		"backHome": "返回首頁"
+	},
+	"chrome": {
+		"graphActions": "外掛圖譜操作",
+		"moreActions": "更多外掛操作"
+	},
+	"surface": {
+		"close": "關閉"
+	},
+	"dialog": {
+		"closeAria": "關閉對話方塊"
+	},
+	"renderers": {
+		"codeBlock": "外掛程式碼區塊（{{language}}）",
+		"tool": "外掛工具（{{toolName}}）"
+	},
+	"question": {
+		"prediction": "預測",
+		"preparing": "正在準備問題…",
+		"unavailable": "問題無法使用",
+		"dismissed": "問題已捨棄",
+		"thinking": "你的思路",
+		"yourThinking": "你的思路",
+		"keys": "↵ 送出 · ⇧↵ 換行",
+		"dismiss": "捨棄問題",
+		"submit": "送出回答"
+	},
+	"problem": {
+		"preparing": "正在準備題目…",
+		"unavailable": "題目無法使用",
+		"fallbackLabel": "題目"
+	},
+	"knowledgePicker": {
+		"label": "選擇節點"
+	},
+	"modelPicker": {
+		"model": "模型選擇器",
+		"thinking": "思考強度",
+		"noThinkingLevels": "沒有可用的思考強度。",
+		"loading": "載入中…"
+	},
+	"composer": {
+		"placeholder": "輸入訊息…"
+	},
+	"workerResult": {
+		"tooltip": "{{label}}：{{status}}",
+		"status": {
+			"succeeded": "已完成",
+			"failed": "失敗",
+			"cancelled": "已取消",
+			"interrupted": "已中斷"
+		}
+	},
+	"shortcutScope": {
+		"app": "全域",
+		"teaching": "教學",
+		"practice": "練習",
+		"views": "檢視：{{views}}"
+	}
+}

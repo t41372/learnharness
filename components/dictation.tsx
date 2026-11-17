@@ -1,12 +1,10 @@
 "use client";
 
-import { cloneElement, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type React from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { Loader2Icon, MicIcon } from "lucide-react";
 import { useSettingsDialog } from "@/components/settings/settings-dialog";
 import { useSettingsSaved } from "@/components/settings-signal";
 import { Hint } from "@/components/ui/hint";
-import { cn } from "@/lib/utils";
 import {
 	asrTranscriptText,
 	EMPTY_ASR_TRANSCRIPT,
@@ -19,6 +17,7 @@ import { useT, type TFunction } from "@/components/i18n";
 import { deepgramListenUrl, type DictationLanguage } from "@/src/core";
 import { useDictationLanguage } from "@/components/dictation-preference";
 import { setDictationActive } from "@/components/dictation-state";
+import { dispatchFocusedPluginShortcut } from "@/components/plugin-input-focus";
 export { isDictationActive } from "@/components/dictation-state";
 
 /**
@@ -107,8 +106,9 @@ export { isDictationActive } from "@/components/dictation-state";
  * flows once the bridge answers "ready", and an end frame flushes it. Its
  * events reduce into the live transcript (core/standard-asr.ts) — and,
  * unlike Deepgram's deferred finals, the LIVE words show while recording,
- * faded at the end of the target field (owner, 2026-10-25: DictationField
- * below); the final text still lands once, when the run ends.
+ * faded at the end of the run's destination field (owner, 2026-10-25: the
+ * preview store below, painted by PathInput's `dictationPreview`); the
+ * final text still lands once, when the run ends.
  */
 
 /*
@@ -116,6 +116,7 @@ export { isDictationActive } from "@/components/dictation-state";
  * endpointing=300, no interims. Silence streams too (the worklet never
  * pauses), so the socket never idles — no KeepAlive needed.
  */
+// URL construction lives in the browser-safe core; only language varies.
 
 /** Meter tuning — the owner's tested values, see the file header. */
 const METER_FLOOR_DB = -50;
@@ -131,10 +132,42 @@ export const DEEPGRAM_KEY_ID = "DEEPGRAM_API_KEY";
 /** The client-authored KEYLESS line (zero-keys wave, owner 2026-09-25):
  * the token route's raw 503 message is dev-speak ("add it to auth.json
  * (desktop) or .env.local (dev)") — the surface says the short truth
- * instead. Exported for pins; the start path recognizes it as the
- * `keyless` error, whose errored idle button's click deep-links Settings
- * → Keys → the Deepgram row. */
+ * instead. Exported for pins; the errored idle button's click recognizes
+ * it and deep-links Settings → Keys → the Deepgram row. */
 export const DICTATION_KEYLESS = "Dictation needs a Deepgram key";
+export const DICTATION_ACTIVE_ELSEWHERE = "Dictation is active elsewhere";
+
+// Mounted controllers do not claim capture. Only start() acquires the single
+// window-wide owner, synchronously, before settings/mic/token awaits.
+let recordingOwner: symbol | null = null;
+let recordingTarget: ((text: string) => unknown) | null = null;
+const controllers = new Map<symbol, { primary: boolean; toggle: () => void; cancel: () => void }>();
+function toggleGlobalDictation() {
+	if (dispatchFocusedPluginShortcut("toggle-dictation")) return;
+	for (const controller of controllers.values()) {
+		if (controller.primary) {
+			controller.toggle();
+			return;
+		}
+	}
+}
+function cancelGlobalDictation() {
+	if (recordingOwner) controllers.get(recordingOwner)?.cancel();
+}
+function registerController(id: symbol, controller: { primary: boolean; toggle: () => void; cancel: () => void }) {
+	if (controllers.size === 0) {
+		window.addEventListener("lh:kbd-toggle-dictation", toggleGlobalDictation);
+		window.addEventListener("lh:kbd-cancel-dictation", cancelGlobalDictation);
+	}
+	controllers.set(id, controller);
+	return () => {
+		controllers.delete(id);
+		if (controllers.size === 0) {
+			window.removeEventListener("lh:kbd-toggle-dictation", toggleGlobalDictation);
+			window.removeEventListener("lh:kbd-cancel-dictation", cancelGlobalDictation);
+		}
+	};
+}
 
 /** The local engine's not-ready line (local dictation, 2026-10-25): no
  *  speech environment yet, or no model chosen. Its click deep-links to
@@ -150,35 +183,31 @@ export const DICTATION_LOCAL_NOT_READY = "The dictation model isn't ready";
 /** The bridge's refusal codes that mean "fix it in settings", not "retry". */
 const LOCAL_NOT_READY_CODES = new Set(["service_unavailable", "unknown_model", "unsupported"]);
 
-/** A terminal failure (i18n wave, 2026-10-25): an id per client-authored
- *  line — the bar renders it in the interface language — and `message`
- *  for text the browser, the session route or the local bridge wrote,
- *  shown as given. `engine` names which engine's socket failed. */
-export type DictationError =
-	| { kind: "keyless" }
-	| { kind: "localUnset" }
-	| { kind: "localNotReady" }
-	| { kind: "micDenied" }
-	| { kind: "micUnavailable" }
-	| { kind: "tokenUnavailable" }
-	| { kind: "reconnectFailed"; engine: "deepgram" | "local" }
-	| { kind: "connectionLost"; engine: "deepgram" | "local"; code: number }
-	| { kind: "message"; text: string };
+/** The client-authored failure lines (i18n wave): `error` stays the English
+ *  line — callers and pins compare it by value — and the bar renders it in
+ *  the interface language. Text the browser, the session route or the local
+ *  bridge wrote matches nothing here and is shown as given. */
+const CLIENT_ERROR_KEYS = {
+	[DICTATION_KEYLESS]: "dictation.error.keyless",
+	[DICTATION_ACTIVE_ELSEWHERE]: "dictation.error.activeElsewhere",
+	[DICTATION_LOCAL_UNSET]: "dictation.error.localUnset",
+	[DICTATION_LOCAL_NOT_READY]: "dictation.error.localNotReady",
+	"Microphone permission denied": "dictation.error.micDenied",
+	"mic unavailable": "dictation.error.micUnavailable",
+	"token unavailable": "dictation.error.tokenUnavailable",
+	"Deepgram reconnect failed": "dictation.error.reconnectFailed",
+	"Local dictation reconnect failed": "dictation.error.localReconnectFailed",
+	"Dictation language unavailable": "dictation.error.languageUnavailable",
+	"Dictation transcript could not be applied": "dictation.error.transcriptNotApplied",
+	"Local dictation failed": "dictation.error.localFailed",
+} as const;
 
 /** The line the bar shows for a failure. */
-function dictationErrorText(error: DictationError, t: TFunction<"artifacts">): string {
-	switch (error.kind) {
-		case "reconnectFailed":
-			return error.engine === "local" ? t("dictation.error.localReconnectFailed") : t("dictation.error.reconnectFailed");
-		case "connectionLost":
-			return error.engine === "local"
-				? t("dictation.error.localConnectionLost", { code: error.code })
-				: t("dictation.error.connectionLost", { code: error.code });
-		case "message":
-			return error.text;
-		default:
-			return t(`dictation.error.${error.kind}`);
-	}
+export function dictationErrorText(error: string, t: TFunction<"artifacts">): string {
+	if (Object.hasOwn(CLIENT_ERROR_KEYS, error)) return t(CLIENT_ERROR_KEYS[error as keyof typeof CLIENT_ERROR_KEYS]);
+	const lost = /^(Deepgram|Local dictation) connection lost \((\d+)\)$/.exec(error);
+	if (lost) return lost[1] === "Deepgram" ? t("dictation.error.connectionLost", { code: lost[2] }) : t("dictation.error.localConnectionLost", { code: lost[2] });
+	return error;
 }
 
 /** Mint a fresh run session — the selected engine's connection (the route
@@ -273,20 +302,25 @@ export function rmsToMeter(rms: number): number {
  * sibling subtree far from the hook's owner, and there is exactly one
  * window, one pending question, one target at a time.
  */
-let questionTarget: ((text: string) => void) | null = null;
+let questionTarget: ((text: string) => void | Promise<void>) | null = null;
+let composerTarget: ((text: string) => void) | null = null;
 
-/* Is a dictation run live on this page? The Esc chain (keyboard wave A,
- * components/keyboard-shortcuts.tsx) needs a SYNCHRONOUS answer — the
- * stop handler can't report back through a CustomEvent. Set at start(),
- * cleared in cleanup() (every terminal path runs through cleanup). */
+/** File references use the very same default destination as dictation,
+ * including claims whose dock is currently collapsed. A focused editor can
+ * insert at its caret instead; callers use this only as the fallback. */
+export function appendToPrimaryInput(text: string): boolean {
+	const target = questionTarget ?? composerTarget;
+	if (!target) return false;
+	target(text);
+	return true;
+}
 
-/* The finisher registry: submit paths FAR from the hook's owner (the
- * pending question's dock) need finish() without a prop bridge. Same
- * module-level pattern as questionTarget — one window, one instance,
- * one finisher. Empty registry (no hook mounted) → resolve immediately. */
+/* The CORE finisher registry: the pending question's dock needs finish()
+ * without a prop bridge. Explicit plugin controllers never register here;
+ * their submit paths await their own controller.finish(). */
 let dictationFinisher: (() => Promise<void>) | null = null;
 
-/** Finish any live dictation run before continuing (see Dictation.finish). */
+/** Finish the core page's dictation before continuing (see Dictation.finish). */
 export function finishDictation(): Promise<void> {
 	return dictationFinisher ? dictationFinisher() : Promise.resolve();
 }
@@ -299,19 +333,35 @@ export function joinDictation(current: string, final: string): string {
 /* THE LIVE PREVIEW (local engine, owner 2026-10-25): the words the local
  * recognizer has heard so far in this run, shown faded at the end of the
  * field the run will flush into. A module-level store (useSyncExternalStore)
- * so only the target field re-renders per partial — never the page. The
- * target is resolved at each update, exactly as the flush resolves it:
- * the claiming question field, else the page's composer. */
-type DictationPreview = { text: string; target: "question" | "page" };
-const NO_PREVIEW: DictationPreview = { text: "", target: "page" };
+ * so only the destination field re-renders per partial — never the page.
+ * The preview follows the run's FIXED destination, chosen when the run
+ * starts (the same choice its flush uses): an explicit destination's id
+ * (a side thread's draft), else the claiming question field, else the
+ * controller's own field (the page composer, or a plugin controller's). */
+
+/** The core page composer's preview key (a primary controller's own field). */
+export const DICTATION_PREVIEW_MAIN = "main";
+/** The claiming question field's preview key (useDictationTarget claimants). */
+export const DICTATION_PREVIEW_QUESTION = "question";
+
+type DictationPreview = { text: string; key: string | null; owner: symbol | null };
+const NO_PREVIEW: DictationPreview = { text: "", key: null, owner: null };
 let preview: DictationPreview = NO_PREVIEW;
 const previewListeners = new Set<() => void>();
 
-function setPreview(text: string) {
-	const next = text ? { text, target: questionTarget ? ("question" as const) : ("page" as const) } : NO_PREVIEW;
-	if (next.text === preview.text && next.target === preview.target) return;
+function publishPreview(next: DictationPreview) {
+	if (next.text === preview.text && next.key === preview.key && next.owner === preview.owner) return;
 	preview = next;
 	for (const listener of previewListeners) listener();
+}
+
+function setPreview(owner: symbol, key: string, text: string) {
+	publishPreview(text ? { text, key, owner } : NO_PREVIEW);
+}
+
+/** Clear the preview — only the controller that painted it may. */
+function clearPreview(owner: symbol) {
+	if (preview.owner === owner) publishPreview(NO_PREVIEW);
 }
 
 function subscribePreview(listener: () => void) {
@@ -321,11 +371,14 @@ function subscribePreview(listener: () => void) {
 	};
 }
 
-/** The live words for a field: the composer passes "page"; a question
- *  field passes "question" with its claim, so only the claimant shows them. */
-export function useDictationPreview(target: "question" | "page", claimed = true): string {
+/** The live words for one destination field: the page composer passes
+ *  DICTATION_PREVIEW_MAIN, a question field DICTATION_PREVIEW_QUESTION with
+ *  its claim (so only the claimant shows them), a side draft its
+ *  destination id, a plugin composer its controller's `previewId`. A null
+ *  key never shows a preview. */
+export function useDictationPreview(key: string | null | undefined, claimed = true): string {
 	const current = useSyncExternalStore(subscribePreview, () => preview, () => NO_PREVIEW);
-	return claimed && current.target === target ? current.text : "";
+	return claimed && key != null && current.key === key ? current.text : "";
 }
 
 /* THE SESSION VOCABULARY (local engine): words the recognizer should
@@ -367,6 +420,20 @@ export function collectDictationTerms(sources: Iterable<readonly string[]> = ter
  * unmount guard is identity-based so dev-mode double-invoked effects
  * can't clear another claimant.
  */
+export function usePluginQuestionDictationTarget(append: (text: string) => void | Promise<void>, claimed: boolean) {
+	useEffect(() => {
+		if (!claimed) return;
+		questionTarget = append;
+		return () => {
+			if (questionTarget === append) {
+				// Cancel/discard an obsolete capture before releasing its destination.
+				if (recordingTarget === append) cancelGlobalDictation();
+				questionTarget = null;
+			}
+		};
+	}, [append, claimed]);
+}
+
 export function useDictationTarget(append: (text: string) => void, claimed: boolean) {
 	useEffect(() => {
 		if (!claimed) return;
@@ -379,12 +446,23 @@ export function useDictationTarget(append: (text: string) => void, claimed: bool
 
 export type DictationPhase = "idle" | "connecting" | "recording" | "stopping";
 
+export interface DictationDestination { id: string; append: (text: string) => void | Promise<void> }
+
 export type Dictation = {
 	phase: DictationPhase;
+	/** One shared recorder; an explicit side destination never claims the main input. */
+	destinationId: string;
+	blocked?: boolean;
+	toggleFor: (destination: DictationDestination) => void;
+	finishFor: (destinationId: string) => Promise<void>;
 	/** Terminal-state explanation, shown inside the wide button (cleared on the next start). */
-	error: DictationError | null;
+	error: string | null;
 	/** The engine's own reason behind `error`, when it gave one (the tooltip). */
 	errorDetail: string | null;
+	/** The preview key of this controller's own field (useDictationPreview):
+	 *  DICTATION_PREVIEW_MAIN for a primary controller, unique per explicit
+	 *  plugin controller. */
+	previewId?: string;
 	/** Latest observed RMS, 0..1 — sampled by the meter's own tick, never reset. */
 	levelRef: { current: number };
 	/** Not idle — from the click until the stop completes (the optimistic window). */
@@ -400,8 +478,9 @@ export type Dictation = {
 	 *  who forgets to stop dictation before Enter never loses the spoken
 	 *  reasoning. Idle → resolves immediately (the common no-run submit
 	 *  pays nothing). Every terminal path runs cleanup(), and cleanup()
-	 *  resolves the waiters — cancel (Esc) resolves them too, by its
-	 *  discard semantics. */
+	 *  settles the waiters. Cancel (Esc) normally resolves after discarding
+	 *  buffered speech; cancel/dispose during asynchronous transcript delivery
+	 *  rejects instead, so a waiting submit cannot send stale text. */
 	finish: () => Promise<void>;
 	/** End + DISCARD the transcript: no flush, immediate teardown. The Esc
 	 *  semantics (owner, 2026-09-17 round 3): Esc is a cancel, not a stop —
@@ -414,22 +493,50 @@ export type Dictation = {
 };
 
 /**
- * One dictation instance per composer-bearing page. `append` is the
- * composer fallback; the mounted question form's claim wins while a
- * question waits.
+ * Shared capture engine with one synchronous window-wide recording owner.
+ * Each primary run captures its main/question or explicit side destination.
+ * Explicit plugin controllers never claim the primary target or finisher;
+ * their asynchronous transcript delivery is part of finishing.
  */
-export function useDictation({ append }: { append: (text: string) => void }): Dictation {
+export function useDictation({ append, destination = "primary", disabled = false }: {
+	append: (text: string) => void;
+	/** Explicit destinations never register or consult the core primary target. */
+	destination?: "primary" | "explicit";
+	disabled?: boolean;
+}): Dictation {
+	const primary = destination === "primary";
+	const owner = useRef(Symbol("dictation")).current;
+	const explicitId = useId();
+	const previewId = primary ? DICTATION_PREVIEW_MAIN : `explicit:${explicitId}`;
+	/** The run's preview key — fixed at start, with its destination. */
+	const previewKeyRef = useRef(previewId);
 	const { getLanguage } = useDictationLanguage();
-	const [phase, setPhase] = useState<DictationPhase>("idle");
-	const [error, setError] = useState<DictationError | null>(null);
+	const [phase, setPhaseState] = useState<DictationPhase>("idle");
+	const phaseRef = useRef<DictationPhase>("idle");
+	const setPhase = useCallback((next: DictationPhase) => {
+		phaseRef.current = next;
+		setPhaseState(next);
+	}, []);
+	const [destinationId, setDestinationId] = useState("main");
+	const destinationRef = useRef<DictationDestination | null>(null);
+	const disabledRef = useRef(disabled);
+	disabledRef.current = disabled;
+	const [error, setError] = useState<string | null>(null);
 	/** The engine's own words behind a short error line (the tooltip). */
 	const [errorDetail, setErrorDetail] = useState<string | null>(null);
 	/** Latest RMS from the worklet — the meter samples this (dictate pattern). */
 	const levelRef = useRef(0);
-	/** The page's fallback append — kept fresh per render so a mid-recording
-	 *  retarget (composer↔question) is honored on the very next final. */
+	/** Fresh fallback for the next start; a live run retains its own target. */
 	const appendRef = useRef(append);
 	appendRef.current = append;
+	useEffect(() => {
+		if (!primary) return;
+		const target = (text: string) => appendRef.current(text);
+		composerTarget = target;
+		return () => {
+			if (composerTarget === target) composerTarget = null;
+		};
+	}, [primary]);
 
 	// Live machinery (non-render values). The MediaStream tracks stop and
 	// the per-run nodes disconnect on teardown; the socket is recreated per
@@ -461,16 +568,17 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 
 	/** Resolvers waiting for the run to fully end (finish(), owner
 	 *  2026-10-01): released by cleanup() — every terminal path runs it. */
-	const waitersRef = useRef<Array<() => void>>([]);
+	const waitersRef = useRef<Array<{ resolve: () => void; reject: (error: unknown) => void }>>([]);
+	const appendFailureRef = useRef<{ error: unknown } | null>(null);
+	const appendPendingRef = useRef(false);
 
-	/** Flush the buffered transcript into the primary input — question claim
-	 *  first, composer fallback. Called exactly once per run, at cleanup; the
+	/** Flush into this run's fixed destination. Called exactly once at cleanup; the
 	 *  buffer clears itself so double-cleanup is a no-op. */
-	const flush = useCallback(() => {
+	const flush = useCallback((): unknown => {
 		if (bufferRef.current.length === 0) return;
 		const text = bufferRef.current.join(" ");
 		bufferRef.current = [];
-		(questionTarget ?? appendRef.current)(text);
+		return (destinationRef.current?.append ?? appendRef.current)(text);
 	}, []);
 
 	/** The local connection's words so far move into the run's buffer (a
@@ -483,10 +591,19 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 
 	/** Full teardown of one run's machinery. Idempotent; generation-guarded by callers. */
 	const cleanup = useCallback((warmNext = true) => {
-		genRef.current++;
-		setDictationActive(false);
-		setPreview(""); // the live words give way to the flushed text
-		flush(); // the deferred transcript appears when the run ends (owner round 2)
+		const endGen = ++genRef.current;
+		let appended: unknown;
+		// A second cleanup (cancel/dispose) cannot turn an unfinished async
+		// append into a successful finish: that would send the old draft.
+		let failure: { error: unknown } | null = appendPendingRef.current
+			? { error: new DOMException("Dictation transcript delivery canceled", "AbortError") }
+			: null;
+		appendPendingRef.current = false;
+		try {
+			appended = flush(); // exactly one append, after the final transcript
+		} catch (error) {
+			failure = { error };
+		}
 		if (safetyRef.current) {
 			clearTimeout(safetyRef.current);
 			safetyRef.current = null;
@@ -508,15 +625,35 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 				ws.close();
 			} catch {}
 		}
-		setPhase("idle");
-		// The finish() waiters ride until NOW — post-flush, post-teardown:
-		// a submit path resuming after `await finishDictation()` reads the
-		// target field with the dictated tail already in it.
-		for (const w of waitersRef.current.splice(0)) w();
-		// Pre-mint for the next run (mitigation D) — best-effort; a keyless
-		// page just doesn't warm.
-		if (warmNext) warmTokens.refresh();
-	}, [flush]);
+		const complete = (failed: { error: unknown } | null) => {
+			if (endGen !== genRef.current) return;
+			appendPendingRef.current = false;
+			appendFailureRef.current = failed;
+			if (failed) setError(failed.error instanceof Error ? failed.error.message : "Dictation transcript could not be applied");
+			if (recordingOwner === owner) {
+				recordingOwner = null;
+				recordingTarget = null;
+				setDictationActive(false);
+			}
+			// The live words give way to the flushed text — once it has landed,
+			// and only this controller's own preview.
+			clearPreview(owner);
+			setPhase("idle");
+			// A plugin's async onTranscript is part of finishing, not a
+			// fire-and-forget notification: send must see its controlled text.
+			for (const waiter of waitersRef.current.splice(0)) {
+				if (failed) waiter.reject(failed.error);
+				else waiter.resolve();
+			}
+			if (warmNext) warmTokens.refresh();
+		};
+		if (appended && typeof (appended as PromiseLike<unknown>).then === "function") {
+			appendPendingRef.current = true;
+			setPhase("stopping");
+			// Both branches consume the promise, including stop-without-finish.
+			void Promise.resolve(appended).then(() => complete(null), (error: unknown) => complete({ error }));
+		} else complete(failure);
+	}, [flush, owner, setPhase]);
 
 	/** Everything captured while the socket couldn't take audio goes out now,
 	 *  in order — both engines accept faster-than-realtime sends. */
@@ -525,7 +662,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		for (const frame of pendingRef.current) ws.send(frame);
 		pendingRef.current = [];
 		setPhase("recording");
-	}, []);
+	}, [setPhase]);
 
 	/** Open the run's socket and wire its messages. `gen` guards staleness. */
 	const openSocket = useCallback(
@@ -590,7 +727,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 					transcriptRef.current = reduceAsrEvent(transcriptRef.current, msg.event as AsrEvent);
 					// The live words: everything committed so far this run, then
 					// this connection's segments (owner, 2026-10-25).
-					setPreview([...bufferRef.current, asrTranscriptText(transcriptRef.current).trim()].filter(Boolean).join(" "));
+					setPreview(owner, previewKeyRef.current, [...bufferRef.current, asrTranscriptText(transcriptRef.current).trim()].filter(Boolean).join(" "));
 				} else if (msg.type === "transcript") localTranscript = typeof msg.text === "string" ? msg.text : "";
 				else if (msg.type === "error") {
 					localError = typeof msg.message === "string" ? msg.message : "Local dictation failed";
@@ -609,7 +746,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 					// repeat the refusal — say so and point at the settings.
 					if (localErrorCode !== null && LOCAL_NOT_READY_CODES.has(localErrorCode)) {
 						setErrorDetail(localError);
-						setError({ kind: "localNotReady" });
+						setError(DICTATION_LOCAL_NOT_READY);
 						cleanup();
 						return;
 					}
@@ -630,23 +767,36 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 						})
 						.catch(() => {
 							if (gen === genRef.current) {
-								setError(localError !== null ? { kind: "message", text: localError } : { kind: "reconnectFailed", engine: session.engine === "deepgram" ? "deepgram" : "local" });
+								setError(session.engine === "deepgram" ? "Deepgram reconnect failed" : localError ?? "Local dictation reconnect failed");
 								cleanup();
 							}
 						});
 				} else {
-					setError(localError !== null ? { kind: "message", text: localError } : { kind: "connectionLost", engine: session.engine === "deepgram" ? "deepgram" : "local", code: ev.code });
+					setError(session.engine === "deepgram" ? `Deepgram connection lost (${ev.code})` : localError ?? `Local dictation connection lost (${ev.code})`);
 					cleanup();
 				}
 			});
 		},
-		[cleanup, commitLocal, startSending],
+		[cleanup, commitLocal, owner, startSending],
 	);
 
-	const start = useCallback(async () => {
+	const start = useCallback(async (destination?: DictationDestination) => {
+		if (disabledRef.current || phaseRef.current !== "idle") return;
+		if (recordingOwner !== null && recordingOwner !== owner) {
+			setError(DICTATION_ACTIVE_ELSEWHERE);
+			return;
+		}
+		const target = destination ?? { id: "main", append: primary ? questionTarget ?? appendRef.current : (text: string) => appendRef.current(text) };
+		destinationRef.current = target;
+		// The live words follow the same fixed destination as the flush.
+		previewKeyRef.current = destination ? destination.id : primary && questionTarget ? DICTATION_PREVIEW_QUESTION : previewId;
+		setDestinationId(target.id);
+		recordingOwner = owner;
+		recordingTarget = target.append;
 		setDictationActive(true);
 		setError(null);
 		setErrorDetail(null);
+		appendFailureRef.current = null;
 		setPhase("connecting");
 		reconnectsRef.current = 0;
 		bufferRef.current = []; // fresh run, fresh buffer (round 2)
@@ -656,9 +806,9 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		let language: DictationLanguage;
 		try {
 			language = await getLanguage();
-		} catch (error) {
+		} catch (e) {
 			if (gen !== genRef.current) return;
-			setError({ kind: "message", text: error instanceof Error ? error.message : "Dictation language unavailable" });
+			setError(e instanceof Error ? e.message : "Dictation language unavailable");
 			cleanup();
 			return;
 		}
@@ -694,6 +844,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 			const worklet = new AudioWorkletNode(ctx, "pcm-capture");
 			workletRef.current = worklet;
 			worklet.port.onmessage = (e) => {
+				if (gen !== genRef.current) return;
 				const msg = e.data as { type: string; rms?: number; buffer?: ArrayBuffer };
 				if (msg.type === "level") {
 					levelRef.current = msg.rms ?? 0; // never reset to zero (dictate pattern)
@@ -717,13 +868,13 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 			worklet.connect(ctx.destination);
 		} catch (e) {
 			if (gen !== genRef.current) return;
-			setError(
+			const msg =
 				e instanceof DOMException && (e.name === "NotAllowedError" || e.name === "SecurityError")
-					? { kind: "micDenied" }
+					? "Microphone permission denied"
 					: e instanceof Error
-						? { kind: "message", text: e.message }
-						: { kind: "micUnavailable" },
-			);
+						? e.message
+						: "mic unavailable";
+			setError(msg);
 			cleanup();
 			return;
 		}
@@ -733,15 +884,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 			session = await sessionPromise;
 		} catch (e) {
 			if (gen !== genRef.current) return;
-			setError(
-				!(e instanceof Error)
-					? { kind: "tokenUnavailable" }
-					: e.message === DICTATION_KEYLESS
-						? { kind: "keyless" }
-						: e.message === DICTATION_LOCAL_UNSET
-							? { kind: "localUnset" }
-							: { kind: "message", text: e.message },
-			);
+			setError(e instanceof Error ? e.message : "token unavailable");
 			cleanup();
 			return;
 		}
@@ -749,11 +892,11 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		// Mitigation B: the handshake fires the moment the graph is live,
 		// overlapping any remaining token wait — mic-gated, never before it.
 		openSocket(gen, session, language);
-	}, [openSocket, cleanup, getLanguage]);
+	}, [openSocket, cleanup, getLanguage, owner, primary, previewId, setPhase]);
 
 	const stop = useCallback(() => {
 		const gen = genRef.current;
-		if (phase !== "recording" && phase !== "connecting") return;
+		if (phaseRef.current !== "recording" && phaseRef.current !== "connecting") return;
 		setPhase("stopping");
 
 		// Mic dies FIRST — no more audio enqueues (dictate pattern). The
@@ -788,48 +931,54 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		} else {
 			cleanup();
 		}
-	}, [phase, cleanup, commitLocal]);
+	}, [cleanup, commitLocal, setPhase]);
 
 	const cancel = useCallback(() => {
-		if (phase === "idle") return;
+		if (phaseRef.current === "idle") return;
 		// Discard first, teardown second — cleanup() flushes, and the now-empty
 		// buffer makes that flush a no-op. Also kills a "stopping" run: the
 		// flush already underway is abandoned (its timer is cleared inside).
 		bufferRef.current = [];
 		cleanup();
-	}, [phase, cleanup]);
+	}, [cleanup]);
 
-	const finish = useCallback((): Promise<void> => {
-		return new Promise((resolve) => {
-			if (phase === "idle") {
-				resolve();
+	const finishCurrent = useCallback((): Promise<void> => {
+		return new Promise((resolve, reject) => {
+			if (phaseRef.current === "idle") {
+				if (appendFailureRef.current) reject(appendFailureRef.current.error);
+				else resolve();
 				return;
 			}
-			waitersRef.current.push(resolve);
+			waitersRef.current.push({ resolve, reject });
 			// "stopping" is already ending — the waiter just rides to cleanup.
-			if (phase === "recording" || phase === "connecting") stop();
+			if (phaseRef.current === "recording" || phaseRef.current === "connecting") stop();
 		});
-	}, [phase, stop]);
+	}, [stop]);
+	const finishFor = useCallback((id: string) => destinationRef.current?.id === id ? finishCurrent() : Promise.resolve(), [finishCurrent]);
+	// A main submission must not stop or wait for side-input recording.
+	const finish = useCallback(() => finishFor("main"), [finishFor]);
 
 	// Publish finish() for the sibling subtrees (the pending question's
 	// dock) — registered for as long as this page owns the hook.
 	useEffect(() => {
+		if (!primary) return;
 		dictationFinisher = finish;
 		return () => {
 			if (dictationFinisher === finish) dictationFinisher = null;
 		};
-	}, [finish]);
+	}, [finish, primary]);
 
-	const toggle = useCallback(() => {
-		if (phase === "idle") void start();
-		else if (phase === "recording" || phase === "connecting") stop();
-		// "stopping" presses are ignored — the flush is in flight.
-	}, [phase, start, stop]);
+	const toggleFor = useCallback((destination?: DictationDestination) => {
+		if (phaseRef.current === "idle") void start(destination);
+		else if (phaseRef.current === "recording" || phaseRef.current === "connecting") stop();
+		// Focus chooses where to START. An active run always stops into its
+		// original destination, even after focus moves to a different field.
+	}, [start, stop]);
+	const toggle = useCallback(() => toggleFor(), [toggleFor]);
 
-	// Shortcut seams (keyboard wave A): ⌘D toggles from anywhere on the
-	// page; the Esc chain lands here as a CANCEL (owner, round 3). Each
-	// page owns ONE hook instance, and only the mounted page's listener is
-	// attached.
+	// One shared pair of shortcut listeners, regardless of widget count:
+	// focused plugin control first, otherwise core fallback; Esc always
+	// cancels the actual recording owner rather than the focused widget.
 	useEffect(() => {
 		// Pre-mint at mount (mitigation D) — silent if keyless. For the local
 		// engine this also starts the bridge and loads the model, so the
@@ -845,17 +994,13 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		// A saved choice must apply to the next run, without waiting for TTL.
 		if (section === "dictation") warmTokens.refresh();
 	});
-	useEffect(() => {
-		window.addEventListener("lh:kbd-toggle-dictation", toggle);
-		return () => window.removeEventListener("lh:kbd-toggle-dictation", toggle);
-	}, [toggle]);
-	useEffect(() => {
-		window.addEventListener("lh:kbd-cancel-dictation", cancel);
-		return () => window.removeEventListener("lh:kbd-cancel-dictation", cancel);
-	}, [cancel]);
+	useEffect(() => registerController(owner, { primary, toggle, cancel }), [owner, primary, toggle, cancel]);
 
 	return {
 		phase,
+		destinationId,
+		toggleFor,
+		finishFor,
 		error,
 		levelRef,
 		active: phase !== "idle",
@@ -864,6 +1009,7 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
 		finish,
 		cancel,
 		errorDetail,
+		previewId,
 		clearError: () => {
 			setError(null);
 			setErrorDetail(null);
@@ -883,8 +1029,8 @@ export function useDictation({ append }: { append: (text: string) => void }): Di
  *   error     the wide button again, label swapped for the failure reason
  *             (full text in the tooltip), cleared on the next click.
  */
-export function DictationBar({ dictation }: { dictation: Dictation }) {
-	const { phase, error, errorDetail, levelRef, toggle, active, clearError } = dictation;
+export function DictationBar({ dictation, disabled = false }: { dictation: Dictation; disabled?: boolean }) {
+	const { phase, error, errorDetail, levelRef, toggle, active, clearError, blocked } = dictation;
 	const { open: openSettings } = useSettingsDialog();
 	const { t } = useT("artifacts");
 	const errorText = error ? dictationErrorText(error, t) : null;
@@ -892,12 +1038,11 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 	 *  idle button deep-links Settings → Keys → the Deepgram row and clears
 	 *  the error — the surface is clean when the user returns. Any other
 	 *  error keeps the old behavior (click = retry, which clears). */
-	const keyless = error?.kind === "keyless";
+	const keyless = error === DICTATION_KEYLESS;
 	/** The local engine's not-set-up line deep-links the same way — to the
 	 *  Dictation section, where the engine is installed and chosen. */
-	const localUnset = error?.kind === "localUnset" || error?.kind === "localNotReady";
+	const localUnset = error === DICTATION_LOCAL_UNSET || error === DICTATION_LOCAL_NOT_READY;
 	const [levels, setLevels] = useState<number[]>(() => new Array(METER_CELLS).fill(0));
-	const recording = phase === "recording" || phase === "stopping";
 	/** Adaptive cell count (owner round 2): derived from the meter's
 	 *  measured width — narrow rows show fewer bars instead of
 	 *  overflowing under neighbors. */
@@ -945,8 +1090,8 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 				// full reveal (the keyless line KEEPS "Deepgram" — owner overrule:
 				// it's the Keys row label, the truth the user needs). Otherwise the
 				// quiet label + the live ⌘D binding.
-				label={errorText ? (errorDetail ? `${errorText} — ${errorDetail}` : errorText) : t("dictation.dictate")}
-				action={errorText ? undefined : "toggle-dictation"}
+				label={errorText ? (errorDetail ? `${errorText} — ${dictationErrorText(errorDetail, t)}` : errorText) : t("dictation.dictate")}
+				action={error ? undefined : "toggle-dictation"}
 				side="top"
 			>
 				<button
@@ -961,12 +1106,11 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 							toggle();
 						}
 					}}
+					disabled={disabled || blocked}
 					aria-label={errorText ? t("dictation.failedAria", { reason: errorText }) : t("dictation.start")}
 					data-testid="dictation-toggle"
-				// Same blurring as the floating chrome (owner, fix wave round 3),
-			// but lower opacity — the mic stays quieter than the model pills.
-			className="flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/50 bg-card/50 text-xs text-muted-foreground/70 shadow-lg backdrop-blur transition-colors hover:border-border hover:text-muted-foreground"
-			>
+					className="flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/50 bg-card/50 text-xs text-muted-foreground/70 shadow-lg backdrop-blur transition-colors hover:border-border hover:text-muted-foreground"
+				>
 					<MicIcon className="size-3.5" />
 					<span className="max-w-full truncate">{errorText ?? t("dictation.dictate")}</span>
 				</button>
@@ -976,32 +1120,20 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 
 	return (
 		<div className="flex w-full min-w-0 items-center gap-2" data-testid="dictation-bar">
-			<Hint
-				// The owner flagged this copy good ("Stop dictation (Esc)") —
-				// kept verbatim; only the machinery moved to the styled tooltip.
-				label={t("dictation.stopHint")}
-				side="top"
-			>
+			<Hint label={t("dictation.stopHint")} side="top">
 				<button
 					type="button"
 					onClick={toggle}
 					disabled={phase === "stopping"}
 					aria-label={t("dictation.stop")}
-				data-testid="dictation-toggle"
-				className="flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/10 px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
-			>
-				{phase === "stopping" ? (
-					<Loader2Icon className="size-3.5 animate-spin" />
-				) : (
-					<MicIcon className="size-3.5" />
-				)}
+					data-testid="dictation-toggle"
+					className="flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/10 px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
+				>
+					{phase === "stopping" ? <Loader2Icon className="size-3.5 animate-spin" /> : <MicIcon className="size-3.5" />}
 					{t("dictation.stopButton")}
 				</button>
 			</Hint>
 			<span className="size-1.5 shrink-0 animate-pulse rounded-full bg-destructive" aria-hidden />
-			{/* Fixed width while recording — nothing ever appends text beside it
-			    (no interims, owner round 1). Cells carry no minimum width; the
-			    COUNT adapts to the measured row space (owner round 2). */}
 			<div ref={meterRef} className="flex h-4 min-w-0 flex-1 items-center gap-[2px]" data-testid="dictation-meter">
 				{levels.slice(-cellCount).map((v, i) => (
 					<span
@@ -1011,48 +1143,6 @@ export function DictationBar({ dictation }: { dictation: Dictation }) {
 					/>
 				))}
 			</div>
-		</div>
-	);
-}
-
-/**
- * A dictation target's textarea with the LIVE words (local engine, owner
- * 2026-10-25): while a run's preview is non-empty, a mirror of the field's
- * text sits in normal flow — the typed text invisible, the heard words
- * faded after it — and the SAME textarea element lays out absolutely over
- * it, so the field grows with the preview and keeps its focus and caret.
- * `layout` carries the textarea's text-box classes (padding, line height,
- * max height) so the mirror wraps exactly as the textarea does. With no
- * preview the wrapper is inert: the textarea lays out as it always has.
- */
-export function DictationField({
-	value,
-	preview,
-	layout,
-	className,
-	children,
-}: {
-	value: string;
-	preview: string;
-	layout: string;
-	className?: string;
-	children: React.ReactElement<{ className?: string }>;
-}) {
-	const live = preview !== "";
-	return (
-		<div className={cn("relative", className)} data-testid={live ? "dictation-field-live" : undefined}>
-			{live && (
-				<div aria-hidden className={cn(layout, "pointer-events-none overflow-hidden whitespace-pre-wrap break-words")}>
-					<span className="invisible">{value}</span>
-					<span className="text-muted-foreground/60">
-						{value && !/\s$/.test(value) ? " " : ""}
-						{preview}
-					</span>
-				</div>
-			)}
-			{cloneElement(children, {
-				className: cn(children.props.className, live && "absolute inset-0 h-full max-h-none min-h-0"),
-			})}
 		</div>
 	);
 }

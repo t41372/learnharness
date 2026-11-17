@@ -6,7 +6,9 @@
 		"graph": "Graph",
 		"keyboard": "Keyboard",
 		"general": "General",
-		"dictation": "Dictation"
+		"dictation": "Dictation",
+		"corePlugins": "Core plugins",
+		"communityPlugins": "Community plugins"
 	},
 	"dialog": {
 		"title": "Settings",
@@ -14,7 +16,9 @@
 		"closeAria": "Close settings",
 		"navAria": "Settings sections",
 		"loading": "Loading settings…",
-		"loadFailed": "Settings could not be loaded — refresh to retry."
+		"loadFailed": "Settings could not be loaded — refresh to retry.",
+		"loadingPlugins": "Loading plugins…",
+		"confirmFailed": "Could not confirm saved settings. Your input has been kept."
 	},
 	"actions": {
 		"save": "Save",
@@ -57,7 +61,15 @@
 			"modelAria": "{{slot}} model",
 			"thinkingAria": "{{slot}} thinking",
 			"footerNoModels": "No models — add a provider key in Keys",
-			"footer": "Runs every agent of this tier"
+			"footer": "Runs every agent of this tier",
+			"showAdvanced": "Show advanced settings",
+			"hideAdvanced": "Hide advanced settings",
+			"cacheAria": "{{slot}} cache retention",
+			"workerConcurrency": {
+				"label": "Concurrent worker requests",
+				"hint": "Maximum simultaneous background-worker model requests. Direct conversations are not limited.",
+				"invalid": "Enter a positive, safely representable whole number."
+			}
 		},
 		"tools": {
 			"group": "Tools",
@@ -89,6 +101,19 @@
 				"automatic": "Automatic",
 				"hasKey": "✓ key",
 				"noKey": "· no key"
+			},
+			"fileAccess": {
+				"label": "File access",
+				"hintBroad": "Broad local source access, except protected locations",
+				"hintListed": "Only listed folders and subfolders.",
+				"hintNone": "Restricted: no folders allowed. Add a folder to enable access.",
+				"restrict": "Restrict to listed folders",
+				"inputAria": "Allowed folder path",
+				"placeholder": "Absolute path or ~/folder",
+				"add": "Add folder",
+				"removeAria": "Remove {{folder}}",
+				"remove": "Remove",
+				"invalidFolder": "Enter an absolute path or ~/folder."
 			}
 		},
 		"context": {
@@ -97,6 +122,10 @@
 				"label": "Compaction threshold",
 				"hint": "{{tokens}} tok",
 				"aria": "compaction threshold"
+			},
+			"reasoning": {
+				"label": "Include reasoning in token estimates (OpenAI Responses only)",
+				"hint": "Use saved output-token usage to account for replayed reasoning on matching OpenAI Responses models. Off uses the original text-based estimate."
 			}
 		},
 		"prompts": {
@@ -106,7 +135,7 @@
 				"teacher": "Teacher",
 				"prober": "Prober",
 				"shared": "Shared",
-				"sharedHint": "Used by both agents"
+				"practice": "Practice"
 			},
 			"inUse": "Your version is in use",
 			"toggle": "prompt {{path}}",
@@ -120,11 +149,14 @@
 			"saved": "Saved",
 			"deleted": "Deleted",
 			"saveFailed": "Save failed: {{detail}}",
-			"deleteFailed": "Delete failed: {{status}}"
+			"deleteFailed": "Delete failed: {{status}}",
+			"usedBy": "Used by {{agents}}",
+			"listSeparator": ", ",
+			"listLast": "{{rest}} and {{last}}"
 		},
 		"instructions": {
 			"group": "Your instructions",
-			"hint": "Added to the end of every agent's instructions — the teacher, practice, research, demos, visuals and the knowledge graph. Applies from the next reply.",
+			"hint": "Added to the end of every agent's instructions — the teacher, practice, side questions, research, demos, visuals, the knowledge graph and plugins. Applies from the next reply.",
 			"aria": "Your instructions for every agent",
 			"placeholder": "For example: Always reply in Traditional Chinese.",
 			"save": "Save",
@@ -133,18 +165,6 @@
 	},
 	"appearance": {
 		"emptyEquals": "Empty = {{value}}",
-		"emptySameAsText": "Empty = same as text",
-		"sameAsText": "same as text",
-		"mode": {
-			"label": "Mode",
-			"hint": "Coming soon",
-			"aria": "mode",
-			"dark": "Dark"
-		},
-		"background": {
-			"label": "Background",
-			"aria": "background hex"
-		},
 		"font": {
 			"label": "Reading font",
 			"tooltip": "Choose from your installed fonts",
@@ -164,13 +184,48 @@
 			"label": "Heading weight",
 			"aria": "heading weight"
 		},
-		"boldColor": {
-			"label": "Bold color",
-			"aria": "bold color"
+		"typography": "Typography",
+		"codeLigatures": {
+			"label": "Code ligatures"
 		},
-		"italicColor": {
-			"label": "Italic color",
-			"aria": "italic color"
+		"colors": {
+			"group": "Colors",
+			"groupHint": "· overrides on top of the theme, kept when you switch",
+			"resetAll": "Reset all",
+			"hexAria": "{{label}} hex",
+			"labels": {
+				"background": "Background",
+				"accent": "Accent",
+				"surface": "Surface",
+				"bold": "Bold",
+				"border": "Border",
+				"italic": "Italic",
+				"text": "Text",
+				"code": "Inline code",
+				"textMuted": "Muted text",
+				"error": "Error",
+				"success": "Success",
+				"warning": "Warning"
+			},
+			"notes": {
+				"accent": "Focus rings, toggles, selection",
+				"surface": "Cards, inputs, sidebar"
+			}
+		},
+		"theme": {
+			"label": "Theme",
+			"hint": "{{name}} · {{mode}} · sets every color below",
+			"modes": {
+				"dark": "dark",
+				"light": "light"
+			},
+			"custom": "custom",
+			"export": "Export JSON",
+			"import": "Import JSON",
+			"remove": "Remove {{name}}",
+			"invalidJson": "{{name}} is not valid JSON",
+			"importFailed": "import failed ({{status}})",
+			"importFailedNetwork": "import failed (network)"
 		}
 	},
 	"graph": {
@@ -202,7 +257,12 @@
 		"rebind": "Rebind",
 		"reset": "Reset",
 		"storageNote": "Stored on this device (lh:keymap) — overrides only.",
-		"resetAll": "Reset all to defaults"
+		"resetAll": "Reset all to defaults",
+		"pluginBindingInvalid": "Use a Mod/Alt chord or function key. Escape, Tab and Enter are reserved.",
+		"pluginUnavailable": "This plugin action is no longer available.",
+		"inactive": "Inactive: {{reason}}",
+		"unbound": "Unbound",
+		"clear": "Clear"
 	},
 	"keys": {
 		"loading": "Loading keys…",
@@ -210,13 +270,14 @@
 			"providerKeys": "Model API keys",
 			"subscriptions": "Subscriptions",
 			"dictation": "Dictation",
-			"search": "Search"
+			"search": "Search",
+			"externalCli": "External CLI"
 		},
 		"pastePlaceholder": "Paste key…",
 		"inputAria": "{{provider}} key",
 		"getKey": "key ↗",
 		"saveFailed": "Save failed ({{status}})",
-		"addProvider": "+ Add provider key",
+		"addProvider": "+ Add a provider",
 		"status": {
 			"notSet": "not set",
 			"env": "env"
@@ -238,7 +299,11 @@
 		"useFamily": "Use “{{family}}”",
 		"custom": "custom",
 		"retry": "Retry",
-		"catalogFailed": "Model catalog could not be loaded. Check the connection and retry."
+		"catalogFailed": "Model catalog could not be loaded. Check the connection and retry.",
+		"unpriced": "Unpriced",
+		"cliBilling": "CLI billing",
+		"cliBillingTitle": "Billing is determined by your Claude Code configuration; LearnHarness does not estimate it.",
+		"priceUnavailable": "Price unavailable"
 	},
 	"connections": {
 		"connect": "Connect",
@@ -390,5 +455,131 @@
 		"checkingLabel": "Checking for updates",
 		"autoLabel": "Automatic updates",
 		"autoToggle": "auto update"
+	},
+	"cacheRetention": {
+		"title": "Cache retention",
+		"intro": "Controls the cache-retention preference sent to Pi. Support and duration depend on the provider and model. This does not guarantee a cache hit.",
+		"label": "Cache: {{value}}",
+		"options": {
+			"default": {
+				"compact": "default",
+				"label": "Pi default",
+				"description": "Leave the option unset. Pi’s normal behavior and environment override apply."
+			},
+			"none": {
+				"compact": "not requested",
+				"label": "Don’t request caching",
+				"description": "Pass Pi’s native none preference. Providers may still cache automatically."
+			},
+			"short": {
+				"compact": "short",
+				"label": "Short retention",
+				"description": "Pass Pi’s native short preference. The duration depends on the provider and model."
+			},
+			"long": {
+				"compact": "long",
+				"label": "Long retention",
+				"description": "Pass Pi’s native long preference. Cache-write costs may be higher."
+			}
+		}
+	},
+	"claudeCode": {
+		"status": {
+			"notFound": "Not found",
+			"meetsMinimum": "Version {{version}} · meets minimum",
+			"updateRequired": "Version {{version}} · update required",
+			"unchecked": "Version could not be checked"
+		},
+		"loadFailed": "Could not load Claude Code settings.",
+		"saveFailed": "Could not save Claude Code settings.",
+		"checking": "Checking…",
+		"checkAgain": "Check again",
+		"setupIntro": "<strong>Install and authenticate Claude Code in your terminal, then select a Claude Code model here.</strong> LearnHarness starts it when needed—no background process required.",
+		"scope": "Checks installation/version only—not authentication, model access, or quota. Claude Code controls billing. Requires v{{version}}+.",
+		"setupLink": "Setup ↗",
+		"verifyClaims": "Verify AI claims independently—they may be inaccurate, incomplete, misleading, or outdated."
+	},
+	"plugins": {
+		"trustWarning": "Only enable plugins you trust. Plugins run trusted local code with broad file and network access; they are not sandboxed. A broken plugin may require restarting LearnHarness.",
+		"install": {
+			"summary": "How to install a plugin",
+			"copy": "Clone or copy the plugin into the directory below, using its plugin ID as the folder name.",
+			"build": "For source projects, follow the repository’s dependency setup and run <code>npm run build</code>. Prebuilt packages already contain <code>dist/manifest.json</code> and need no build.",
+			"enable": "Refresh the list, then enable the plugin. New plugins are disabled by default.",
+			"restart": "Restart LearnHarness after changing loaded code. Preserve <code>data/</code> beside <code>dist/</code> when updating."
+		},
+		"authoring": {
+			"title": "Build a plugin",
+			"intro": "Download the authoring skill for your coding agent.",
+			"download": "Download authoring skill"
+		},
+		"directory": "Plugins directory",
+		"refresh": "Refresh plugins",
+		"noCore": "No Core plugins available.",
+		"noCommunity": "No community plugins installed.",
+		"status": {
+			"saving": "Saving…",
+			"error": "Error",
+			"loading": "Loading…",
+			"enabled": "Enabled",
+			"disabled": "Disabled"
+		},
+		"settingsFor": "Settings for {{name}}",
+		"enable": "Enable {{name}}",
+		"page": {
+			"loading": "Loading plugin settings…",
+			"loadFailed": "Plugin settings could not be loaded.",
+			"empty": "No settings available.",
+			"mountLabel": "{{name}} settings"
+		},
+		"rowOutOfRange": "Value is outside the allowed range."
+	},
+	"customEndpoint": {
+		"name": "Custom endpoint",
+		"loadFailed": "Unable to load custom configuration.",
+		"loading": "Loading custom configuration…",
+		"modelCount_one": "{{count}} model",
+		"modelCount_other": "{{count}} models",
+		"status": {
+			"keyless": "keyless",
+			"apiKey": "API key",
+			"apiKeyMissing": "API key missing"
+		},
+		"disconnectFailed": "Disconnect failed.",
+		"disconnectFailedNetwork": "Disconnect failed. Check your connection.",
+		"inspectFailed": "Unable to inspect effective key. Reload configuration and retry.",
+		"saveFailedNetwork": "Save failed. Check your connection.",
+		"connectFailed": "Connect failed ({{status}})",
+		"connectFailedNetwork": "Connect failed. Check your connection.",
+		"baseUrlPlaceholder": "Base URL, e.g. http://localhost:11434/v1",
+		"baseUrlAria": "Custom endpoint base URL",
+		"modelsPlaceholder": "Model IDs, comma-separated — optional, needed when the endpoint has no /models list",
+		"modelsAria": "Custom endpoint model IDs",
+		"authentication": "Authentication",
+		"authAria": "Custom endpoint authentication",
+		"keyless": "Keyless",
+		"apiKey": "API key",
+		"envOwned": "Environment supplies the effective key. Change the environment to replace it.",
+		"reuseKey": "Allow reuse of the effective existing key for this URL",
+		"keyPlaceholderKeep": "Leave blank to keep effective key",
+		"keyAria": "Custom endpoint API key",
+		"connecting": "Connecting…",
+		"pins": {
+			"line": "Context: {{contextLimit}} · Output: {{outputLimit}}",
+			"userPin": "user pin",
+			"reported": "reported {{value}}",
+			"fallback": "fallback {{value}}",
+			"contextAria": "{{id}} context window in tokens",
+			"maxTokensAria": "{{id}} max output tokens",
+			"reasoningAria": "{{id}} reasoning effort support",
+			"reasoningReported": "Reasoning effort: Use reported",
+			"reasoningSupported": "Reasoning effort: Supported",
+			"reasoningUnsupported": "Reasoning effort: Not supported",
+			"saving": "Saving…",
+			"save": "Save limits"
+		},
+		"budgetHelp": "Budget pins do not resize backend context. Blank uses reported limits, then fallback ({{contextLimit}} context / {{outputLimit}} output). Custom pricing is unknown.",
+		"reasoningHelp": "Reasoning support is a capability declaration. The effort picker’s Off may not disable a custom backend’s default thinking.",
+		"reload": "Reload configuration"
 	}
 }

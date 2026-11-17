@@ -37,10 +37,10 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { useBackdropDismiss } from "@/components/backdrop-dismiss";
+import { HostDialog } from "@/components/host-dialog";
+import { useInteractionLayers } from "@/components/interaction-layers";
 import type React from "react";
-import { type ModelCatalogEntry, type ModelSlotName, type ModelsSettings } from "@/src/core";
+import { type ModelCatalogEntry, type ModelSlotName, type ModelsSettings, CUSTOM_PROVIDER } from "@/src/core";
 import { prettyModel } from "@/components/usage-format";
 import { ModelMenuList } from "@/components/settings/model-menu";
 import { MenuShell } from "@/components/menu-shell";
@@ -48,7 +48,7 @@ import { notifySettingsSaved, useSettingsSaved } from "@/components/settings-sig
 import { useModelCatalog } from "@/components/model-catalog";
 import { savedSlotsConfigured } from "@/components/setup-cta";
 import { Hint } from "@/components/ui/hint";
-import { type ProviderKeyInfo } from "@/components/settings/keys-section";
+import { type ProviderKeyInfo, CUSTOM_PROVIDER_INFO, CustomEndpointSetup } from "@/components/settings/keys-section";
 import { ProviderMenuList } from "@/components/settings/model-menu";
 import { ChatGPTBackgroundAccess } from "@/components/settings/chatgpt-connection";
 import { NativeSubscriptionBackgroundAccess, SubscriptionConnections } from "@/components/settings/subscription-connections";
@@ -127,10 +127,13 @@ export function SetupKeysBody({
 	error,
 	menuOpen,
 	onToggleMenu,
+	onCloseMenu,
 	onPick,
 	onValue,
 	onSave,
 	menuAnchor,
+	isCustom,
+	onCustomSaved,
 }: {
 	/** The full provider roster (GET /api/keys providers) — undefined
 	 *  while it loads; the picker renders an honest empty state then. */
@@ -143,11 +146,16 @@ export function SetupKeysBody({
 	error: string | null;
 	menuOpen: boolean;
 	onToggleMenu: () => void;
+	onCloseMenu?: () => void;
 	onPick: (p: ProviderKeyInfo) => void;
 	onValue: (v: string) => void;
 	onSave: () => void;
 	/** The MenuShell anchor — wired by the wrapper (its triggerRef). */
 	menuAnchor: React.RefObject<HTMLDivElement | null>;
+	/** Chosen provider is the custom endpoint: a base URL field joins the key
+	 *  field. All three optional so plain-key callers (and tests) stay unchanged. */
+	isCustom?: boolean;
+	onCustomSaved?: () => void;
 }) {
 	const { t } = useT("shell");
 	return (
@@ -172,6 +180,7 @@ export function SetupKeysBody({
 						<MenuShell
 							anchorRef={menuAnchor}
 							testid="setup-key-provider-menu"
+							onClose={() => { onCloseMenu?.(); return "closed"; }}
 							preferredSide="down"
 							align="left"
 							menuClass="flex w-[22rem] flex-col rounded-xl border border-border bg-card p-2 text-xs shadow-xl"
@@ -180,35 +189,37 @@ export function SetupKeysBody({
 						</MenuShell>
 					)}
 				</div>
-				{provider && (
-					<div className="flex max-w-96 items-center gap-2">
-						<input
-							type="text"
-							value={value}
-							onChange={(e) => onValue(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" && value.trim()) onSave();
-							}}
-							placeholder={t("setupDialog.pasteKey")}
-							aria-label={t("setupDialog.keyAria", { provider: provider.label })}
-							data-testid="setup-key-input"
-							disabled={saving}
-							autoFocus
-							className="h-7 min-w-0 flex-1 rounded-sm border border-border bg-background px-1.5 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-muted-foreground/50"
-						/>
-						<button
-							type="button"
-							onClick={onSave}
-							disabled={saving || !value.trim()}
-							data-testid="setup-key-save"
-							className="shrink-0 rounded-sm border border-border bg-background px-3 py-1.5 font-ui text-xs text-foreground transition-colors hover:border-muted-foreground/50 disabled:cursor-not-allowed disabled:opacity-40"
-						>
-							{saving ? t("setupDialog.saving") : t("setupDialog.saveKey")}
-						</button>
+				{provider && (isCustom ? <CustomEndpointSetup onSaved={onCustomSaved ?? onSave} /> : (
+					<div className="flex max-w-96 flex-col gap-2">
+						<div className="flex items-center gap-2">
+							<input
+								type="text"
+								value={value}
+								onChange={(e) => onValue(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" && value.trim()) onSave();
+								}}
+								placeholder={t("setupDialog.pasteKey")}
+								aria-label={t("setupDialog.keyAria", { provider: provider.label })}
+								data-testid="setup-key-input"
+								disabled={saving}
+								autoFocus
+								className="h-7 min-w-0 flex-1 rounded-sm border border-border bg-background px-1.5 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-muted-foreground/50"
+							/>
+							<button
+								type="button"
+								onClick={onSave}
+								disabled={saving || !value.trim()}
+								data-testid="setup-key-save"
+								className="shrink-0 rounded-sm border border-border bg-background px-3 py-1.5 font-ui text-xs text-foreground transition-colors hover:border-muted-foreground/50 disabled:cursor-not-allowed disabled:opacity-40"
+							>
+								{saving ? t("setupDialog.saving") : t("setupDialog.saveKey")}
+							</button>
+						</div>
 					</div>
-				)}
+				))}
 				{error && (
-					<p role="alert" data-testid="setup-key-error" className="text-xs text-red-400">
+					<p role="alert" data-testid="setup-key-error" className="text-xs text-error">
 						{error}
 					</p>
 				)}
@@ -244,7 +255,7 @@ export function SetupDialog(props: SetupDialogProps) {
 
 function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 	const { t } = useT("shell");
-	const backdropDismiss = useBackdropDismiss(onClose);
+	const controller = useInteractionLayers();
 	const { catalog, failed, refresh } = useModelCatalog();
 	const providerStageSeen = useRef(false);
 	const connectionCloseRequested = useRef(false);
@@ -319,46 +330,27 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 		}
 	}, [stage, closeAfterConnection, onClose]);
 
-	// Esc + outside-click — layered dismissal, closable WITHOUT
-	// configuring (browsing stays possible; the gate is the send
-	// interception, not this dialog). An open slot menu eats Esc first
-	// (and any click outside it); only a bare Esc closes the dialog.
+	// Keep setup's existing outside-pointer policy; MenuShell and HostDialog
+	// own leaf-first Escape, including while a connection dialog covers setup.
 	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key !== "Escape") return;
-			// THE ONE-ESC LAW (owner, keyboard round 2026-10-06): claim at
-			// the document level before the layered dismissal — every branch
-			// below acts, so the window chain (dictation → abort) must
-			// never also fire. One Esc, one action.
-			e.preventDefault();
-			e.stopPropagation();
-			if (keyMenuOpen) {
-				setKeyMenuOpen(false);
-				return;
-			}
-			if (openMenu !== null) setOpenMenu(null);
-			else onClose();
-		};
 		const onPointerDown = (e: PointerEvent) => {
 			if (!(e.target instanceof Element)) return;
 			const target = e.target;
-			if (keyMenuOpen) {
+			if (keyMenuOpen && controller.isElementEligible(document.querySelector('[data-testid="setup-key-provider-menu"]'))) {
 				if (target.closest("[data-lh-menu]") || target.closest('[data-testid="setup-key-provider"]')) return;
 				setKeyMenuOpen(false);
 			}
 			if (openMenu === null) return;
+			const menuTestid = openMenu.kind === "model" ? `setup-menu-${openMenu.slot}` : `setup-thinking-menu-${openMenu.slot}`;
+			if (!controller.isElementEligible(document.querySelector(`[data-testid="${menuTestid}"]`))) return;
 			const triggerTestid =
 				openMenu.kind === "model" ? `setup-trigger-${openMenu.slot}` : `setup-thinking-${openMenu.slot}`;
 			if (target.closest("[data-lh-menu]") || target.closest(`[data-testid="${triggerTestid}"]`)) return;
 			setOpenMenu(null);
 		};
-		document.addEventListener("keydown", onKey);
 		document.addEventListener("pointerdown", onPointerDown);
-		return () => {
-			document.removeEventListener("keydown", onKey);
-			document.removeEventListener("pointerdown", onPointerDown);
-		};
-	}, [onClose, openMenu, keyMenuOpen]);
+		return () => document.removeEventListener("pointerdown", onPointerDown);
+	}, [controller, openMenu, keyMenuOpen]);
 
 	// Do not briefly paint model pickers between successful connection and
 	// closing an already-configured setup. No saved model/thinking writes.
@@ -371,14 +363,15 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 	 *  close recovery or advance to the missing model slots. Shape-gate
 	 *  400s keep their user-facing line inline. */
 	async function saveKey() {
-		if (!keyProvider || !keyValue.trim() || keySaving) return;
+		if (!keyProvider || keySaving) return;
+		if (!keyValue.trim()) return;
 		setKeySaving(true);
 		setKeyError(null);
 		const res = await fetch(`/api/keys/${encodeURIComponent(keyProvider.envVar)}`, {
-			method: "PUT",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ value: keyValue }),
-		}).catch(() => null);
+						method: "PUT",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({ value: keyValue }),
+					}).catch(() => null);
 		setKeySaving(false);
 		if (!res || !res.ok) {
 			const body = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
@@ -398,6 +391,8 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 		for (const slot of SLOT_ORDER) {
 			const level = levels[slot];
 			models[slot] = {
+				// Advanced controls stay out of setup; never erase their saved choice.
+				...(catalog?.slots[slot]?.cacheRetention !== undefined ? { cacheRetention: catalog.slots[slot]!.cacheRetention } : {}),
 				model: { provider: picked[slot]!.provider, id: picked[slot]!.id },
 				...(level ? { thinkingLevel: level } : {}),
 			};
@@ -417,33 +412,27 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 	}
 
 	const keysBody = <SetupKeysBody
-		providers={keyProviders}
+		providers={keyProviders ? [...keyProviders, CUSTOM_PROVIDER_INFO] : undefined}
 		provider={keyProvider}
 		value={keyValue}
 		saving={keySaving}
 		error={keyError}
 		menuOpen={keyMenuOpen}
 		menuAnchor={keyTriggerRef}
+		isCustom={keyProvider?.id === CUSTOM_PROVIDER.id}
+		onCustomSaved={() => { setKeyProvider(null); notifySettingsSaved("keys"); }}
 		onToggleMenu={() => setKeyMenuOpen((v) => !v)}
+		onCloseMenu={() => setKeyMenuOpen(false)}
 		onPick={(p) => { setKeyProvider(p); setKeyMenuOpen(false); setKeyError(null); }}
 		onValue={setKeyValue}
 		onSave={() => void saveKey()}
 	/>;
 
-	return createPortal(
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
-			data-testid="setup-backdrop"
-			{...backdropDismiss}
-		>
-			<div
-				role="dialog"
-				aria-modal="true"
-				aria-label={t("setupDialog.title")}
-				data-testid="setup-dialog"
-				className="settings-dialog-pop flex max-h-[85vh] w-[640px] max-w-[90vw] flex-col overflow-hidden rounded-md border border-border bg-card shadow-xl"
-				onClick={(e) => e.stopPropagation()}
-			>
+	return <HostDialog open onClose={() => { onClose(); return "closed"; }} aria-label={t("setupDialog.title")}
+		backdropProps={{ className: "fixed inset-0 z-50 flex items-center justify-center bg-background/80", "data-testid": "setup-backdrop" }}
+		frame={<div data-testid="setup-dialog"
+			className="settings-dialog-pop flex max-h-[85vh] w-[640px] max-w-[90vw] flex-col overflow-hidden rounded-md border border-border bg-card shadow-xl"
+			onClick={(e) => e.stopPropagation()} />}>
 				<header className="flex h-15 shrink-0 items-center gap-3 border-b border-border px-5">
 					<h2 className="font-title text-2xl tracking-tight">{t("setupDialog.title")}</h2>
 					<Hint label={t("setupDialog.close")} binding="escape" side="left">
@@ -478,7 +467,9 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 							// Unavailable metadata cannot erase or clamp a saved preference.
 							const levelsForEntry = metadata?.supportedLevels ?? (entry ? Object.keys(THINKING_LABEL) : []);
 							const available = catalog?.models ?? (failed ? [] : undefined);
-							const slotCatalog = slot === "vision" ? available?.filter((m) => m.input.includes("image")) : available;
+							const slotCatalog = slot === "vision"
+								? available?.filter((m) => m.input.includes("image") || m.provider === CUSTOM_PROVIDER.id)
+								: available;
 							const slotLabel = t(`setupDialog.slots.${slot}.label`);
 							return (
 								<div key={slot} data-testid={`setup-slot-${slot}`} className="flex flex-col gap-1.5">
@@ -497,7 +488,7 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 									{slot !== "strong" && <><ChatGPTBackgroundAccess provider={entry?.provider} /><NativeSubscriptionBackgroundAccess provider={entry?.provider} /></>}
 									<div className="flex items-center gap-2">
 										<div className="relative flex-1">
-											<Hint label={entry ? `${entry.provider}:${entry.id}` : "Pick a model…"}>
+											<Hint label={entry ? `${entry.provider}:${entry.id}` : t("setupDialog.pickModel")}>
 											<button
 												type="button"
 												aria-label={t("setupDialog.slotModelAria", { slot: slotLabel })}
@@ -525,6 +516,7 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 												<MenuShell
 													anchorTestid={`setup-trigger-${slot}`}
 													testid={`setup-menu-${slot}`}
+													onClose={() => { setOpenMenu(null); return "closed"; }}
 													preferredSide="down"
 													align="left"
 													menuClass="flex w-[22rem] flex-col rounded-xl border border-border bg-card p-2 text-xs shadow-xl"
@@ -533,6 +525,7 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 														models={slotCatalog}
 														effectiveId={entry?.id}
 														effectiveProvider={entry?.provider}
+														vision={slot === "vision"}
 														onPick={(m) => {
 															editedSlots.current.add(slot);
 															setPicked((prev) => ({ ...prev, [slot]: m }));
@@ -574,6 +567,7 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 												<MenuShell
 													anchorTestid={`setup-thinking-${slot}`}
 													testid={`setup-thinking-menu-${slot}`}
+													onClose={() => { setOpenMenu(null); return "closed"; }}
 													preferredSide="down"
 													align="left"
 													menuClass="flex w-44 flex-col gap-0.5 rounded-xl border border-border bg-card p-2 text-xs shadow-xl"
@@ -604,12 +598,9 @@ function OpenSetupDialog({ onClose, onDone }: SetupDialogProps) {
 							>
 								{saving ? t("setupDialog.saving") : t("setupDialog.saveModels")}
 							</button>
-							{error && <p className="text-xs text-red-400">{error}</p>}
+							{error && <p className="text-xs text-error">{error}</p>}
 						</div>
 					</div>
 				)}
-			</div>
-		</div>,
-		document.body,
-	);
+		</HostDialog>;
 }

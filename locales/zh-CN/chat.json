@@ -15,7 +15,9 @@
 		"thinkingLabel": "思考中",
 		"thinking": "思考中…",
 		"setupModels": "设置你的模型",
-		"nextPlaceholder": "随便问点什么，或按 Enter 进入下一题。"
+		"nextPlaceholder": "随便问点什么，或按 Enter 进入下一题。",
+		"evaluatingLabel": "评估中",
+		"evaluating": "评估中…"
 	},
 	"errors": {
 		"banner": "出错了：{{message}}",
@@ -28,7 +30,12 @@
 		"dismissFailed": "跳过/舍弃失败（{{status}}）。",
 		"modelsNotConfigured": "尚未配置模型，请先完成模型设置",
 		"providerKeyMissing": "尚未设置 {{provider}} 密钥，请在“设置 → 服务商”中添加",
-		"retry": "重试"
+		"retry": "重试",
+		"streamDropped": "连接在这一轮回复完成前中断了。",
+		"syncFailed": "无法同步已保存的会话。",
+		"pluginDismissFailed": "跳过失败。",
+		"thinkingRequired": "请填写思路文字或添加图片。你的输入已保留。",
+		"messageRequired": "请填写消息文字或添加图片。你的输入已保留。"
 	},
 	"composer": {
 		"placeholder": "提问、回答，或引导这节课的方向…",
@@ -50,7 +57,6 @@
 		"question": "问题"
 	},
 	"questionDock": {
-		"malformed": "这道题的格式有误，重试记录会保留在会话中。",
 		"revealTitle": "检验一下你的理解",
 		"revealOpen": "打开",
 		"answer": "作答",
@@ -64,7 +70,8 @@
 		"yourAnswer": "你的回答",
 		"answerPlaceholder": "输入你的回答…",
 		"thinkingPlaceholder": "为什么选这个？想到什么就写什么。",
-		"submit": "提交回答"
+		"submit": "提交回答",
+		"retryBlocked": "请先回答或跳过剩下的问题。"
 	},
 	"dock": {
 		"compacting": "正在压缩会话…",
@@ -78,7 +85,7 @@
 		"didntKnow": "不知道",
 		"correct": "正确",
 		"incorrect": "错误",
-		"quote": "“{{text}}”",
+		"quote": "“<text/>”",
 		"answeredDontKnow": "回答了“我不知道”。",
 		"why": "解析",
 		"hideWhy": "收起解析",
@@ -147,7 +154,8 @@
 			"yes": "是",
 			"no": "否",
 			"separator": "、"
-		}
+		},
+		"submitCustom": "提交"
 	},
 	"spinner": {
 		"working": "处理中"
@@ -166,18 +174,101 @@
 		"branchPage": "{{current}} / {{total}}"
 	},
 	"attachments": {
-		"choose": "添加附件",
-		"supported": "图片、PDF、文本或代码 · 最多 10 个文件 · 每个 20 MB",
-		"tooMany": "每条消息最多可附加 10 个文件。",
-		"tooLarge": "每个附件必须小于或等于 20 MB。",
-		"failed": "上传失败，请检查文件类型后重试。",
-		"retry": "重试",
-		"uploading": "正在上传…",
+		"attachImages": "添加图片",
+		"dropImages": "拖放到这里以添加图片",
+		"staged": "待发送的图片",
+		"preview": "待发送的图片：{{name}}",
 		"remove": "移除 {{name}}",
-		"download": "下载",
-		"close": "关闭预览",
-		"loading": "正在加载预览…",
-		"previewError": "无法预览此文件，你仍可下载文件。",
-		"previewTruncated": "预览已缩短，下载文件可查看完整内容。"
+		"tooMany": "每个输入框最多 10 张图片，这张图片不会发送。",
+		"tooLarge": "超过 20 MB，这张图片不会发送。",
+		"unsupported": "只能发送 PNG、JPEG、GIF 和 WebP 图片。",
+		"unreadable": "无法读取这张图片。",
+		"overBudget": "一次发送的图片数据过多，这张图片不会发送。请先发送其他图片。",
+		"noTarget": "请先打开一个会话，再添加图片。"
+	},
+	"sync": {
+		"retry": "重新同步"
+	},
+	"pluginQuestion": {
+		"preparing": "正在准备问题…",
+		"unavailable": "问题不可用",
+		"dismiss": "跳过问题"
+	},
+	"malformed": {
+		"line": "这道题无法显示。",
+		"lineRetry": "这道题无法显示。可以重试，或发送一条消息继续。",
+		"retryTitle": "让模型重新出一道题。",
+		"retry": "重试此题"
+	},
+	"sideThread": {
+		"ask": "发起旁支提问",
+		"openConversation": "打开旁支对话",
+		"askAction": "提问",
+		"askActionAria": "就选中的内容发起旁支提问",
+		"placeholderPassage": "就这段内容提问…",
+		"placeholderFollowUp": "继续追问…",
+		"placeholderNew": "输入旁支提问…",
+		"showQuote": "显示引用的老师原文",
+		"showInLesson": "在课程中显示",
+		"inputLevel": "麦克风输入音量",
+		"title": "旁支提问",
+		"dock": "将旁支对话停靠到侧边",
+		"float": "让旁支对话浮动显示",
+		"pin": "固定到侧边",
+		"unpin": "取消固定，改为浮动",
+		"close": "关闭旁支对话",
+		"closeShort": "关闭",
+		"stopped": "已停止",
+		"answering": "正在回答",
+		"retry": "重新回答",
+		"currentStep": "前往当前步骤",
+		"dictationStop": "停止旁支对话的语音输入",
+		"dictationStart": "开始旁支对话的语音输入",
+		"dictate": "语音输入旁支提问",
+		"stopAnswer": "停止旁支回答",
+		"send": "发送旁支提问",
+		"errors": {
+			"unreachable": "无法连接到旁支对话。",
+			"noStream": "旁支回答没有返回数据流。",
+			"failed": "旁支回答失败。",
+			"disconnected": "旁支回答的连接已断开。重新打开对话即可重新连接。"
+		}
+	},
+	"selection": {
+		"toolbar": "选中内容操作",
+		"shorten": "请缩短选择范围"
+	},
+	"citation": {
+		"cite": "引用",
+		"citeAria": "在输入框中引用选中内容",
+		"goToSource": "前往原文",
+		"viewCited": "查看引用的老师原文：{{label}}",
+		"quoted": "引用的老师原文：{{label}}",
+		"editComment": "编辑引用评论",
+		"addComment": "为引用添加评论",
+		"commentAria": "对选中文字的评论",
+		"commentKeys": "按 Enter 保存引用评论；按 Command/Ctrl+Enter 保存并发送；按 Shift+Enter 换行。",
+		"commentPlaceholder": "添加评论（可选）…",
+		"commentTooLong": "评论最多 8,000 个字符。",
+		"cancel": "取消",
+		"shortenComment": "缩短评论",
+		"save": "保存"
+	},
+	"images": {
+		"submitted": "已提交的图片",
+		"openFullscreen": "全屏查看已提交的图片"
+	},
+	"filePaths": {
+		"attach": "添加附件",
+		"attachMenu": "添加文件或文件夹",
+		"files": "文件",
+		"folder": "文件夹",
+		"folderFailed": "无法选择文件夹，请重试。",
+		"browserNotice": "只有桌面应用才能附加本地文件路径。你也可以直接粘贴完整路径。",
+		"dropHere": "拖放到这里以附加文件路径",
+		"noPaths": "没有可用的本地文件路径。请拖入电脑上已有的文件或文件夹。",
+		"noChat": "请先打开一个会话，再附加文件路径。",
+		"skipped": "部分拖入的项目没有可用的文件路径。",
+		"dismissNotice": "关闭附件提示"
 	}
 }

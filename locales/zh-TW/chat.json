@@ -15,7 +15,9 @@
 		"thinkingLabel": "思考中",
 		"thinking": "思考中…",
 		"setupModels": "設定你的模型",
-		"nextPlaceholder": "想問什麼都可以，或按 Enter 進入下一題。"
+		"nextPlaceholder": "想問什麼都可以，或按 Enter 進入下一題。",
+		"evaluatingLabel": "評估中",
+		"evaluating": "評估中…"
 	},
 	"errors": {
 		"banner": "發生錯誤：{{message}}",
@@ -28,7 +30,12 @@
 		"dismissFailed": "略過/捨棄失敗（{{status}}）。",
 		"modelsNotConfigured": "尚未設定模型，請先完成模型設定",
 		"providerKeyMissing": "尚未設定 {{provider}} 金鑰，請在「設定 → 供應商」中新增",
-		"retry": "重試"
+		"retry": "重試",
+		"streamDropped": "連線在這一輪回覆完成前中斷了。",
+		"syncFailed": "無法同步已儲存的對話。",
+		"pluginDismissFailed": "略過失敗。",
+		"thinkingRequired": "請填寫思路文字或加入圖片。你的輸入已保留。",
+		"messageRequired": "請填寫訊息文字或加入圖片。你的輸入已保留。"
 	},
 	"composer": {
 		"placeholder": "提問、回答，或引導這堂課的方向…",
@@ -50,7 +57,6 @@
 		"question": "問題"
 	},
 	"questionDock": {
-		"malformed": "這道題的格式有誤，重試紀錄會保留在對話中。",
 		"revealTitle": "檢驗一下你的理解",
 		"revealOpen": "開啟",
 		"answer": "作答",
@@ -64,7 +70,8 @@
 		"yourAnswer": "你的回答",
 		"answerPlaceholder": "輸入你的回答…",
 		"thinkingPlaceholder": "為什麼選這個？想到什麼就寫什麼。",
-		"submit": "送出回答"
+		"submit": "送出回答",
+		"retryBlocked": "請先回答或略過剩下的問題。"
 	},
 	"dock": {
 		"compacting": "正在壓縮對話…",
@@ -78,7 +85,7 @@
 		"didntKnow": "不知道",
 		"correct": "正確",
 		"incorrect": "錯誤",
-		"quote": "「{{text}}」",
+		"quote": "「<text/>」",
 		"answeredDontKnow": "回答了「我不知道」。",
 		"why": "解析",
 		"hideWhy": "收合解析",
@@ -147,7 +154,8 @@
 			"yes": "是",
 			"no": "否",
 			"separator": "、"
-		}
+		},
+		"submitCustom": "送出"
 	},
 	"spinner": {
 		"working": "處理中"
@@ -166,18 +174,101 @@
 		"branchPage": "{{current}} / {{total}}"
 	},
 	"attachments": {
-		"choose": "加入附件",
-		"supported": "圖片、PDF、文字或程式碼 · 最多 10 個檔案 · 每檔 20 MB",
-		"tooMany": "每則訊息最多可附加 10 個檔案。",
-		"tooLarge": "每個附件必須小於或等於 20 MB。",
-		"failed": "上傳失敗，請檢查檔案類型後再試一次。",
-		"retry": "再試一次",
-		"uploading": "正在上傳…",
+		"attachImages": "加入圖片",
+		"dropImages": "拖放到這裡以加入圖片",
+		"staged": "待傳送的圖片",
+		"preview": "待傳送的圖片：{{name}}",
 		"remove": "移除 {{name}}",
-		"download": "下載",
-		"close": "關閉預覽",
-		"loading": "正在載入預覽…",
-		"previewError": "無法預覽此檔案，你仍可下載檔案。",
-		"previewTruncated": "預覽已縮短，下載檔案可查看完整內容。"
+		"tooMany": "每個輸入框最多 10 張圖片，這張圖片不會傳送。",
+		"tooLarge": "超過 20 MB，這張圖片不會傳送。",
+		"unsupported": "只能傳送 PNG、JPEG、GIF 和 WebP 圖片。",
+		"unreadable": "無法讀取這張圖片。",
+		"overBudget": "一次傳送的圖片資料過多，這張圖片不會傳送。請先傳送其他圖片。",
+		"noTarget": "請先開啟一個對話，再加入圖片。"
+	},
+	"sync": {
+		"retry": "重新同步"
+	},
+	"pluginQuestion": {
+		"preparing": "正在準備問題…",
+		"unavailable": "問題無法使用",
+		"dismiss": "略過問題"
+	},
+	"malformed": {
+		"line": "這道題無法顯示。",
+		"lineRetry": "這道題無法顯示。可以重試，或傳送一則訊息繼續。",
+		"retryTitle": "請模型重新出一道題。",
+		"retry": "重試此題"
+	},
+	"sideThread": {
+		"ask": "提出旁支提問",
+		"openConversation": "開啟旁支對話",
+		"askAction": "提問",
+		"askActionAria": "針對選取的內容提出旁支提問",
+		"placeholderPassage": "針對這段內容提問…",
+		"placeholderFollowUp": "繼續追問…",
+		"placeholderNew": "輸入旁支提問…",
+		"showQuote": "顯示引用的老師原文",
+		"showInLesson": "在課程中顯示",
+		"inputLevel": "麥克風輸入音量",
+		"title": "旁支提問",
+		"dock": "將旁支對話停靠到側邊",
+		"float": "讓旁支對話浮動顯示",
+		"pin": "固定到側邊",
+		"unpin": "取消固定，改為浮動",
+		"close": "關閉旁支對話",
+		"closeShort": "關閉",
+		"stopped": "已停止",
+		"answering": "正在回答",
+		"retry": "重新回答",
+		"currentStep": "前往目前步驟",
+		"dictationStop": "停止旁支對話的語音輸入",
+		"dictationStart": "開始旁支對話的語音輸入",
+		"dictate": "語音輸入旁支提問",
+		"stopAnswer": "停止旁支回答",
+		"send": "傳送旁支提問",
+		"errors": {
+			"unreachable": "無法連線到旁支對話。",
+			"noStream": "旁支回答沒有回傳資料流。",
+			"failed": "旁支回答失敗。",
+			"disconnected": "旁支回答的連線已中斷。重新開啟對話即可重新連線。"
+		}
+	},
+	"selection": {
+		"toolbar": "選取內容操作",
+		"shorten": "請縮短選取範圍"
+	},
+	"citation": {
+		"cite": "引用",
+		"citeAria": "在輸入框中引用選取內容",
+		"goToSource": "前往原文",
+		"viewCited": "查看引用的老師原文：{{label}}",
+		"quoted": "引用的老師原文：{{label}}",
+		"editComment": "編輯引用評論",
+		"addComment": "為引用加入評論",
+		"commentAria": "對選取文字的評論",
+		"commentKeys": "按 Enter 儲存引用評論；按 Command/Ctrl+Enter 儲存並傳送；按 Shift+Enter 換行。",
+		"commentPlaceholder": "加入評論（選填）…",
+		"commentTooLong": "評論最多 8,000 個字元。",
+		"cancel": "取消",
+		"shortenComment": "縮短評論",
+		"save": "儲存"
+	},
+	"images": {
+		"submitted": "已送出的圖片",
+		"openFullscreen": "全螢幕檢視已送出的圖片"
+	},
+	"filePaths": {
+		"attach": "加入附件",
+		"attachMenu": "加入檔案或資料夾",
+		"files": "檔案",
+		"folder": "資料夾",
+		"folderFailed": "無法選擇資料夾，請再試一次。",
+		"browserNotice": "只有桌面應用程式才能附加本機檔案路徑。你也可以直接貼上完整路徑。",
+		"dropHere": "拖放到這裡以附加檔案路徑",
+		"noPaths": "沒有可用的本機檔案路徑。請拖入電腦上現有的檔案或資料夾。",
+		"noChat": "請先開啟一個對話，再附加檔案路徑。",
+		"skipped": "部分拖入的項目沒有可用的檔案路徑。",
+		"dismissNotice": "關閉附件提示"
 	}
 }

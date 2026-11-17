@@ -1,21 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { SurfaceRegion, usePageSurfaceBoundary, useSurfaceChromeStyle } from "./plugin-surfaces";
 import { CornerDownLeftIcon, DumbbellIcon } from "lucide-react";
 import { GraphView } from "@/components/graph-view";
 import { MinimalHome } from "@/components/minimal-home";
 import { SetupDialog } from "@/components/setup-dialog";
 import { ComposerActions, NodePickerControl } from "@/components/composer-actions";
 import { useModelSetup, selectedModelUnavailable, openModelPicker, ZeroKeysPill } from "@/components/setup-cta";
-import { DictationBar, DictationField, joinDictation, useDictation, useDictationPreview } from "@/components/dictation";
+import { DICTATION_PREVIEW_MAIN, DictationBar, joinDictation, useDictation, useDictationPreview } from "@/components/dictation";
 import { useFieldCycle } from "@/components/field-cycle";
+import { useOptionalInteractionLayers } from "./interaction-layers";
+import { isInteractionScopeEligible } from "./plugin-input-focus";
 import { SidebarToggle } from "@/components/sidebar";
 import { StatsBar } from "@/components/stats-bar";
-import { OPENING_PROMPT_FAILURE } from "@/components/opening-prompt";
+import { PathInput } from "@/components/path-input";
+import { AttachFilesButton } from "@/components/attach-files-button";
 import { SessionStarter } from "@/components/start-session";
+import { StagedImageStrip, stagedImagePasteHandler } from "@/components/staged-image-strip";
+import { OPENING_IMAGE_KEY, handOverOpeningImages } from "@/components/staged-images";
 import type { TurnUsage } from "@/src/core";
-import { AttachmentDraftList, AttachmentPicker, useAttachmentDraft } from "@/components/attachments";
 import { useT } from "@/components/i18n";
 
 /**
@@ -34,8 +39,13 @@ export function Home({
 	 * changing the setting applies on the next visit home. */
 	rendering?: boolean;
 }) {
+	const controller = useOptionalInteractionLayers();
 	const router = useRouter();
-	const { t } = useT("shell");
+	const { t } = useT(["shell", "common"]);
+	const pathname = usePathname();
+	const bodyRef = useRef<HTMLDivElement>(null);
+	const surfaceTarget = usePageSurfaceBoundary({ active: pathname === "/", viewKey: "/", bodyRef });
+	const chromeStyle = useSurfaceChromeStyle(surfaceTarget);
 	const [topic, setTopic] = useState("");
 	/* The topic MIRROR ("nothing gets lost" round, 2026-10-01 — same
 	 * mechanics as the chat composer, owner's consistency ruling): a
@@ -60,16 +70,16 @@ export function Home({
 			setTopic(v);
 		},
 	});
-	const livePreview = useDictationPreview("page");
+	// The local engine's live words, painted after the topic draft.
+	const livePreview = useDictationPreview(DICTATION_PREVIEW_MAIN);
 	const [busy, setBusy] = useState(false);
 	const startingRef = useRef(false);
 	const starterRef = useRef(new SessionStarter());
 	const [startError, setStartError] = useState(false);
-	const attachments = useAttachmentDraft();
 	/* Run end focuses the topic input (owner, 2026-10-01): the hands are on
 	 * the keyboard from the stop. Falling edge only; this surface's only
 	 * dictation target IS this textarea, so no case-split is needed. */
-	const topicInputRef = useRef<HTMLTextAreaElement>(null);
+	const topicInputRef = useRef<HTMLDivElement>(null);
 	// Tab navigates INTO the topic composer (owner, keyboard round
 	// 2026-10-06): the only text field on this surface — and home's
 	// composer is its OWN textarea, not the shared Composer component,
@@ -86,9 +96,9 @@ export function Home({
 			dictationWasActiveRef.current = true;
 		} else if (dictationWasActiveRef.current) {
 			dictationWasActiveRef.current = false;
-			topicInputRef.current?.focus();
+			if (isInteractionScopeEligible(topicInputRef.current, controller)) topicInputRef.current!.focus();
 		}
-	}, [dictation.active]);
+	}, [dictation.active, controller]);
 
 	/* PRACTICE MODE (owner, 2026-10-04): the graph composer's teach |
 	 *  practice switch — practice creates a kind:"practice" session and
@@ -115,8 +125,7 @@ export function Home({
 	};
 	const begin = async () => {
 		const title = topicRef.current.trim();
-		const files = attachments.current();
-		if ((!title && !files.length) || startingRef.current || attachments.pending || attachments.uploads.some((u) => u.failed)) return;
+		if (!title || startingRef.current) return;
 		// Unconfigured: the send INTERCEPTS into the setup flow (the draft
 		// stays in the textarea; the learner sends it after Save).
 		if (!configured) {
@@ -149,10 +158,13 @@ export function Home({
 			// before the learner's first user message, propositions + the
 			// chains among them); the prompt stays the learner's own words.
 			const target = await starterRef.current.start({
-				title: title || files[0]!.name,
+				title,
 				...(mode === "practice" ? { kind: "practice" } : {}),
 				...(practiceProps.length > 0 ? { graphContext: { propositions: practiceProps } } : {}),
-			}, fetch, JSON.stringify(catalog?.slots.strong), { text: title, attachments: files });
+			}, fetch, JSON.stringify(catalog?.slots.strong));
+			// Pasted images ride into the created chat's composer draft; its
+			// opening delivery sends them and clears them on acceptance.
+			await handOverOpeningImages(target);
 			router.push(target);
 		} catch {
 			startingRef.current = false;
@@ -181,6 +193,7 @@ export function Home({
 			    MINIMAL HOME — a quiet knowledge-base summary + the graph
 			    chrome's survivors; data, extraction, and the pick flow are
 			    untouched, and the chain table stays behind its button. */}
+			<div ref={bodyRef} className="absolute inset-0">
 			<main className="absolute inset-0">
 				{rendering ? (
 					<GraphView
@@ -199,16 +212,6 @@ export function Home({
 				)}
 			</main>
 
-			{/* Header floats over the graph — pointer-events-none except the
-			    toggle, so the canvas stays draggable/hoverable around it. Carries
-			    no app-region of its own: the strip's drag comes from the mask
-			    div above, and the toggle's lh-no-drag subtracts from it (it is
-			    later in the tree, so the subtraction sticks). */}
-			<header className="pointer-events-none absolute inset-x-0 top-0 flex items-center gap-2 px-3 py-2">
-				<div className="pointer-events-auto">
-					<SidebarToggle />
-				</div>
-			</header>
 
 			{/* New session — same floating blob as the chat composer, docked
 			    OVER the graph (no gradient: the graph runs clean under it to the
@@ -246,30 +249,34 @@ export function Home({
 							)
 						)}
 					/>
-					{startError && <p role="alert" className="mb-2 text-sm text-destructive">{OPENING_PROMPT_FAILURE}</p>}
-					<div className="rounded-2xl border bg-card shadow-lg" {...attachments.bind}>
-					<AttachmentDraftList draft={attachments} />
+					{startError && <p role="alert" className="mb-2 text-sm text-destructive">{t("common:openingPromptFailure")}</p>}
 					<form
-						className="flex items-end gap-1.5 p-1.5"
+						data-attachment-composer=""
+						className="flex flex-wrap items-end gap-1.5 rounded-2xl border bg-card p-1.5 shadow-lg"
 					onSubmit={(e) => {
 						e.preventDefault();
 						void start();
 					}}
 				>
-					<AttachmentPicker draft={attachments} disabled={busy} />
-					<DictationField value={topic} preview={livePreview} layout="lh-input max-h-48 min-h-10 px-2.5 py-2" className="min-w-0 flex-1">
-					<textarea
+					<StagedImageStrip draftKey={OPENING_IMAGE_KEY} className="basis-full" />
+					<PathInput
 						ref={topicInputRef}
+						data-staged-image-key={OPENING_IMAGE_KEY}
+						onPaste={stagedImagePasteHandler(OPENING_IMAGE_KEY)}
 						value={topic}
-						onChange={(e) => {
-							topicRef.current = e.target.value;
-							setTopic(e.target.value);
+						dictationPreview={livePreview}
+						onValueChange={(value) => {
+							topicRef.current = value;
+							setTopic(value);
 						}}
+						defaultDropTarget
 						onKeyDown={(e) => {
+							if (!isInteractionScopeEligible(e.currentTarget, controller)) return;
 							// Esc ends dictation (the dictate decisions: click-again or
 							// Esc) — stopPropagation claims it (keyboard wave A) so
 							// the window chain doesn't also abort a turn.
 							if (e.key === "Escape" && dictation.active) {
+								controller?.claimEscape(e);
 								e.preventDefault();
 								e.stopPropagation();
 								dictation.cancel();
@@ -282,22 +289,20 @@ export function Home({
 						}}
 						placeholder={mode === "practice" ? t("draft.practicePlaceholder") : t("draft.learnPlaceholder")}
 						autoFocus
-						rows={1}
-						className="field-sizing-content lh-input max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
+						className="field-sizing-content lh-input max-h-48 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 outline-none placeholder:text-muted-foreground"
 					/>
-					</DictationField>
+					<AttachFilesButton editorRef={topicInputRef} imageDraftKey={OPENING_IMAGE_KEY} />
 					{/* No tooltip on the start square — the ↵ glyph is the
 					    affordance (owner, subtlety round 2026-09-25). */}
 					<button
 						type="submit"
 						aria-label={t("home.start")}
-						disabled={(!topic.trim() && !dictation.active && attachments.items.length === 0) || busy || attachments.pending || attachments.uploads.some((u) => u.failed)}
+						disabled={(!topic.trim() && !dictation.active) || busy}
 						className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-primary text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-40"
 					>
 						<CornerDownLeftIcon className="size-5" />
 					</button>
 					</form>
-					</div>
 					{/* Same as the chat view's under-composer stats bar (owner) — no
 					    session yet, so the LEFT side renders nothing (wave 7 sweep)
 					    while the RIGHT keeps the strong-slot control (fix wave: the
@@ -329,6 +334,17 @@ export function Home({
 					/>
 				</div>
 			</div>
+
+			<SurfaceRegion target={surfaceTarget} />
+			</div>
+			{/* Floating host chrome stays outside page-content coverage, after
+			    the region at the same owned-surface rank. The drag mask remains
+			    first so later controls retain their Electron no-drag carve-outs. */}
+			<header style={chromeStyle} className="pointer-events-none absolute inset-x-0 top-0 flex items-center gap-2 px-3 py-2">
+				<div className="pointer-events-auto">
+					<SidebarToggle />
+				</div>
+			</header>
 
 			{/* First-run setup (unconfigured): the CTA's target and the send
 			    interception's landing surface — stage 1 is the self-contained

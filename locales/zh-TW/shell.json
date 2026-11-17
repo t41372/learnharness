@@ -57,16 +57,14 @@
 	"minimalHome": {
 		"chains": "推理鏈",
 		"chainsHint": "所有推理鏈",
-		"import": "匯入筆記…",
-		"importHint": "將筆記匯入圖譜",
-		"importing": "正在匯入…",
 		"summary": {
 			"propositions_other": "{{count}} 個命題",
 			"chains_other": "{{count}} 條推理鏈",
 			"teachSessions_other": "{{count}} 個教學對話",
 			"practiceSessions_other": "{{count}} 個練習對話",
 			"importedNotes_other": "{{count}} 篇匯入的筆記",
-			"empty": "這裡還沒有任何內容——匯入筆記，開始建立圖譜。"
+			"emptyStart": "新增一個對話，開始學習。",
+			"emptyAttach": "點選迴紋針或拖放檔案來加入學習材料。"
 		}
 	},
 	"activity": {
@@ -88,7 +86,8 @@
 			"demo": "示範製作者",
 			"visual": "圖示製作者",
 			"pdf": "PDF 閱讀者",
-			"subAgent": "子 Agent"
+			"subAgent": "子 Agent",
+			"plugin": "外掛背景任務"
 		},
 		"abortFailed": "終止失敗——請重試",
 		"end": "結束這個背景程序",
@@ -104,7 +103,8 @@
 		"ready": "LearnHarness {{version}} 已準備就緒",
 		"readyUnversioned": "LearnHarness 更新已準備就緒",
 		"restartToInstall": "，重新啟動即可完成安裝。",
-		"restart": "重新啟動"
+		"restart": "重新啟動",
+		"dismiss": "關閉更新通知"
 	},
 	"cheatSheet": {
 		"title": "鍵盤快速鍵",
@@ -113,7 +113,9 @@
 			"global": "全域",
 			"chat": "對話",
 			"graph": "圖譜檢視"
-		}
+		},
+		"unbound": "未綁定",
+		"inactive": "未生效：{{reason}}"
 	},
 	"deleteSession": {
 		"aria": "刪除對話",
@@ -156,7 +158,11 @@
 		"zoomOut": "縮小",
 		"fit": "縮放至符合檢視",
 		"zoomIn": "放大",
-		"rendering": "正在繪製圖表…"
+		"rendering": "正在繪製圖表…",
+		"imageTitle": "圖片",
+		"imageAria": "圖片聚焦檢視",
+		"fitImage": "縮放至符合檢視",
+		"imageAlt": "送出的圖片"
 	},
 	"setupCta": {
 		"addProviderKey": "新增供應商金鑰"
@@ -221,34 +227,30 @@
 		"manageChatGPT": "管理 ChatGPT 用量",
 		"unpriced": "未計價輪次",
 		"turns": "輪次",
-		"steps": "{{n}} 步"
+		"steps": "{{n}} 步",
+		"cliWindow": "上下文視窗由 Claude Code 回報；因自動壓縮，實際可能更小。",
+		"cacheHitRate": "快取命中率"
 	},
-	"reviews": {
-		"title": "待複習",
-		"description": "在到期時複習知識。新知識會自動加入；既有知識可從知識圖譜選取加入。",
-		"dueCount": "{{count}} 項到期",
-		"loadError": "無法載入複習清單，請再試一次。",
-		"saveError": "無法儲存複習結果，請再試一次。",
-		"startError": "無法開始複習，請檢查模型設定後再試一次。",
-		"retry": "再試一次",
-		"loading": "正在載入複習清單…",
-		"empty": "目前沒有待複習的知識。請在知識圖譜選取知識，按「加入複習」。",
-		"dueNow": "現在可複習",
-		"retention": "預估回憶率：{{percent}}%",
-		"history": "複習紀錄",
-		"sourceAutomatic": "首次學到時自動加入。",
-		"sourceManual": "由你加入。",
-		"resume": "繼續複習",
-		"start": "開始複習",
-		"add": "加入複習",
-		"added": "已加入複習",
-		"beginPrompt": "請用一道新的提取練習題開始這次複習。",
-		"again": "忘記",
-		"hard": "困難",
-		"good": "良好",
-		"easy": "容易",
-		"scheduled": "已安排下次複習。",
-		"back": "回到複習清單",
-		"ratePrompt": "在看到解答之前，你能多順利地回想起來？"
+	"deleteSource": {
+		"aria": "刪除來源",
+		"title": "刪除所選的來源與資料夾？",
+		"more_other": "，以及另外 {{count}} 項",
+		"contributions": "移除這些來源對命題與推理鏈的貢獻。有其他來源支持的知識會保留；只由這些來源支持的知識會被移除。",
+		"records": "匯入的來源紀錄會被移除，但磁碟上的原始檔案不會被更動。所選資料夾只有為空時才會被移除；保留的對話仍需要的資料夾會保留。",
+		"alsoDeleteSessions_other": "同時刪除所選的 {{count}} 個對話",
+		"sessionsBody": "不勾選時，這些對話會留在目前的資料夾中，之後可以再次擷取。無論是否勾選，它們對圖譜的貢獻與擷取涵蓋率都會被清除。勾選後還會永久刪除它們的訊息與背景任務。",
+		"cancel": "取消",
+		"deleting": "正在刪除…",
+		"retry": "重試",
+		"confirm": "刪除"
+	},
+	"sources": {
+		"folderNamePlaceholder": "資料夾名稱",
+		"nameInput": "來源或資料夾名稱",
+		"rename": "重新命名",
+		"selectFolder": "選取資料夾 {{name}}",
+		"selectFolderContents": "選取 {{name}} 中的內容",
+		"expandFolder": "展開資料夾 {{name}}",
+		"moveToRoot": "移出資料夾"
 	}
 }
