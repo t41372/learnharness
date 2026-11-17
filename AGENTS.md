@@ -20,11 +20,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## 長期主題分支與比較 PR
 
-- 主題清單與必要依賴由 `fork-features.json` 管理。所有要保留的個人功能與維護改動都必須有來源主題分支，包括圖像／附件、FSRS、Standard ASR、i18n、agent instructions、桌面建置、fork 維護規則及 fork README。
+- 主題清單與必要依賴由 `fork-features.json` 管理。所有要保留的個人功能與維護改動都必須有來源主題分支，包括圖像／附件、Standard ASR、i18n、agent instructions、桌面建置、fork 維護規則及 fork README。
 - 分支按長期話題組織。所有 Standard ASR 改動更新 `feat/standard-asr-dictation`；所有翻譯與後續上游新增文字更新 `feat/i18n`；其他主題同理。臨時子分支完成後回到對應主題分支，不建立另一份平行的同主題來源。
 - 每個主題分支在 **`t41372/learnharness` 內**保留一個 open、base 明確為 `main` 的比較 PR，讓差異、目的、驗證與上游關係可追蹤。即使 default branch 是 `fork-preview`，也必須指定 base `main`。
 - 比較 PR 不合進 `main`，整合進 preview 後也不關閉、不刪除來源分支。需要額外的整合 PR 時，其 base 才是 `fork-preview`。
 - 主題從原版基線建立，只包含該主題的提交與明確記錄的必要依賴，不從整個 preview 分出來夾帶無關功能。跨主題翻譯屬於 i18n 主題，功能本身留在其主題。
+- 上游提供相同或取代的功能而決定退役某主題時：將分支推送為 `archive/<原分支名>` 保留歷史，再刪除本機與 origin 的原分支、從 `fork-features.json` 移除；比較 PR 留言說明取代來源後關閉。仍依賴它的主題以 `git revert` 移除其提交，再 merge 進 preview，不重寫已發布歷史。
 - 同步既有主題時優先 merge 更新後的 `main`，保留歷史。已發布分支的 rebase／重寫需先獲使用者同意，保留 `archive/` 備份並使用明確舊 SHA 的 `--force-with-lease`；不得覆蓋未知的新提交。
 - 提交遵守 Conventional Commits；程式碼應易於閱讀與維護。
 
@@ -36,7 +37,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `fork-features.json` 中每個來源分支的最新本機／遠端 head 必須一致，且全部已成為 preview 的祖先；不得漏掉只存在遠端的更新。新出現但未登記的 `feat/` 分支必須先釐清，不能默默忽略。
 - 不得追蹤 `node_modules`、依賴符號連結、`.next` 或 `dist` 等本機建置內容；完整性檢查必須拒絕這類 preview。
 - 產品功能修正必須先回到主題分支，再合併 preview。preview 的 merge commit 可以記錄保留雙方意圖的衝突整合，不可成為遺漏來源主題的功能開發分支。
-- 合併後必須通過受影響主題測試、typecheck、lint、完整測試與正式編譯，並驗證打包後的伺服器、圖像／附件輸入、FSRS 與 ASR 修正。既有或環境失敗必須列出，不能宣稱全通過。
+- 合併後必須通過受影響主題測試、typecheck、lint、完整測試與正式編譯，並驗證打包後的伺服器、圖像／附件輸入與 ASR 修正。既有或環境失敗必須列出，不能宣稱全通過。
 - 預覽與 App 建置使用最新已提交的 `fork-preview`；執行 `node scripts/verify-fork-preview.mjs --fetch` 驗證來源完整性，建置清單保存於 `dist/fork-preview-manifest.json`。檢查失敗不得交付舊產物假裝是完整 preview。
 
 ## 定期同步順序

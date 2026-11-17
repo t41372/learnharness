@@ -30,15 +30,9 @@
       ]
     },
     {
-      "branch": "feat/spaced-repetition",
-      "dependsOn": [
-        "feat/i18n"
-      ]
-    },
-    {
       "branch": "feat/message-attachments",
       "dependsOn": [
-        "feat/spaced-repetition"
+        "feat/i18n"
       ]
     },
     {
