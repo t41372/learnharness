@@ -176,19 +176,17 @@
 		"branchPage": "{{current}} of {{total}}"
 	},
 	"attachments": {
-		"choose": "Attach files",
-		"supported": "Images, PDF, text, or code · up to 10 files · 20 MB each",
-		"tooMany": "A message can contain at most 10 attachments.",
-		"tooLarge": "Each attachment must be 20 MB or smaller.",
-		"failed": "Upload failed. Check the file type and try again.",
-		"retry": "Try again",
-		"uploading": "Uploading…",
+		"attachImages": "Attach images",
+		"dropImages": "Drop to attach images",
+		"staged": "Images to send",
+		"preview": "Image to send: {{name}}",
 		"remove": "Remove {{name}}",
-		"download": "Download",
-		"close": "Close preview",
-		"loading": "Loading preview…",
-		"previewError": "Could not preview this file. You can still download it.",
-		"previewTruncated": "Preview shortened. Download the file to see its full contents."
+		"tooMany": "Up to 10 images per input. This one won't be sent.",
+		"tooLarge": "Larger than 20 MB. This image won't be sent.",
+		"unsupported": "Only PNG, JPEG, GIF, and WebP images can be sent.",
+		"unreadable": "This image couldn't be read.",
+		"overBudget": "Too much image data for one send. This image won't be sent; send the others first.",
+		"noTarget": "Open a chat to attach images."
 	},
 	"sync": {
 		"retry": "Retry syncing"
