@@ -16,6 +16,7 @@
 import { useRef, useState } from "react";
 import { CheckIcon, DownloadIcon, Trash2Icon, UploadIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n";
 import { exportThemeFile, type AppearanceSettings, type Theme } from "@/src/core";
 
 /** The selected card's frame: a 2px gap in the dialog surface, then a 1px
@@ -85,6 +86,7 @@ export function ThemeCards({
 	/** After a successful import (the catalog must be re-read). */
 	onImported: (theme: Theme) => void;
 }) {
+	const { t } = useT("settings");
 	const fileRef = useRef<HTMLInputElement>(null);
 	const [importError, setImportError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
@@ -95,7 +97,7 @@ export function ThemeCards({
 		try {
 			body = JSON.parse(await file.text());
 		} catch {
-			setImportError(`${file.name} is not valid JSON`);
+			setImportError(t("appearance.theme.invalidJson", { name: file.name }));
 			return;
 		}
 		setBusy(true);
@@ -107,12 +109,12 @@ export function ThemeCards({
 			});
 			const out = (await res.json().catch(() => ({}))) as { theme?: Theme; error?: string };
 			if (!res.ok || !out.theme) {
-				setImportError(out.error ?? `import failed (${res.status})`);
+				setImportError(out.error ?? t("appearance.theme.importFailed", { status: res.status }));
 				return;
 			}
 			onImported(out.theme);
 		} catch {
-			setImportError("import failed (network)");
+			setImportError(t("appearance.theme.importFailedNetwork"));
 		} finally {
 			setBusy(false);
 		}
@@ -127,9 +129,9 @@ export function ThemeCards({
 		<div data-testid="row-theme" className="flex flex-col gap-3 py-1">
 			<div className="flex items-end justify-between gap-4">
 				<span className="min-w-0">
-					<span className="block font-prose text-(length:--lh-prose-size)">Theme</span>
+					<span className="block font-prose text-(length:--lh-prose-size)">{t("appearance.theme.label")}</span>
 					<span data-testid="theme-hint" className="block text-xs text-muted-foreground/70">
-						{active.name} · {active.mode} · sets every color below
+						{t("appearance.theme.hint", { name: active.name, mode: t(`appearance.theme.modes.${active.mode}`) })}
 					</span>
 				</span>
 				<button
@@ -139,7 +141,7 @@ export function ThemeCards({
 					className="flex h-7 shrink-0 items-center gap-2 rounded-sm border border-border bg-background px-2 font-ui text-xs text-foreground transition-colors hover:border-muted-foreground/50"
 				>
 					<DownloadIcon className="size-3.5" />
-					Export JSON
+					{t("appearance.theme.export")}
 				</button>
 			</div>
 			<div className="grid grid-cols-3 gap-3">
@@ -164,14 +166,14 @@ export function ThemeCards({
 										<span className="truncate">{theme.name}</span>
 									</span>
 									<span className="shrink-0 rounded-sm border border-border px-1.5 font-ui text-xs uppercase tracking-wider text-muted-foreground">
-										{theme.builtin ? theme.mode : "custom"}
+										{theme.builtin ? t(`appearance.theme.modes.${theme.mode}`) : t("appearance.theme.custom")}
 									</span>
 								</span>
 							</button>
 							{!theme.builtin && (
 								<button
 									type="button"
-									aria-label={`Remove ${theme.name}`}
+									aria-label={t("appearance.theme.remove", { name: theme.name })}
 									data-testid={`theme-remove-${theme.id}`}
 									onClick={() => void remove(theme)}
 									className="absolute right-3 bottom-3 flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-error"
@@ -190,7 +192,7 @@ export function ThemeCards({
 					className="flex min-h-27 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-muted-foreground/50 p-3 text-center font-ui text-xs text-muted-foreground transition-colors hover:text-foreground"
 				>
 					<UploadIcon className="size-4" />
-					<span>Import JSON</span>
+					<span>{t("appearance.theme.import")}</span>
 					{importError ? (
 						<span data-testid="theme-import-error" className="text-error">{importError}</span>
 					) : (

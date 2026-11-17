@@ -84,8 +84,9 @@ describe("SessionRow", () => {
 	it("the meta line: state replaces the count when the state is the useful fact", () => {
 		// Local noon: timeAgo renders the local date, so a fixed UTC instant
 		// lands on 2026-01-01 west of UTC.
-		const awaiting = render(item({ pendingQuestion: true, updatedAt: new Date(2026, 0, 2, 12).toISOString() }));
-		assert.ok(awaiting.includes("Waiting for input · 2026-01-02"), "awaiting meta keeps the existing date");
+		const at = new Date(2026, 0, 2, 12).toISOString();
+		const awaiting = render(item({ pendingQuestion: true, updatedAt: at }));
+		assert.ok(awaiting.includes(`Waiting for input · ${timeAgo(at)}`), "awaiting meta uses the same local date formatter as idle metadata");
 		assert.ok(!awaiting.includes("messages"), "count yields to the state");
 		assert.ok(!awaiting.includes("braille-spinner"), "…and the spinner stays off");
 

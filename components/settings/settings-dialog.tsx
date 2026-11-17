@@ -33,19 +33,25 @@ import {
 	type ReactNode,
 	type RefObject,
 } from "react";
-import { BotIcon, KeyIcon, KeyboardIcon, PaletteIcon, PlugIcon, PuzzleIcon, SettingsIcon, WaypointsIcon, type LucideIcon } from "lucide-react";
+import { BotIcon, KeyIcon, KeyboardIcon, MicIcon, PaletteIcon, PlugIcon, PuzzleIcon, SettingsIcon, WaypointsIcon, type LucideIcon } from "lucide-react";
 import { HostDialog } from "@/components/host-dialog";
 import { useInteractionLayers, type CloseOutcome } from "@/components/interaction-layers";
 import {
 	CURRENT_SETTINGS_VERSION,
+	LANGUAGE_NAMES,
+	LANGUAGE_SETTINGS,
 	type AgentSettings,
 	type AppearanceSettings,
 	type CompactionSettings,
+	type DictationSettings,
 	type GraphSettings,
+	type LanguageSetting,
 	type UserSettings,
 } from "@/src/core";
+import { useLanguage, useT } from "@/components/i18n";
+import { cn } from "@/lib/utils";
 import { useAppearance } from "./appearance.tsx";
-import { SettingsSection } from "./controls.tsx";
+import { SettingsSection, SettingsRow } from "./controls.tsx";
 import { UpdateSettings } from "./update-settings.tsx";
 import { AgentSection } from "./agent-section.tsx";
 import type { ModelsSettings } from "@/src/core";
@@ -55,6 +61,7 @@ import { KeysSection } from "./keys-section.tsx";
 import { Hint } from "@/components/ui/hint";
 import { AppearanceSection, GraphSection } from "./appearance-section.tsx";
 import { KeyboardSection } from "./keyboard-section.tsx";
+import { DictationSection } from "./dictation-section.tsx";
 import { PluginsSection } from "./plugins-section.tsx";
 import { PluginSettingsPage } from "./plugin-settings-page.tsx";
 import { usePlugins } from "@/components/plugins";
@@ -63,14 +70,16 @@ import { NativeSubscriptionUIProvider } from "./subscription-connections.tsx";
 
 /** Owner (2026-09-20): hints earn their place — mechanics-explaining
  *  prose is out; only the keyboard note stays (storage location is a
- *  real question users ask). */
+ *  real question users ask). Labels are settings-namespace keys,
+ *  resolved at render (i18n wave). */
 const SECTIONS = [
-	{ id: "keys", label: "Providers", icon: KeyIcon },
-	{ id: "agent", label: "Agent", icon: BotIcon },
-	{ id: "appearance", label: "Appearance", icon: PaletteIcon },
-	{ id: "graph", label: "Graph", icon: WaypointsIcon },
-	{ id: "keyboard", label: "Keyboard", icon: KeyboardIcon, hint: "Stored on this device" },
-	{ id: "general", label: "General", icon: SettingsIcon },
+	{ id: "keys", label: "nav.providers", icon: KeyIcon },
+	{ id: "agent", label: "nav.agent", icon: BotIcon },
+	{ id: "dictation", label: "nav.dictation", icon: MicIcon },
+	{ id: "appearance", label: "nav.appearance", icon: PaletteIcon },
+	{ id: "graph", label: "nav.graph", icon: WaypointsIcon },
+	{ id: "keyboard", label: "nav.keyboard", icon: KeyboardIcon, hint: "keyboard.storedHint" },
+	{ id: "general", label: "nav.general", icon: SettingsIcon },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"] | "plugins" | "core-plugins" | `plugin:${string}`;
 
@@ -154,12 +163,13 @@ function SettingsDialog({
 	/** The keys-section row to unfold (see DialogContext above). */
 	initialRow: string | null;
 }) {
+	const { t } = useT("settings");
 	// Keep the original visual frame and plain dim backdrop. The shared
 	// untransformed boundary also contains this modal's portaled menus.
 	return <SettingsDialogBody onClose={onClose} initialSection={initialSection}
 		initialRow={initialRow} navigationRequest={navigationRequest}
 		renderFrame={frame => <HostDialog open layerId={layerId} ownerId={null}
-			onClose={onClose} frame={frame} aria-label="Settings"
+			onClose={onClose} frame={frame} aria-label={t("dialog.title")}
 			backdropProps={{
 				className: "fixed inset-0 z-50 flex items-center justify-center bg-background/80",
 				"data-testid": "settings-backdrop",
@@ -185,6 +195,7 @@ export function SettingsDialogBody({
 	 *  retargets follow it exactly like initialSection below. */
 	initialRow?: string | null;
 }) {
+	const { t } = useT("settings");
 	const { onAppearanceChange } = useAppearance();
 	const inheritedWriteOrder = useContext(WriteOrderContext);
 	const standaloneWriteOrder = useRef<SettingsWriteOrder>({ issued: 0, acknowledged: 0, listeners: new Set() });
@@ -249,9 +260,9 @@ export function SettingsDialogBody({
 	}, [missingPlugin, management]);
 	const selected = missingPlugin ? management : active;
 	const navSections: { id: SectionId; label: string; icon?: LucideIcon }[] = [
-		...SECTIONS,
-		{ id: "core-plugins", label: "Core plugins", icon: PlugIcon },
-		{ id: "plugins", label: "Community plugins", icon: PuzzleIcon },
+		...SECTIONS.map(section => ({ ...section, label: t(section.label) })),
+		{ id: "core-plugins", label: t("nav.corePlugins"), icon: PlugIcon },
+		{ id: "plugins", label: t("nav.communityPlugins"), icon: PuzzleIcon },
 		...enabledPlugins.map(plugin => ({ id: `plugin:${plugin.info.id}` as const, label: plugin.info.manifest?.name ?? plugin.info.id })),
 	];
 
@@ -295,7 +306,7 @@ export function SettingsDialogBody({
 	 *  schema mistake caught by the validation surface). */
 	const write = useCallback(
 		async (
-			section: "general" | "agent" | "models" | "appearance" | "graph" | "compaction",
+			section: "general" | "agent" | "models" | "appearance" | "graph" | "compaction" | "dictation",
 			body: object,
 		): Promise<boolean> => {
 			const ticket = ++writeOrder.current.issued;
@@ -319,7 +330,7 @@ export function SettingsDialogBody({
 				const stored = reply?.settings;
 				if (!stored || typeof stored !== "object" || Array.isArray(stored) || stored.version !== 1 ||
 					!stored[section] || typeof stored[section] !== "object" || Array.isArray(stored[section])) {
-					if (ticket === writeOrder.current.issued) setError(`${section}: Could not confirm saved settings. Your input has been kept.`);
+					if (ticket === writeOrder.current.issued) setError(`${section}: ${t("dialog.confirmFailed")}`);
 					return false;
 				}
 				if (ticket >= writeOrder.current.acknowledged) {
@@ -338,7 +349,7 @@ export function SettingsDialogBody({
 				return false;
 			}
 		},
-		[onAppearanceChange, writeOrder],
+		[onAppearanceChange, writeOrder, t],
 	);
 
 	const frame = (
@@ -346,23 +357,23 @@ export function SettingsDialogBody({
 			tabIndex={-1}
 			role="dialog"
 			aria-modal="true"
-			aria-label="Settings"
+			aria-label={t("dialog.title")}
 			data-testid="settings-dialog"
 			className="settings-dialog-pop flex h-[620px] max-h-[85vh] w-[920px] max-w-[90vw] flex-col overflow-hidden rounded-md border border-border bg-card shadow-xl"
 			onClick={(e) => e.stopPropagation()}
 		>
 			{/* Header — the app's quiet CMU title language. */}
 			<header className="flex h-15 shrink-0 items-center gap-3 border-b border-border px-5">
-				<h2 className="font-title text-2xl tracking-tight">Settings</h2>
+				<h2 className="font-title text-2xl tracking-tight">{t("dialog.title")}</h2>
 				<Hint
 						// Esc closes through the shared interaction owner.
-						label="Close"
+						label={t("dialog.close")}
 						binding="escape"
 						side="left"
 					>
 						<button
 					type="button"
-					aria-label="Close settings"
+					aria-label={t("dialog.closeAria")}
 					data-testid="settings-close"
 					className="ml-auto size-7 rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
 					onClick={onClose}
@@ -384,7 +395,7 @@ export function SettingsDialogBody({
 				{/* Left nav — mono labels and theme-inherited decorative icons,
 					    active = bg-accent. */}
 				<nav
-					aria-label="Settings sections"
+					aria-label={t("dialog.navAria")}
 					data-testid="settings-nav"
 					className="flex min-h-0 w-48 shrink-0 flex-col gap-1 overflow-y-auto border-r border-border p-2"
 				>
@@ -432,22 +443,28 @@ export function SettingsDialogBody({
 					)}
 					{selected === "plugins" || selected === "core-plugins" ? <PluginsSection origin={selected === "core-plugins" ? "core" : "community"} onOpenSettings={pluginId => setActive(`plugin:${pluginId}`)} />
 						: activePlugin ? <PluginSettingsPage key={`${activePlugin.info.id}/${activePlugin.info.revision}`} plugin={activePlugin} />
-							: activePluginId !== null ? <p role="status" className="px-6 py-5 text-xs text-muted-foreground">Loading plugins…</p>
+							: activePluginId !== null ? <p role="status" className="px-6 py-5 text-xs text-muted-foreground">{t("dialog.loadingPlugins")}</p>
 								: record === undefined ? (
 						<p className="px-6 py-5 text-xs text-muted-foreground/70">
-							Loading settings…
+							{t("dialog.loading")}
 						</p>
 					) : record === null ? (
 						<p className="px-6 py-5 text-xs text-muted-foreground/70">
-							Settings could not be loaded — refresh to retry.
+							{t("dialog.loadFailed")}
 						</p>
 					) : (
 						<div>
 							{active === "general" && (
 								<SettingsSection
-									title="General"
+									title={t("nav.general")}
 									testid="section-general"
 								>
+									<LanguageRow
+										value={record.general?.language ?? "system"}
+										onChange={(language) =>
+											void write("general", { ...record.general, language })
+										}
+									/>
 									<UpdateSettings
 										autoUpdate={record.general?.autoUpdate ?? true}
 										onAutoUpdateChange={(on) =>
@@ -457,13 +474,13 @@ export function SettingsDialogBody({
 								</SettingsSection>
 							)}
 							{active === "keys" && (
-								<SettingsSection title="Providers" testid="section-keys">
+								<SettingsSection title={t("nav.providers")} testid="section-keys">
 									<KeysSection initialRow={initialRow ?? undefined} />
 								</SettingsSection>
 							)}
 							{active === "agent" && (
 								<SettingsSection
-									title="Agent"
+									title={t("nav.agent")}
 									testid="section-agent"
 								>
 									<AgentSection
@@ -484,9 +501,18 @@ export function SettingsDialogBody({
 									/>
 								</SettingsSection>
 							)}
+							{active === "dictation" && (
+								<SettingsSection title={t("nav.dictation")} testid="section-dictation">
+									<DictationSection
+										dictation={record.dictation}
+										initialRow={initialRow ?? undefined}
+										onChange={(next: DictationSettings) => void write("dictation", next)}
+									/>
+								</SettingsSection>
+							)}
 							{active === "appearance" && (
 								<SettingsSection
-									title="Appearance"
+									title={t("nav.appearance")}
 									testid="section-appearance"
 								>
 									<AppearanceSection
@@ -499,7 +525,7 @@ export function SettingsDialogBody({
 							)}
 							{active === "graph" && (
 								<SettingsSection
-									title="Graph"
+									title={t("nav.graph")}
 									testid="section-graph"
 								>
 									<GraphSection
@@ -512,8 +538,8 @@ export function SettingsDialogBody({
 							)}
 							{active === "keyboard" && (
 								<SettingsSection
-									title="Keyboard"
-									hint="Stored on this device"
+									title={t("nav.keyboard")}
+									hint={t("keyboard.storedHint")}
 									testid="section-keyboard"
 								>
 									<KeyboardSection />
@@ -526,4 +552,52 @@ export function SettingsDialogBody({
 		</div>
 	);
 	return renderFrame ? renderFrame(frame) : frame;
+}
+
+/** The interface-language row (i18n wave, 2026-10-25): Follow system +
+ *  every shipped language, each named in its own language. A pick applies
+ *  to the running interface at once (useLanguage) and persists through the
+ *  dialog's one writer. */
+export function LanguageRow({
+	value,
+	onChange,
+}: {
+	value: LanguageSetting;
+	onChange: (setting: LanguageSetting) => void;
+}) {
+	const { t } = useT("settings");
+	const { setSetting } = useLanguage();
+	return (
+		<SettingsRow label={t("general.language.label")} testid="row-language">
+			<div
+				role="radiogroup"
+				aria-label={t("general.language.aria")}
+				className="flex rounded-lg border border-border/60 bg-muted/30 p-0.5"
+			>
+				{LANGUAGE_SETTINGS.map((option) => {
+					const active = option === value;
+					return (
+						<button
+							key={option}
+							type="button"
+							role="radio"
+							aria-checked={active}
+							data-testid={`language-${option}`}
+							onClick={() => {
+								if (active) return;
+								setSetting(option);
+								onChange(option);
+							}}
+							className={cn(
+								"h-8 rounded-md px-3 text-sm font-medium transition-colors",
+								active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+							)}
+						>
+							{option === "system" ? t("general.language.system") : LANGUAGE_NAMES[option]}
+						</button>
+					);
+				})}
+			</div>
+		</SettingsRow>
+	);
 }

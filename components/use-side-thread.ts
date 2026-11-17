@@ -7,6 +7,16 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { serializeCitation, sideSegmentId, type LhMessage, type TextSelector, type SideChatMessage, type SideChatThread } from "@/src/core";
 import { useServerEvent, useServerResync } from "./server-events";
 
+/** The hook's own failure lines (English, the state value). The side
+ *  thread renders them in the interface language by exact match
+ *  (chat:sideThread.errors); server and provider text stays verbatim. */
+export const SIDE_THREAD_ERRORS = {
+	unreachable: "The side conversation could not be reached.",
+	noStream: "The side answer had no response stream.",
+	failed: "The side answer failed.",
+	disconnected: "The side answer disconnected. Reopen the conversation to reconnect.",
+} as const;
+
 export type SideThreadAnchor = { kind: "range"; range: Range } | { kind: "element"; element: HTMLElement } | { kind: "composer" };
 export interface SidePassage { text: string; sourceMessageId: string; selector?: Omit<TextSelector, "text"> }
 export interface SideThreadOpenArgs {
@@ -111,10 +121,10 @@ export function useSideThread(chatId: string, messages: readonly LhMessage[], ge
 		if (token !== connection.current?.token) { await response.body?.cancel(); return; }
 		if (!response.ok) {
 			const body = await response.json().catch(() => null) as { error?: string | { message?: string } } | null;
-			throw new Error(typeof body?.error === "string" ? body.error : body?.error?.message ?? "The side conversation could not be reached.");
+			throw new Error(typeof body?.error === "string" ? body.error : body?.error?.message ?? SIDE_THREAD_ERRORS.unreachable);
 		}
 		const reader = response.body?.getReader();
-		if (!reader) throw new Error("The side answer had no response stream.");
+		if (!reader) throw new Error(SIDE_THREAD_ERRORS.noStream);
 		const decoder = new TextDecoder(); let buffer = ""; let terminal = false;
 		const apply = (line: string) => {
 			if (!line.trim() || token !== connection.current?.token) return;
@@ -128,7 +138,7 @@ export function useSideThread(chatId: string, messages: readonly LhMessage[], ge
 				revision.current++; // an older GET must not rewind a newer stream tail
 				dispatch({ type: "text", threadId, text: event.text ?? "" });
 			}
-			else if (event.type === "error") throw new Error(event.error ?? "The side answer failed.");
+			else if (event.type === "error") throw new Error(event.error ?? SIDE_THREAD_ERRORS.failed);
 		};
 		try {
 			for (;;) {
@@ -138,7 +148,7 @@ export function useSideThread(chatId: string, messages: readonly LhMessage[], ge
 				let newline: number;
 				while ((newline = buffer.indexOf("\n")) >= 0) { apply(buffer.slice(0, newline)); buffer = buffer.slice(newline + 1); }
 			}
-			if (!terminal && token === connection.current?.token) throw new Error("The side answer disconnected. Reopen the conversation to reconnect.");
+			if (!terminal && token === connection.current?.token) throw new Error(SIDE_THREAD_ERRORS.disconnected);
 		} finally { reader.releaseLock(); }
 	}, [adopt]);
 

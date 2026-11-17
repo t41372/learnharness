@@ -1,4 +1,5 @@
 import type { Phase3 } from "@/src/core";
+import { useT } from "@/components/i18n";
 
 /**
  * The in-session phase presentation (owner, minimal-color round —
@@ -24,12 +25,13 @@ import type { Phase3 } from "@/src/core";
  * phase; work-state is the sidebar row's spinner.
  */
 
-/** Header-chip labels: the phases as the learner thinks of them. */
-const CHIP_LABEL: Record<Phase3, string> = {
-	probe: "Probing",
-	plan: "Planning",
-	teach: "Teaching",
-};
+/** Header-chip labels: the phases as the learner thinks of them (keys in
+ *  the chat namespace, resolved at render). */
+const CHIP_LABEL = {
+	probe: "phase.probe",
+	plan: "phase.plan",
+	teach: "phase.teach",
+} as const satisfies Record<Phase3, string>;
 
 /** The header label: the phase as a quiet flat tag (owner,
  *  extraction-UX redesign 2026-09-24 — the UN-PILL round): no border, no
@@ -39,6 +41,7 @@ const CHIP_LABEL: Record<Phase3, string> = {
  *  at all, so it is part of the drag surface instead of a carved-out
  *  target. */
 export function PhaseChip({ phase }: { phase: Phase3 }) {
+	const { t } = useT("chat");
 	return (
 		<span
 			data-testid="phase-chip"
@@ -46,7 +49,7 @@ export function PhaseChip({ phase }: { phase: Phase3 }) {
 			aria-hidden="true"
 			className="pointer-events-none flex shrink-0 select-none items-center text-xs font-medium uppercase tracking-wide text-muted-foreground"
 		>
-			{CHIP_LABEL[phase]}
+			{t(CHIP_LABEL[phase])}
 		</span>
 	);
 }
@@ -60,11 +63,12 @@ export function PhaseChip({ phase }: { phase: Phase3 }) {
  * after the start).
  */
 export function PhaseDivider({ phase, nodeCount }: { phase: Phase3; nodeCount?: number }) {
+	const { t } = useT("chat");
 	if (phase === "probe") return null;
 	const label =
 		phase === "plan" && nodeCount
-			? `Plan · ${nodeCount} node${nodeCount === 1 ? "" : "s"}`
-			: CHIP_LABEL[phase];
+			? t("phase.planNodes", { count: nodeCount })
+			: t(CHIP_LABEL[phase]);
 	return (
 		<div className="my-4 flex w-full items-center gap-3" data-testid={`phase-divider-${phase}`}>
 			<span className="h-0 flex-1 border-t-2 border-dotted border-border/50" aria-hidden />

@@ -28,10 +28,11 @@ import type {
 	ModelSlot,
 	RoleModelOverride,
 } from "../core/settings.ts";
-import { BACKGROUND_MODEL_ROLES, CACHE_RETENTIONS, COMPACTION_THRESHOLD_FLOOR, CUSTOM_MODEL_PIN_FLOOR, EXTRACTION_CHUNK_TOKENS_FLOOR, MODEL_SLOTS } from "../core/settings.ts";
+import { BACKGROUND_MODEL_ROLES, CACHE_RETENTIONS, COMPACTION_THRESHOLD_FLOOR, CUSTOM_MODEL_PIN_FLOOR, EXTRACTION_CHUNK_TOKENS_FLOOR, LEARNER_INSTRUCTIONS_MAX_CHARS, MODEL_SLOTS } from "../core/settings.ts";
 import { WRITABLE_TOOL_KEYS } from "../core/pending.ts";
+import { isLanguageSetting, LANGUAGE_SETTINGS } from "../core/language.ts";
+import { DICTATION_ENGINES, isDictationSettingLanguage, isAsrModelKey, type DictationEngine } from "../core/settings.ts";
 import { isSearchEngineId, SEARCH_ENGINES } from "../core/search.ts";
-import { isDictationLanguage } from "../core/dictation.ts";
 import { parseFileAccessSettings } from "../core/file-access.ts";
 
 /** Parsed-or-rejected — `ok: false` carries the 400's error message. */
@@ -83,7 +84,7 @@ function asRecord(body: unknown): Record<string, unknown> | null {
 	return body as Record<string, unknown>;
 }
 
-/** general: { autoUpdate?: boolean } */
+/** general: { autoUpdate?: boolean, language?: LanguageSetting } */
 export function parseGeneralSettingsBody(body: unknown): SettingsBodyResult<GeneralSettings> {
 	const raw = asRecord(body);
 	if (!raw) return { ok: false, error: "Invalid JSON body" };
@@ -93,6 +94,12 @@ export function parseGeneralSettingsBody(body: unknown): SettingsBodyResult<Gene
 			return { ok: false, error: "autoUpdate must be a boolean" };
 		}
 		settings.autoUpdate = raw.autoUpdate;
+	}
+	if (raw.language !== undefined) {
+		if (!isLanguageSetting(raw.language)) {
+			return { ok: false, error: `language must be one of ${LANGUAGE_SETTINGS.join(", ")}` };
+		}
+		settings.language = raw.language;
 	}
 	return { ok: true, settings };
 }
@@ -217,6 +224,15 @@ export function parseAgentSettingsBody(body: unknown): SettingsBodyResult<AgentS
 			return { ok: false, error: "graphTools.enabled must be a boolean" };
 		}
 		settings.graphTools = graphTools.enabled === undefined ? {} : { enabled: graphTools.enabled };
+	}
+	// The learner's instructions (2026-10-25): a string within the cap;
+	// blank stores nothing (absence IS the unset).
+	if (raw.instructions !== undefined) {
+		if (typeof raw.instructions !== "string") return { ok: false, error: "instructions must be a string" };
+		if (raw.instructions.length > LEARNER_INSTRUCTIONS_MAX_CHARS) {
+			return { ok: false, error: `instructions must be at most ${LEARNER_INSTRUCTIONS_MAX_CHARS} characters` };
+		}
+		if (raw.instructions.trim()) settings.instructions = raw.instructions;
 	}
 	if (raw.fileAccess !== undefined) {
 		const parsed = parseFileAccessSettings(raw.fileAccess);
@@ -439,13 +455,30 @@ export function parseCompactionSettingsBody(body: unknown): SettingsBodyResult<C
 	return { ok: true, settings };
 }
 
-/** dictation: { language?: one of Nova-3's supported language codes } */
+/** dictation: { engine?, model?, language? } — strict (local dictation,
+ *  2026-10-25): an unknown engine, a malformed model key or language tag
+ *  is a 400. Whether the model is INSTALLED is not checked here — the
+ *  environment can change under a stored choice, and dictation reports
+ *  that honestly at start. */
 export function parseDictationSettingsBody(body: unknown): SettingsBodyResult<DictationSettings> {
 	const raw = asRecord(body);
 	if (!raw) return { ok: false, error: "Invalid JSON body" };
-	if (raw.language === undefined) return { ok: true, settings: {} };
-	if (!isDictationLanguage(raw.language)) return { ok: false, error: "Unsupported dictation language" };
-	return { ok: true, settings: { language: raw.language } };
+	const settings: DictationSettings = {};
+	if (raw.engine !== undefined) {
+		if (!(DICTATION_ENGINES as readonly unknown[]).includes(raw.engine)) {
+			return { ok: false, error: `engine must be one of ${DICTATION_ENGINES.join(", ")}` };
+		}
+		settings.engine = raw.engine as DictationEngine;
+	}
+	if (raw.model !== undefined) {
+		if (!isAsrModelKey(raw.model)) return { ok: false, error: "model must be a Standard ASR model key (engine/model)" };
+		settings.model = raw.model;
+	}
+	if (raw.language !== undefined) {
+		if (!isDictationSettingLanguage(raw.language, raw.engine)) return { ok: false, error: "language must be a language tag or \"auto\"" };
+		settings.language = raw.language;
+	}
+	return { ok: true, settings };
 }
 
 /** The custom endpoint's per-model pins (PATCH /api/custom-provider): the

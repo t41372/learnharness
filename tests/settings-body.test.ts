@@ -290,7 +290,8 @@ describe("SETTINGS_SECTIONS (the route's section map)", () => {
 		// compaction joined (owner round 14): its own section PUT — the
 		// threshold is engine behavior, not an agent-section key. The custom
 		// endpoint is NOT a section: it is one more provider in the Keys list,
-		// connected through POST /api/custom-provider.
+		// connected through POST /api/custom-provider. dictation joined with
+		// local dictation (2026-10-25).
 		assert.deepEqual(
 			Object.keys(SETTINGS_SECTIONS),
 			["general", "chat", "agent", "appearance", "graph", "compaction", "models", "dictation", "claudeCode"],

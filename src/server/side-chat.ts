@@ -15,6 +15,7 @@ import { COMPACTION_RESERVE_TOKENS } from "../core/compaction.ts";
 import { resolveSideQuestionSpec } from "../core/settings-resolution.ts";
 import { modelsNotConfigured, providerKeyMissing as providerKeyMissingEnvelope } from "../core/settings.ts";
 import { piEngineForSpec, type PiEngine } from "../agent/models.ts";
+import { withLearnerInstructions } from "../agent/learner-instructions.ts";
 import { isSubscriptionProvider } from "../agent/subscription-connections.ts";
 import { usageWasAdmitted } from "../agent/subscription-request-cycle.ts";
 import { composeSideChatInstructions, streamSideAnswer } from "../agent/side-chat.ts";
@@ -271,8 +272,8 @@ async function productionEngineFor(record: ChatRecord): Promise<SideEngine | Res
 	if (!providerKeyPresent(spec.provider)) return Response.json(providerKeyMissingEnvelope(spec.provider, ["strong"]), { status: 503 });
 	try {
 		let denied = false;
-		const engine = piEngineForSpec(spec, false, { captured() {}, beforeDispatch() {}, noDispatch() { denied = true; } },
-			() => stores.settingsStore.readSettings()?.models?.strong?.cacheRetention);
+		const engine = withLearnerInstructions(piEngineForSpec(spec, false, { captured() {}, beforeDispatch() {}, noDispatch() { denied = true; } },
+			() => stores.settingsStore.readSettings()?.models?.strong?.cacheRetention), effectiveSettings().agent.instructions);
 		return { ...engine, sideUsageAdmitted: () => !denied };
 	} catch { return Response.json({ error: "The selected model is unavailable." }, { status: 503 }); }
 }

@@ -34,6 +34,7 @@ import {
 	type CustomModel,
 	type CustomModelOverride,
 } from "@/src/core";
+import { i18n, useT, type TFunction } from "@/components/i18n";
 import { SettingsGroup } from "./controls.tsx";
 import { SubscriptionConnections } from "./subscription-connections.tsx";
 import { ClaudeCodeInstallationStatus } from "./claude-code-status.tsx";
@@ -42,7 +43,6 @@ import { useInteractionLayer, useInteractionLayers, useOptionalInteractionLayers
 import { isInteractionScopeEligible } from "@/components/plugin-input-focus";
 import { MenuShell } from "@/components/menu-shell";
 import { notifySettingsSaved } from "@/components/settings-signal";
-import { DictationLanguageSetting } from "@/components/dictation-language";
 
 /** One pi-ai provider with plain API-key auth (the Platform seam —
  *  derived from pi-ai's own env-key table; no drift possible). */
@@ -76,6 +76,13 @@ async function readCustomStatus(inspectKey = false): Promise<CustomStatus> {
 	if (!response.ok) throw new Error("Unable to load custom configuration.");
 	const cp = await response.json() as Partial<CustomStatus>;
 	return { keyReuseRequired: Boolean(cp.keyReuseRequired), revision: response.headers.get("etag") ?? "", authMode: cp.authMode ?? "keyless", keySource: cp.keySource ?? "none", baseUrl: cp.baseUrl ?? "", models: cp.models ?? [], overrides: cp.overrides ?? {}, manualModels: cp.manualModels ?? [], keyPresent: Boolean(cp.keyPresent) };
+}
+
+/** The custom-endpoint editor's own English lines, set from effects and
+ *  translated at display (i18n wave); server error text shows as received. */
+const INSPECT_FAILED = "Unable to inspect effective key. Reload configuration and retry.";
+function customMessage(t: TFunction<"settings">, message: string): string {
+	return message === INSPECT_FAILED ? t("customEndpoint.inspectFailed") : message;
 }
 
 /** The curated tools group, pinned by id (the catalog owns the copy;
@@ -150,12 +157,16 @@ export function providerKeyLabel(id: string, providers: readonly ProviderKeyInfo
 }
 
 /** The minimal status line, e.g. "…ab12 · 64 chars" (" · env" marks an
- *  environment-owned value — the row itself is read-only then). Pure. */
-export function keyStatusLine(status: AuthKeyStatus): string {
-	if (!status.present || !status.masked) return "not set";
+ *  environment-owned value — the row itself is read-only then). Pure
+ *  (the words default to English; the section passes its `t`). */
+export function keyStatusLine(
+	status: AuthKeyStatus,
+	t: TFunction<"settings"> = i18n.getFixedT("en", "settings"),
+): string {
+	if (!status.present || !status.masked) return t("keys.status.notSet");
 	const tail = status.masked.replace(/ \((\d+) chars\)$/, "");
 	const chars = status.masked.match(/\((\d+) chars\)$/)?.[1] ?? "?";
-	return `${tail} · ${chars}${status.source === "env" ? " · env" : ""}`;
+	return `${tail} · ${chars}${status.source === "env" ? ` · ${t("keys.status.env")}` : ""}`;
 }
 
 /** One table row: label left, tiny docs link + status right. Writable
@@ -185,6 +196,7 @@ function KeyTableRow({
 	onCancel: () => void;
 	testid: string;
 }) {
+	const { t } = useT("settings");
 	const envOwned = status.source === "env";
 	const [value, setValue] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -216,8 +228,8 @@ function KeyTableRow({
 						onKeyDown={(e) => {
 							if (e.key === "Enter") void save();
 						}}
-						placeholder="Paste key…"
-						aria-label={`${label} key`}
+						placeholder={t("keys.pastePlaceholder")}
+						aria-label={t("keys.inputAria", { provider: label })}
 						data-testid={`${testid}-input`}
 						disabled={busy}
 						autoFocus
@@ -230,7 +242,7 @@ function KeyTableRow({
 						data-testid={`${testid}-save`}
 						className="shrink-0 text-xs text-foreground underline-offset-2 hover:underline disabled:text-muted-foreground/40 disabled:no-underline"
 					>
-						Save
+						{t("actions.save")}
 					</button>
 					<button
 						type="button"
@@ -239,7 +251,7 @@ function KeyTableRow({
 						data-testid={`${testid}-cancel`}
 						className="shrink-0 text-xs text-muted-foreground/70 underline-offset-2 hover:text-foreground hover:underline"
 					>
-						Cancel
+						{t("actions.cancel")}
 					</button>
 					{status.present && status.source === "file" && onDelete && (
 						<button
@@ -249,7 +261,7 @@ function KeyTableRow({
 							data-testid={`${testid}-delete`}
 							className="shrink-0 text-xs text-muted-foreground/70 underline-offset-2 hover:text-error hover:underline"
 						>
-							Delete
+							{t("actions.delete")}
 						</button>
 					)}
 				</div>
@@ -283,11 +295,11 @@ function KeyTableRow({
 							onClick={(e) => e.stopPropagation()}
 							className="text-[10px] text-muted-foreground/60 underline-offset-2 hover:text-foreground hover:underline"
 						>
-							key ↗
+							{t("keys.getKey")}
 						</a>
 					)}
 					<span data-testid={`${testid}-status`} className="font-mono text-[11px] text-muted-foreground">
-						{keyStatusLine(status)}
+						{keyStatusLine(status, t)}
 					</span>
 				</span>
 			</button>
@@ -309,6 +321,7 @@ function AddProviderRow({
 	addable: ProviderKeyInfo[];
 	onPick: (p: ProviderKeyInfo) => void;
 }) {
+	const { t } = useT("settings");
 	const [open, setOpen] = useState(false);
 	const anchorRef = useRef<HTMLDivElement>(null);
 	const interactions = useInteractionLayers();
@@ -335,7 +348,7 @@ function AddProviderRow({
 				onClick={() => setOpen((v) => !v)}
 				className="flex w-full items-center justify-between gap-3 rounded-sm px-1 py-1.5 text-left font-ui text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
 			>
-				<span>+ Add a provider</span>
+				<span>{t("keys.addProvider")}</span>
 				{addable.length > 0 && <span className="font-mono text-[11px]">{addable.length}</span>}
 			</button>
 			{open && (
@@ -367,9 +380,15 @@ export function KeysSection({
 	 *  while mounted too — the settings dialog's while-open retarget
 	 *  pattern. undefined = nothing seeded. */
 	initialRow,
+	scope = "providers",
 }: {
 	initialRow?: string;
+	/** Which rows render (local dictation, 2026-10-25): the Providers
+	 *  section shows every key but Deepgram's; the Dictation section shows
+	 *  only Deepgram's, beside the engine choice it serves. */
+	scope?: "providers" | "dictation";
 }) {
+	const { t } = useT("settings");
 	const [statuses, setStatuses] = useState<AuthKeyStatus[] | null>(null);
 	const [providers, setProviders] = useState<ProviderKeyInfo[] | undefined>(undefined);
 	const [loading, setLoading] = useState(true);
@@ -441,7 +460,7 @@ export function KeysSection({
 		});
 		if (!res.ok) {
 			const body = (await res.json().catch(() => ({}))) as { error?: string };
-			return body.error ?? `Save failed (${res.status})`;
+			return body.error ?? t("keys.saveFailed", { status: res.status });
 		}
 		await reload();
 		// The cross-surface keys signal (zero-keys wave): the zero-keys pill,
@@ -461,7 +480,7 @@ export function KeysSection({
 	 *  deleteKey: fire, re-read, broadcast so the catalog narrows everywhere. */
 	async function disconnectCustom(revision: string): Promise<string | null> {
 		const res = await fetch("/api/custom-provider", { method: "DELETE", headers: { "content-type": "application/json", "if-match": revision }, body: JSON.stringify({}) }).catch(() => null);
-		if (!res?.ok) return res ? ((await res.json().catch(() => ({}))).error ?? "Disconnect failed.") : "Disconnect failed. Check your connection.";
+		if (!res?.ok) return res ? ((await res.json().catch(() => ({}))).error ?? t("customEndpoint.disconnectFailed")) : t("customEndpoint.disconnectFailedNetwork");
 		discardCustomEditor();
 		await reload();
 		notifySettingsSaved("keys");
@@ -469,10 +488,29 @@ export function KeysSection({
 	}
 
 	if (loading || statuses === null) {
-		return <p className="px-6 py-5 text-xs text-muted-foreground/70">Loading keys…</p>;
+		return <p className="px-6 py-5 text-xs text-muted-foreground/70">{t("keys.loading")}</p>;
 	}
 
 	const { providerRows, toolRows, unknownRows, addable } = classifyKeys(statuses, providers);
+	const keyRow = (status: AuthKeyStatus) => (
+		<KeyTableRow
+			key={status.id}
+			label={status.info?.label ?? status.id}
+			docsUrl={status.info?.docsUrl}
+			status={status}
+			expanded={openRow === status.id}
+			onToggle={() => setOpenRow(openRow === status.id ? null : status.id)}
+			onSave={async (v) => {
+				const err = await saveKey(status.id, v);
+				if (!err) setOpenRow(null);
+				return err;
+			}}
+			onCancel={() => setOpenRow(null)}
+			onDelete={() => deleteKey(status.id)}
+			testid={`key-${status.id.toLowerCase()}`}
+		/>
+	);
+	if (scope === "dictation") return <>{toolRows.filter((status) => status.id === "DEEPGRAM_API_KEY").map(keyRow)}</>;
 
 	async function saveNewProvider(p: ProviderKeyInfo, value: string) {
 		const err = await saveKey(p.envVar, value);
@@ -485,7 +523,7 @@ export function KeysSection({
 
 	return (
 		<div ref={editorScopeRef} className="contents">
-			<SettingsGroup label="Model API keys" testid="group-provider-keys">
+			<SettingsGroup label={t("keys.groups.providerKeys")} testid="group-provider-keys">
 				{providerRows.map((status) => (
 					<KeyTableRow
 						key={status.id}
@@ -541,7 +579,7 @@ export function KeysSection({
 				)}
 				{providers !== undefined && (
 					<AddProviderRow
-						addable={custom?.baseUrl ? addable : [...addable, CUSTOM_PROVIDER_INFO]}
+						addable={custom?.baseUrl ? addable : [...addable, { ...CUSTOM_PROVIDER_INFO, label: t("customEndpoint.name") }]}
 						onPick={(p) => {
 							setAddError(null);
 							if (p.id === CUSTOM_PROVIDER.id) {
@@ -572,45 +610,19 @@ export function KeysSection({
 				</div>}
 			</SettingsGroup>
 
-			<SettingsGroup label="Subscriptions" testid="group-subscriptions">
+			<SettingsGroup label={t("keys.groups.subscriptions")} testid="group-subscriptions">
 				<SubscriptionConnections />
 			</SettingsGroup>
 
-			<SettingsGroup label="External CLI" testid="group-external-cli">
+			<SettingsGroup label={t("keys.groups.externalCli")} testid="group-external-cli">
 				<ClaudeCodeInstallationStatus />
 			</SettingsGroup>
 
-			{(["Dictation", "Search"] as const).map((label) => <SettingsGroup key={label} label={label} testid={label === "Dictation" ? "group-dictation" : "group-search"}>
-				{toolRows.filter((status) => label === "Dictation" ? status.id === "DEEPGRAM_API_KEY" : status.id !== "DEEPGRAM_API_KEY").map((status) => (
-					<KeyTableRow
-						key={status.id}
-						label={status.info?.label ?? status.id}
-						docsUrl={status.info?.docsUrl}
-						status={status}
-						expanded={openRow === status.id}
-						onToggle={() => setOpenRow(openRow === status.id ? null : status.id)}
-						onSave={async (v) => {
-							const err = await saveKey(status.id, v);
-							if (!err) setOpenRow(null);
-							return err;
-						}}
-						onCancel={() => setOpenRow(null)}
-						onDelete={() => deleteKey(status.id)}
-						testid={`key-${status.id.toLowerCase()}`}
-					/>
-				))}
-				{label === "Dictation" && <>
-					<DictationLanguageSetting />
-					<p data-testid="dictation-setup-hint" className="px-1 text-[11px] leading-relaxed text-muted-foreground/70">
-						Create a <a
-							href="https://console.deepgram.com/"
-							target="_blank"
-							rel="noreferrer"
-							className="underline underline-offset-2 hover:text-foreground"
-						>Deepgram API key</a> with the Member role or higher, then add it above.
-					</p>
-				</>}
-			</SettingsGroup>)}
+			{/* The Deepgram key lives in Settings → Dictation (local dictation,
+			    2026-10-25). */}
+			<SettingsGroup label={t("keys.groups.search")} testid="group-search">
+				{toolRows.filter((status) => status.id !== "DEEPGRAM_API_KEY").map(keyRow)}
+			</SettingsGroup>
 
 		</div>
 	);
@@ -631,6 +643,7 @@ function AddProviderEditor({
 	onCancel: () => void;
 	error: string | null;
 }) {
+	const { t } = useT("settings");
 	const [value, setValue] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const interactions = useInteractionLayers();
@@ -647,8 +660,8 @@ function AddProviderEditor({
 				onKeyDown={(e) => {
 					if (e.key === "Enter" && value.trim()) onSave(value);
 				}}
-				placeholder="Paste key…"
-				aria-label={`${provider.label} key`}
+				placeholder={t("keys.pastePlaceholder")}
+				aria-label={t("keys.inputAria", { provider: provider.label })}
 				data-testid={`key-${provider.id}-input`}
 				autoFocus={active}
 				className="h-7 min-w-0 flex-1 rounded-sm border border-border bg-background px-1.5 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-muted-foreground/50"
@@ -660,7 +673,7 @@ function AddProviderEditor({
 				data-testid={`key-${provider.id}-save`}
 				className="shrink-0 text-xs text-foreground underline-offset-2 hover:underline disabled:text-muted-foreground/40 disabled:no-underline"
 			>
-				Save
+				{t("actions.save")}
 			</button>
 			<button
 				type="button"
@@ -668,7 +681,7 @@ function AddProviderEditor({
 				data-testid={`key-${provider.id}-cancel`}
 				className="shrink-0 text-xs text-muted-foreground/70 underline-offset-2 hover:text-foreground hover:underline"
 			>
-				Cancel
+				{t("actions.cancel")}
 			</button>
 			{error && (
 				<p role="alert" className="w-full pl-0 text-xs text-error" data-testid={`key-${provider.id}-error`}>
@@ -682,6 +695,7 @@ function AddProviderEditor({
 /** One donor editor for first setup and Settings; setup omits offline pin and
  * disconnect controls, while authentication/revisions/manual IDs stay identical. */
 export function CustomEndpointSetup({ onSaved }: { onSaved: () => void | Promise<void> }) {
+	const { t } = useT("settings");
 	const [status, setStatus] = useState<CustomStatus | null>(null);
 	const [error, setError] = useState(false);
 	async function reload() {
@@ -689,7 +703,7 @@ export function CustomEndpointSetup({ onSaved }: { onSaved: () => void | Promise
 		catch { setError(true); }
 	}
 	useEffect(() => { void reload(); }, []);
-	if (!status || error) return <div className="text-xs">{error ? "Unable to load custom configuration." : "Loading custom configuration…"}{error && <button onClick={() => void reload()}>Retry</button>}</div>;
+	if (!status || error) return <div className="text-xs">{error ? t("customEndpoint.loadFailed") : t("customEndpoint.loading")}{error && <button onClick={() => void reload()}>{t("actions.retry")}</button>}</div>;
 	return <CustomEndpointEditor key={status.revision} setup revision0={status.revision} authMode0={status.authMode} keySource0={status.keySource} keyReuseRequired0={status.keyReuseRequired} baseUrl0={status.baseUrl} keyPresent={status.keyPresent} models={status.models} overrides={status.overrides} manualModels0={status.manualModels} onSaved={onSaved} onPinsSaved={reload} onReload={reload} onCancel={reload} />;
 }
 
@@ -703,8 +717,9 @@ function CustomEndpointRow({
 	expanded: boolean;
 	onToggle: () => void;
 }) {
+	const { t } = useT("settings");
 	const count = status.models.length;
-	const line = `${status.baseUrl} · ${count} model${count === 1 ? "" : "s"} · ${status.authMode === "keyless" ? "keyless" : status.keyPresent ? "API key" : "API key missing"}`;
+	const line = `${status.baseUrl} · ${t("customEndpoint.modelCount", { count })} · ${status.authMode === "keyless" ? t("customEndpoint.status.keyless") : status.keyPresent ? t("customEndpoint.status.apiKey") : t("customEndpoint.status.apiKeyMissing")}`;
 	return (
 		<div data-testid="custom-endpoint-row">
 			<button
@@ -714,7 +729,7 @@ function CustomEndpointRow({
 				onClick={onToggle}
 				className="flex w-full items-center justify-between gap-3 rounded-sm px-1 py-1.5 text-left cursor-pointer transition-colors hover:bg-accent/50"
 			>
-				<span className="font-ui text-xs text-foreground">Custom endpoint</span>
+				<span className="font-ui text-xs text-foreground">{t("customEndpoint.name")}</span>
 				<span data-testid="custom-endpoint-status" className="max-w-[60%] truncate font-mono text-[11px] text-muted-foreground">
 					{line}
 				</span>
@@ -800,6 +815,7 @@ function CustomEndpointEditor({
 	onCancel: () => void;
 	onDelete?: (revision: string) => Promise<string | null>;
 }) {
+	const { t } = useT("settings");
 	const baseUrlRef = useRef<HTMLInputElement>(null);
 	const interactions = useOptionalInteractionLayers();
 	useEffect(() => {
@@ -822,7 +838,7 @@ function CustomEndpointEditor({
 			setKeyPresent(status.keyPresent);
 			setKeyReuseRequired(status.keyReuseRequired);
 			if (status.keySource === "env") setKey("");
-		}).catch(() => { if (!cancelled) setError("Unable to inspect effective key. Reload configuration and retry."); })
+		}).catch(() => { if (!cancelled) setError(INSPECT_FAILED); })
 			.finally(() => { if (!cancelled) setAuthLoading(false); });
 		return () => { cancelled = true; };
 	}, [authMode]);
@@ -858,7 +874,7 @@ function CustomEndpointEditor({
 		}).catch(() => null);
 		if (!res || !res.ok) {
 			const b = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
-			setPinsError(res ? (b?.error ?? `Save failed (${res.status})`) : "Save failed. Check your connection.");
+			setPinsError(res ? (b?.error ?? t("keys.saveFailed", { status: res.status })) : t("customEndpoint.saveFailedNetwork"));
 			setPinsBusy(false);
 			return;
 		}
@@ -883,7 +899,7 @@ function CustomEndpointEditor({
 		}).catch(() => null);
 		if (!res || !res.ok) {
 			const b = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
-			setError(res ? (b?.error ?? `Connect failed (${res.status})`) : "Connect failed. Check your connection.");
+			setError(res ? (b?.error ?? t("customEndpoint.connectFailed", { status: res.status })) : t("customEndpoint.connectFailedNetwork"));
 			setBusy(false);
 			return;
 		}
@@ -894,14 +910,14 @@ function CustomEndpointEditor({
 	return (
 		<div data-testid="custom-endpoint-editor" className="flex flex-col gap-2 rounded-sm px-1 py-1.5">
 			<div className="flex items-center gap-2">
-				<span className="shrink-0 font-ui text-xs text-foreground">Custom endpoint</span>
+				<span className="shrink-0 font-ui text-xs text-foreground">{t("customEndpoint.name")}</span>
 				<input
 					ref={baseUrlRef}
 					type="text"
 					value={baseUrl}
 					onChange={(e) => setBaseUrl(e.target.value)}
-					placeholder="Base URL, e.g. http://localhost:11434/v1"
-					aria-label="Custom endpoint base URL"
+					placeholder={t("customEndpoint.baseUrlPlaceholder")}
+					aria-label={t("customEndpoint.baseUrlAria")}
 					data-testid="custom-baseurl-input"
 					disabled={busy}
 					autoFocus={active}
@@ -912,19 +928,19 @@ function CustomEndpointEditor({
 				type="text"
 				value={manualModels}
 				onChange={(e) => setManualModels(e.target.value)}
-				placeholder="Model IDs, comma-separated — optional, needed when the endpoint has no /models list"
-				aria-label="Custom endpoint model IDs"
+				placeholder={t("customEndpoint.modelsPlaceholder")}
+				aria-label={t("customEndpoint.modelsAria")}
 				data-testid="custom-models-input"
 				disabled={busy}
 				className="h-7 min-w-0 rounded-sm border border-border bg-background px-1.5 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-muted-foreground/50"
 			/>
-			<label className="flex items-center gap-2 text-xs">Authentication
-				<select aria-label="Custom endpoint authentication" data-testid="custom-auth-mode" value={authMode} disabled={busy || pinsBusy} onChange={(e) => { setAuthMode(e.target.value as "keyless" | "apiKey"); setReuseKey(false); }}>
-					<option value="keyless">Keyless</option><option value="apiKey">API key</option>
+			<label className="flex items-center gap-2 text-xs">{t("customEndpoint.authentication")}
+				<select aria-label={t("customEndpoint.authAria")} data-testid="custom-auth-mode" value={authMode} disabled={busy || pinsBusy} onChange={(e) => { setAuthMode(e.target.value as "keyless" | "apiKey"); setReuseKey(false); }}>
+					<option value="keyless">{t("customEndpoint.keyless")}</option><option value="apiKey">{t("customEndpoint.apiKey")}</option>
 				</select>
 			</label>
-			{authMode === "apiKey" && keySource === "env" && <p className="text-[11px] text-muted-foreground" data-testid="custom-env-owned">Environment supplies the effective key. Change the environment to replace it.</p>}
-			{authMode === "apiKey" && keyPresent && (changedTarget || keyReuseRequired) && <label className="text-[11px]"><input type="checkbox" data-testid="custom-reuse-key" checked={reuseKey} onChange={(e) => setReuseKey(e.target.checked)} /> Allow reuse of the effective existing key for this URL</label>}
+			{authMode === "apiKey" && keySource === "env" && <p className="text-[11px] text-muted-foreground" data-testid="custom-env-owned">{t("customEndpoint.envOwned")}</p>}
+			{authMode === "apiKey" && keyPresent && (changedTarget || keyReuseRequired) && <label className="text-[11px]"><input type="checkbox" data-testid="custom-reuse-key" checked={reuseKey} onChange={(e) => setReuseKey(e.target.checked)} /> {t("customEndpoint.reuseKey")}</label>}
 			<div className="flex items-center gap-2">
 				{authMode === "apiKey" && <input
 					type="password"
@@ -934,8 +950,8 @@ function CustomEndpointEditor({
 						setKeyTouched(true);
 						if (!e.target.value.trim()) setAuthMode("keyless");
 					}}
-					placeholder={keyPresent ? "Leave blank to keep effective key" : "API key"}
-					aria-label="Custom endpoint API key"
+					placeholder={keyPresent ? t("customEndpoint.keyPlaceholderKeep") : t("customEndpoint.apiKey")}
+					aria-label={t("customEndpoint.keyAria")}
 					data-testid="custom-key-input"
 					disabled={busy || pinsBusy || keySource === "env"}
 					className="h-7 min-w-0 flex-1 rounded-sm border border-border bg-background px-1.5 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-muted-foreground/50"
@@ -947,7 +963,7 @@ function CustomEndpointEditor({
 					data-testid="custom-save"
 					className="shrink-0 text-xs text-foreground underline-offset-2 hover:underline disabled:text-muted-foreground/40 disabled:no-underline"
 				>
-					{busy ? "Connecting…" : "Connect"}
+					{busy ? t("customEndpoint.connecting") : t("connections.connect")}
 				</button>
 				<button
 					type="button"
@@ -956,7 +972,7 @@ function CustomEndpointEditor({
 					data-testid="custom-cancel"
 					className="shrink-0 text-xs text-muted-foreground/70 underline-offset-2 hover:text-foreground hover:underline"
 				>
-					Cancel
+					{t("actions.cancel")}
 				</button>
 				{/* Disconnect rides beside Connect, exactly the stored-key rows' Delete:
 				    quiet text, one click, no confirm — and only once there IS an
@@ -969,7 +985,7 @@ function CustomEndpointEditor({
 						data-testid="custom-delete"
 						className="shrink-0 text-xs text-muted-foreground/70 underline-offset-2 hover:text-error hover:underline"
 					>
-						Disconnect
+						{t("actions.disconnect")}
 					</button>
 				)}
 			</div>
@@ -982,7 +998,10 @@ function CustomEndpointEditor({
 								<div key={m.id} className="flex items-center gap-2" data-testid={pinTestid("custom-pin-row", m.id)}>
 									<span className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground" title={m.id}>
 										{m.id}
-										<span className="block text-[10px] text-muted-foreground">Context: {d.context.trim() ? "user pin" : m.context ? `reported ${m.context}` : `fallback ${CUSTOM_MODEL_DEFAULT_CONTEXT_WINDOW}`} · Output: {d.maxTokens.trim() ? "user pin" : m.maxTokens ? `reported ${m.maxTokens}` : `fallback ${CUSTOM_MODEL_DEFAULT_MAX_TOKENS}`}</span>
+										<span className="block text-[10px] text-muted-foreground">{t("customEndpoint.pins.line", {
+											contextLimit: d.context.trim() ? t("customEndpoint.pins.userPin") : m.context ? t("customEndpoint.pins.reported", { value: m.context }) : t("customEndpoint.pins.fallback", { value: CUSTOM_MODEL_DEFAULT_CONTEXT_WINDOW }),
+											outputLimit: d.maxTokens.trim() ? t("customEndpoint.pins.userPin") : m.maxTokens ? t("customEndpoint.pins.reported", { value: m.maxTokens }) : t("customEndpoint.pins.fallback", { value: CUSTOM_MODEL_DEFAULT_MAX_TOKENS }),
+										})}</span>
 									</span>
 									<input
 										type="text"
@@ -990,7 +1009,7 @@ function CustomEndpointEditor({
 										value={d.context}
 										onChange={(e) => setDraft(m, { context: e.target.value })}
 										placeholder={String(m.context ?? CUSTOM_MODEL_DEFAULT_CONTEXT_WINDOW)}
-										aria-label={`${m.id} context window in tokens`}
+										aria-label={t("customEndpoint.pins.contextAria", { id: m.id })}
 										data-testid={pinTestid("custom-pin-context", m.id)}
 										disabled={pinsBusy}
 										className="h-7 w-20 shrink-0 rounded-sm border border-border bg-background px-1.5 text-right font-mono text-[11px] text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-muted-foreground/50"
@@ -1001,7 +1020,7 @@ function CustomEndpointEditor({
 										value={d.maxTokens}
 										onChange={(e) => setDraft(m, { maxTokens: e.target.value })}
 										placeholder={String(m.maxTokens ?? CUSTOM_MODEL_DEFAULT_MAX_TOKENS)}
-										aria-label={`${m.id} max output tokens`}
+										aria-label={t("customEndpoint.pins.maxTokensAria", { id: m.id })}
 										data-testid={pinTestid("custom-pin-maxtokens", m.id)}
 										disabled={pinsBusy}
 										className="h-7 w-20 shrink-0 rounded-sm border border-border bg-background px-1.5 text-right font-mono text-[11px] text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-muted-foreground/50"
@@ -1009,14 +1028,14 @@ function CustomEndpointEditor({
 									<select
 										value={d.reasoning}
 										onChange={(e) => setDraft(m, { reasoning: e.target.value as PinDraft["reasoning"] })}
-										aria-label={`${m.id} reasoning effort support`}
+										aria-label={t("customEndpoint.pins.reasoningAria", { id: m.id })}
 										data-testid={pinTestid("custom-pin-reasoning", m.id)}
 										disabled={pinsBusy}
 										className="h-7 shrink-0 rounded-sm border border-border bg-background px-1 font-ui text-[11px] text-foreground outline-none focus:border-muted-foreground/50"
 									>
-										<option value="">Reasoning effort: Use reported</option>
-										<option value="on">Reasoning effort: Supported</option>
-										<option value="off">Reasoning effort: Not supported</option>
+										<option value="">{t("customEndpoint.pins.reasoningReported")}</option>
+										<option value="on">{t("customEndpoint.pins.reasoningSupported")}</option>
+										<option value="off">{t("customEndpoint.pins.reasoningUnsupported")}</option>
 									</select>
 								</div>
 							);
@@ -1035,19 +1054,19 @@ function CustomEndpointEditor({
 							data-testid="custom-pins-save"
 							className="ml-auto shrink-0 text-xs text-foreground underline-offset-2 hover:underline disabled:text-muted-foreground/40 disabled:no-underline"
 						>
-							{pinsBusy ? "Saving…" : "Save limits"}
+							{pinsBusy ? t("customEndpoint.pins.saving") : t("customEndpoint.pins.save")}
 						</button>
 					</div>
 				</div>
 			)}
 			<div className="flex flex-col gap-1 text-[11px] text-muted-foreground" data-testid="custom-help">
-				{!setup && models.length > 0 && <p data-testid="custom-budget-help">Budget pins do not resize backend context. Blank uses reported limits, then fallback (8192 context / 4096 output). Custom pricing is unknown.</p>}
-				<p data-testid="custom-reasoning-help">Reasoning support is a capability declaration. The effort picker’s Off may not disable a custom backend’s default thinking.</p>
+				{!setup && models.length > 0 && <p data-testid="custom-budget-help">{t("customEndpoint.budgetHelp", { contextLimit: CUSTOM_MODEL_DEFAULT_CONTEXT_WINDOW, outputLimit: CUSTOM_MODEL_DEFAULT_MAX_TOKENS })}</p>}
+				<p data-testid="custom-reasoning-help">{t("customEndpoint.reasoningHelp")}</p>
 			</div>
-			{(error || pinsError) && <button type="button" data-testid="custom-reload" onClick={() => void onReload()} className="text-left text-xs underline">Reload configuration</button>}
+			{(error || pinsError) && <button type="button" data-testid="custom-reload" onClick={() => void onReload()} className="text-left text-xs underline">{t("customEndpoint.reload")}</button>}
 			{error && (
 				<p role="alert" data-testid="custom-error" className="text-xs text-error">
-					{error}
+					{customMessage(t, error)}
 				</p>
 			)}
 		</div>

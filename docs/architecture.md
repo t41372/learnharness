@@ -81,7 +81,7 @@ A matching successful `probe_done` result selects the teacher and queues a fresh
 
 Practice uses the same turn/persistence/recovery path, not a separate problem-set service. [`tools/practice.ts`](../src/agent/tools/practice.ts) commits a statement and solution with `problem`; `conclude` records the outcome and reveals that solution. A turn-scoped gate enforces one active problem. The post-conclusion pause is doctrine, not a terminating `conclude` result. Next adds an explicit marker. Practice outcomes are session evidence, not graph mastery; ordinary practice settlement skips extraction.
 
-[Prompt composition](../src/agent/prompts/README.md) and [tool-content display recovery](tool-content-recovery.md) have separate references. Plugins can add bounded question/problem types without replacing builtins; see [Trusted local plugins](#trusted-local-plugins-api-v1).
+[Prompt composition](../src/agent/prompts/README.md) and [tool-content display recovery](tool-content-recovery.md) have separate references. The learner's own instructions (Settings → Agent, `agent.instructions`) are not part of that composition: [`withLearnerInstructions`](../src/agent/learner-instructions.ts) wraps every engine the server builds, so each request — conversation, side question, compaction and background worker — carries them as a named system section. Plugins can add bounded question/problem types without replacing builtins; see [Trusted local plugins](#trusted-local-plugins-api-v1).
 
 ## Background work
 
@@ -177,7 +177,11 @@ Read-only file tools default to the server user's home, not a selected project o
 
 The **sensitive-path guard** refuses known private home locations, `.env` files, configured auth/subscription files, and recognized credential temporary files. It checks named/canonical paths and aliases; walks skip protected locations. It is path-based defense in depth, not a content scanner, sandbox, or allowed-folders setting. Other sensitive files and learning records can remain readable. See [`fs-shared.ts`](../src/agent/tools/fs-shared.ts).
 
-File/PDF/visual images share image postprocessing. Search supports Tavily, Brave, Exa, Firecrawl, and hosted Ollama adapters; page fetching is independent and does not need a search key. Dictation mints short-lived tokens server-side and streams audio browser → Deepgram. These external effects are not isolated by a scratch data directory alone.
+File/PDF/visual images share image postprocessing. Search supports Tavily, Brave, Exa, Firecrawl, and hosted Ollama adapters; page fetching is independent and does not need a search key. Dictation either mints short-lived tokens server-side and streams audio browser → Deepgram, or streams PCM to the local Standard ASR bridge described below. These external effects are not isolated by a scratch data directory alone.
+
+### Local dictation (Standard ASR)
+
+Settings → Dictation chooses the engine: Deepgram (cloud, a key) or Standard ASR — any engine plugin installed in the app's own speech environment, recognizing on the device. The server owns that environment (`src/server/standard-asr/`): a uv venv under `LH_DATA_DIR/speech` (uv bundled with the desktop app, `LH_UV_PATH`; PATH otherwise), the pinned core and plugins (`pins.ts` — commits, never `@main`), model files under `speech/models` (`STANDARD_ASR_MODEL_DIR`). Management (inventory, file status, downloads) runs `bridge.py` in a fresh interpreter per call; recognition runs in ONE resident `bridge.py serve` per server process — it keeps engines created and warmed, so only the first dictation after start pays the model load. The bridge listens on 127.0.0.1 and admits a socket only with this launch's random token; `GET /api/stt/session` hands the renderer the URL + token (the Deepgram token flow's shape), and audio flows renderer → bridge, never through the Next server. Recognition never downloads (`STANDARD_ASR_ALLOW_DOWNLOAD=0`); package changes stop the bridge so the next session discovers the new entry points. The bridge's lifetime is tied to the server's: its stdin is the control channel, and EOF exits it.
 
 ## Trusted local plugins (API v1)
 

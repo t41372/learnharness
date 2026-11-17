@@ -9,6 +9,7 @@ import { LiveToolCard } from "@/components/artifacts/live-tool-card";
 import { ToolCallCard } from "@/components/artifacts/tool-call-card";
 import { DispatchCard } from "@/components/artifacts/dispatch-card";
 import { JobsContext } from "@/components/jobs-context";
+import { useT } from "@/components/i18n";
 
 /** The Markdown dispatch uses this same exclusive built-in language. */
 export const BUILTIN_MERMAID_LANGUAGE = "mermaid";
@@ -41,12 +42,13 @@ function RendererMount({ registration, mount, label, fallback }: {
 }
 
 export function PluginCodeBlock({ language, source, meta, incomplete, fallback }: Omit<PluginCodeBlockProps, "signal"> & { fallback: ReactNode }) {
+	const { t } = useT("plugins");
 	const { snapshot } = usePlugins();
 	const registration = snapshot.codeBlocks.find(entry => entry.renderer.language === language);
 	const mount = useMemo<PluginMount>(() => (container, signal) => registration?.renderer.mount(container, { language, source, meta, incomplete, signal }),
 		[registration, language, source, meta, incomplete]);
 	if (!registration) return <>{fallback}</>;
-	return <RendererMount registration={registration} mount={mount} label={`Plugin code block (${language})`} fallback={fallback} />;
+	return <RendererMount registration={registration} mount={mount} label={t("renderers.codeBlock", { language })} fallback={fallback} />;
 }
 
 /** Preserve native text (and an honest image attachment note) when no details
@@ -67,6 +69,7 @@ export function toolFallbackPart(part: LhViewPart): ArtifactPartProps["part"] {
  * the native dispatch/status card. Custom renderers replace either default body.
  * Disabled, failed, or uninstalled renderers never make native results vanish. */
 export function PluginToolRenderer({ part, fallback: suppliedFallback }: { part: LhViewPart; fallback?: ReactNode }) {
+	const { t } = useT("plugins");
 	const { snapshot } = usePlugins();
 	const jobs = useContext(JobsContext);
 	const toolName = part.type.slice("tool-".length);
@@ -90,12 +93,12 @@ export function PluginToolRenderer({ part, fallback: suppliedFallback }: { part:
 		jobs.some(job => job.kind === "plugin" && job.toolCallId === part.toolCallId) ||
 		(ack !== null && typeof ack === "object" && typeof ack.jobId === "string" && ack.dispatched === true)
 	);
-	if (part.pluginQuestion) return <p role="status" className="text-xs text-muted-foreground">Question unavailable</p>;
+	if (part.pluginQuestion) return <p role="status" className="text-xs text-muted-foreground">{t("question.unavailable")}</p>;
 	const fallback = suppliedFallback ?? (dispatched
 		? <DispatchCard kind="plugin" toolCallId={part.toolCallId ?? ""} />
 		: <ToolCallCard part={toolFallbackPart(part)} />);
 	if (!registration || !isToolState(part.state)) return fallback;
-	return <RendererMount registration={registration} mount={mount} label={`Plugin tool (${toolName})`} fallback={fallback} />;
+	return <RendererMount registration={registration} mount={mount} label={t("renderers.tool", { toolName })} fallback={fallback} />;
 }
 
 function isToolState(state: unknown): state is PluginToolRenderProps["state"] {
@@ -106,9 +109,10 @@ function isToolState(state: unknown): state is PluginToolRenderProps["state"] {
  * handling. Built-in cards and the hidden settled plan call remain exclusive;
  * only the generic fallback slot is extensible by plugins. */
 export function ToolPartRenderer({ part }: { part: LhViewPart }) {
+	const { t } = useT("plugins");
 	// Attempts/unreadable metadata must never fall through to raw payloads or
 	// validator error text, including when the renderer is missing.
-	if (part.pluginQuestion) return <p role="status" className="text-xs text-muted-foreground">Question unavailable</p>;
+	if (part.pluginQuestion) return <p role="status" className="text-xs text-muted-foreground">{t("question.unavailable")}</p>;
 	const toolName = part.type.slice("tool-".length);
 	const Builtin = Object.hasOwn(artifactRenderers, toolName) ? artifactRenderers[toolName] : undefined;
 	const reserved = Builtin || toolName === "plan_init" || (QUESTION_TOOLS as readonly string[]).includes(toolName);

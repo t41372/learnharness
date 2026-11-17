@@ -3,6 +3,7 @@
  * schemes, and research jobs saved earlier may still hold them. */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ResearchBriefCard } from "../components/artifacts/job-card.tsx";
 import { parseSources } from "../src/agent/subagents/runner.ts";
@@ -37,7 +38,8 @@ describe("research sources", () => {
 
 	it("a saved non-http(s) source renders as plain text, never a link", () => {
 		const html = renderToStaticMarkup(
-			ResearchBriefCard({
+			// Rendered as an element: the card's copy comes from a hook.
+			createElement(ResearchBriefCard, {
 				output: {
 					brief: "Brief.",
 					sources: [

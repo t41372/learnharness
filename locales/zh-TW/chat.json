@@ -1,0 +1,274 @@
+{
+	"session": {
+		"titleAria": "對話標題",
+		"titleRename": "重新命名此對話",
+		"planChip": "計畫",
+		"planHint": "開啟完整計畫",
+		"practiceTag": "練習",
+		"emptyTitle": "新對話",
+		"emptyDescription": "老師會先問幾個問題，了解你已經掌握了什麼。",
+		"you": "你",
+		"nextProblemLine": "下一題",
+		"retrying": "正在重試…",
+		"compactingLabel": "正在壓縮上下文",
+		"compacting": "正在壓縮上下文…",
+		"thinkingLabel": "思考中",
+		"thinking": "思考中…",
+		"setupModels": "設定你的模型",
+		"nextPlaceholder": "想問什麼都可以，或按 Enter 進入下一題。",
+		"evaluatingLabel": "評估中",
+		"evaluating": "評估中…"
+	},
+	"errors": {
+		"banner": "發生錯誤：{{message}}",
+		"generic": "未知錯誤。",
+		"turnRunning": "已有一輪回覆正在進行，請稍後再試。",
+		"attachFailed": "無法連線到正在進行的回覆。",
+		"emptyStream": "回覆的資料流是空的。",
+		"sendFailed": "傳送失敗（{{status}}）。",
+		"steerFailed": "引導訊息傳送失敗（{{status}}）。",
+		"dismissFailed": "略過/捨棄失敗（{{status}}）。",
+		"modelsNotConfigured": "尚未設定模型，請先完成模型設定",
+		"providerKeyMissing": "尚未設定 {{provider}} 金鑰，請在「設定 → 供應商」中新增",
+		"retry": "重試",
+		"streamDropped": "連線在這一輪回覆完成前中斷了。",
+		"syncFailed": "無法同步已儲存的對話。",
+		"pluginDismissFailed": "略過失敗。",
+		"thinkingRequired": "請填寫思路文字或加入圖片。你的輸入已保留。",
+		"messageRequired": "請填寫訊息文字或加入圖片。你的輸入已保留。"
+	},
+	"composer": {
+		"placeholder": "提問、回答，或引導這堂課的方向…",
+		"nextProblem": "下一題",
+		"send": "傳送",
+		"stop": "停止"
+	},
+	"nodePicker": {
+		"selected_other": "已選 {{count}} 個節點",
+		"pick": "選擇節點",
+		"clear": "清除"
+	},
+	"questionLabel": {
+		"probe": "前測",
+		"recall": "回想",
+		"prediction": "預測",
+		"check": "測驗",
+		"explain": "解釋",
+		"question": "問題"
+	},
+	"questionDock": {
+		"revealTitle": "檢驗一下你的理解",
+		"revealOpen": "開啟",
+		"answer": "作答",
+		"multiSelect": " · 可複選",
+		"dontKnow": "我不知道",
+		"otherPlaceholder": "輸入你自己的回答…",
+		"confidence": "把握程度",
+		"confidenceAria": "把握程度——你所選答案正確的機率",
+		"confidenceValue": "{{value}}%",
+		"confidenceTitle": "你所選答案正確的機率——50% 等於擲硬幣。用 ←/→ 調整。",
+		"yourAnswer": "你的回答",
+		"answerPlaceholder": "輸入你的回答…",
+		"thinkingPlaceholder": "為什麼選這個？想到什麼就寫什麼。",
+		"submit": "送出回答",
+		"retryBlocked": "請先回答或略過剩下的問題。"
+	},
+	"dock": {
+		"compacting": "正在壓縮對話…",
+		"keys": "↵ 送出 · ⇧↵ 換行"
+	},
+	"thinking": {
+		"yours": "你的思路"
+	},
+	"answeredCard": {
+		"skipped": "<q/>——已略過",
+		"didntKnow": "不知道",
+		"correct": "正確",
+		"incorrect": "錯誤",
+		"quote": "「<text/>」",
+		"answeredDontKnow": "回答了「我不知道」。",
+		"why": "解析",
+		"hideWhy": "收合解析",
+		"whyLabel": "解析：",
+		"theAnswer": "參考答案："
+	},
+	"readingThinking": {
+		"label": "邊讀邊想",
+		"placeholder": "讀的時候想到什麼，都可以寫在這裡。"
+	},
+	"abortTurn": {
+		"cancel": "取消",
+		"turn": {
+			"title": "中止這一輪回覆？",
+			"line": "已產生的部分會保留在對話紀錄中。",
+			"action": "中止"
+		},
+		"question": {
+			"title": "略過這個問題？",
+			"line": "略過後，老師會直接往下講。",
+			"lineBusy": "略過後，老師會直接往下講。正在進行的回覆也會停止。",
+			"action": "略過"
+		},
+		"problem": {
+			"title": "捨棄這道題？",
+			"line": "這道題會被捨棄，不會公布解答。",
+			"lineBusy": "這道題會被捨棄，不會公布解答。正在進行的回覆也會停止。",
+			"action": "捨棄"
+		}
+	},
+	"phase": {
+		"probe": "前測",
+		"plan": "規劃",
+		"teach": "教學",
+		"planNodes_other": "計畫 · {{count}} 個節點"
+	},
+	"compaction": {
+		"moment": "上下文已壓縮",
+		"cut": "歷史已壓縮",
+		"cutTokens": "歷史已壓縮 · {{k}}k token"
+	},
+	"practice": {
+		"problem": "題目",
+		"problemDismissed": "題目已捨棄。",
+		"concluded": "已結束",
+		"modelSolution": "參考解答",
+		"thinkingPlaceholder": "在這裡推演，邊想邊寫。",
+		"submit": "送出思路",
+		"outcome": {
+			"solved": "已解決",
+			"solvedWithHints": "靠提示解決",
+			"movedOn": "已略過",
+			"surrendered": "已放棄",
+			"dismissed": "已捨棄"
+		},
+		"metadata": {
+			"toggle": "中繼資料",
+			"mode": "模式",
+			"targets": "目標",
+			"outcome": "結果",
+			"hintRung": "提示層級",
+			"missClass": "錯誤類型",
+			"retest": "複測",
+			"untagged": "未標記",
+			"none": "無",
+			"yes": "是",
+			"no": "否",
+			"separator": "、"
+		},
+		"submitCustom": "送出"
+	},
+	"spinner": {
+		"working": "處理中"
+	},
+	"reasoning": {
+		"thinking": "思考中…",
+		"agentThinking": "Agent 的思路"
+	},
+	"conversation": {
+		"emptyTitle": "還沒有訊息",
+		"emptyDescription": "開始對話後，訊息會顯示在這裡"
+	},
+	"message": {
+		"previousBranch": "上一個分支",
+		"nextBranch": "下一個分支",
+		"branchPage": "{{current}} / {{total}}"
+	},
+	"attachments": {
+		"attachImages": "加入圖片",
+		"dropImages": "拖放到這裡以加入圖片",
+		"staged": "待傳送的圖片",
+		"preview": "待傳送的圖片：{{name}}",
+		"remove": "移除 {{name}}",
+		"tooMany": "每個輸入框最多 10 張圖片，這張圖片不會傳送。",
+		"tooLarge": "超過 20 MB，這張圖片不會傳送。",
+		"unsupported": "只能傳送 PNG、JPEG、GIF 和 WebP 圖片。",
+		"unreadable": "無法讀取這張圖片。",
+		"overBudget": "一次傳送的圖片資料過多，這張圖片不會傳送。請先傳送其他圖片。",
+		"noTarget": "請先開啟一個對話，再加入圖片。"
+	},
+	"sync": {
+		"retry": "重新同步"
+	},
+	"pluginQuestion": {
+		"preparing": "正在準備問題…",
+		"unavailable": "問題無法使用",
+		"dismiss": "略過問題"
+	},
+	"malformed": {
+		"line": "這道題無法顯示。",
+		"lineRetry": "這道題無法顯示。可以重試，或傳送一則訊息繼續。",
+		"retryTitle": "請模型重新出一道題。",
+		"retry": "重試此題"
+	},
+	"sideThread": {
+		"ask": "提出旁支提問",
+		"openConversation": "開啟旁支對話",
+		"askAction": "提問",
+		"askActionAria": "針對選取的內容提出旁支提問",
+		"placeholderPassage": "針對這段內容提問…",
+		"placeholderFollowUp": "繼續追問…",
+		"placeholderNew": "輸入旁支提問…",
+		"showQuote": "顯示引用的老師原文",
+		"showInLesson": "在課程中顯示",
+		"inputLevel": "麥克風輸入音量",
+		"title": "旁支提問",
+		"dock": "將旁支對話停靠到側邊",
+		"float": "讓旁支對話浮動顯示",
+		"pin": "固定到側邊",
+		"unpin": "取消固定，改為浮動",
+		"close": "關閉旁支對話",
+		"closeShort": "關閉",
+		"stopped": "已停止",
+		"answering": "正在回答",
+		"retry": "重新回答",
+		"currentStep": "前往目前步驟",
+		"dictationStop": "停止旁支對話的語音輸入",
+		"dictationStart": "開始旁支對話的語音輸入",
+		"dictate": "語音輸入旁支提問",
+		"stopAnswer": "停止旁支回答",
+		"send": "傳送旁支提問",
+		"errors": {
+			"unreachable": "無法連線到旁支對話。",
+			"noStream": "旁支回答沒有回傳資料流。",
+			"failed": "旁支回答失敗。",
+			"disconnected": "旁支回答的連線已中斷。重新開啟對話即可重新連線。"
+		}
+	},
+	"selection": {
+		"toolbar": "選取內容操作",
+		"shorten": "請縮短選取範圍"
+	},
+	"citation": {
+		"cite": "引用",
+		"citeAria": "在輸入框中引用選取內容",
+		"goToSource": "前往原文",
+		"viewCited": "查看引用的老師原文：{{label}}",
+		"quoted": "引用的老師原文：{{label}}",
+		"editComment": "編輯引用評論",
+		"addComment": "為引用加入評論",
+		"commentAria": "對選取文字的評論",
+		"commentKeys": "按 Enter 儲存引用評論；按 Command/Ctrl+Enter 儲存並傳送；按 Shift+Enter 換行。",
+		"commentPlaceholder": "加入評論（選填）…",
+		"commentTooLong": "評論最多 8,000 個字元。",
+		"cancel": "取消",
+		"shortenComment": "縮短評論",
+		"save": "儲存"
+	},
+	"images": {
+		"submitted": "已送出的圖片",
+		"openFullscreen": "全螢幕檢視已送出的圖片"
+	},
+	"filePaths": {
+		"attach": "加入附件",
+		"attachMenu": "加入檔案或資料夾",
+		"files": "檔案",
+		"folder": "資料夾",
+		"folderFailed": "無法選擇資料夾，請再試一次。",
+		"browserNotice": "只有桌面應用程式才能附加本機檔案路徑。你也可以直接貼上完整路徑。",
+		"dropHere": "拖放到這裡以附加檔案路徑",
+		"noPaths": "沒有可用的本機檔案路徑。請拖入電腦上現有的檔案或資料夾。",
+		"noChat": "請先開啟一個對話，再附加檔案路徑。",
+		"skipped": "部分拖入的項目沒有可用的檔案路徑。",
+		"dismissNotice": "關閉附件提示"
+	}
+}

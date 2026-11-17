@@ -12,7 +12,8 @@ import { findSurfaceBoundary } from "./plugin-surface-targets";
 import { scheduleOpeningSubmission } from "./plugin-submission-opening";
 import { activeProblemOccurrenceOf, buildAnswer, toClientQuestion, type PluginSubmission, type PluginSubmissionTarget, type QuestionData } from "@/src/core";
 import { validatePluginBuiltinSubmissionAnswer } from "@/src/core";
-import { visibleQueuedSteers } from "@/components/session-core";
+import { visibleQueuedSteers, type SessionError } from "@/components/session-core";
+import { useT, type TFunction } from "@/components/i18n";
 import { SetupDialog } from "@/components/setup-dialog";
 import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
@@ -38,11 +39,11 @@ import { ChatSessionComposer } from "@/components/composer";
 import { useEnterSubmits } from "@/components/enter-submits";
 import { blurAfterPointerClick } from "@/components/focus-hygiene";
 import { dockStateKey } from "@/components/dock-state-key";
-import { clearOpeningPrompt, readOpeningPromptEntry, stashOpeningPrompt, OPENING_PROMPT_FAILURE } from "@/components/opening-prompt";
+import { clearOpeningPrompt, readOpeningPromptEntry, stashOpeningPrompt } from "@/components/opening-prompt";
 import { forwardDockWheel, useDockHeight } from "@/components/dock-height";
 import { createDockMorph } from "@/components/dock-morph";
 import { QueuedSteersBody, type QueuedSteerLine } from "@/components/queued-steers";
-import { DictationBar, finishDictation, joinDictation, useDictation, type Dictation } from "@/components/dictation";
+import { DictationBar, finishDictation, joinDictation, useDictation, useDictationTerms, type Dictation } from "@/components/dictation";
 import { useFieldCycle } from "@/components/field-cycle";
 import { useOptionalInteractionLayers } from "./interaction-layers";
 import { isInteractionScopeEligible } from "./plugin-input-focus";
@@ -50,6 +51,7 @@ import { JobsContext } from "@/components/jobs-context";
 import { StatsBar } from "@/components/stats-bar";
 import { useServerEvent, useServerResync } from "@/components/server-events";
 import {
+	AUTH_PROVIDER_KEYS,
 	isProviderKeyRefusal,
 	firstSourceTextParts,
 	cliContextWindowOf,
@@ -206,6 +208,55 @@ export function parseProviderKeyRefusal(message: string | undefined): boolean {
 	}
 }
 
+/** The error banner's line in the interface language (i18n wave,
+ *  2026-10-25): the session model's own coded lines and the two refusal
+ *  envelopes (keyed on their machine codes) translate; provider, server,
+ *  and network text stays exactly as received. */
+function errorLine(error: SessionError, t: TFunction<["chat", "common"]>): string {
+	switch (error.code) {
+		case "generic":
+			return t("errors.generic");
+		case "turnRunning":
+			return t("errors.turnRunning");
+		case "attachFailed":
+			return t("errors.attachFailed");
+		case "emptyStream":
+			return t("errors.emptyStream");
+		case "streamDropped":
+			return t("errors.streamDropped");
+		case "syncFailed":
+			return t("errors.syncFailed");
+		case "sendFailed":
+			return t("errors.sendFailed", { status: error.status });
+		case "steerFailed":
+			return t("errors.steerFailed", { status: error.status });
+		case "dismissFailed":
+			return t("errors.dismissFailed", { status: error.status });
+		case "pluginDismissFailed":
+			return t("errors.pluginDismissFailed");
+	}
+	if (parseModelsRefusal(error.message)) return t("errors.modelsNotConfigured");
+	if (parseProviderKeyRefusal(error.message)) {
+		// The envelope's own label lookup (core providerKeyMissing).
+		const { provider } = JSON.parse(error.message) as { provider?: unknown };
+		const id = typeof provider === "string" ? provider : "";
+		return t("errors.providerKeyMissing", { provider: AUTH_PROVIDER_KEYS.find((p) => p.id === id)?.label ?? id });
+	}
+	return error.message;
+}
+
+/** The host's own submission refusals (thrown below, before any POST) —
+ *  recognized word for word at render; plugin and preparation text from
+ *  elsewhere stays verbatim. */
+const THINKING_REQUIRED = "Thinking text or images are required. Your input has been kept.";
+const MESSAGE_REQUIRED = "Message text or images are required. Your input has been kept.";
+
+function preparationLine(message: string, t: TFunction<["chat", "common"]>): string {
+	if (message === THINKING_REQUIRED) return t("errors.thinkingRequired");
+	if (message === MESSAGE_REQUIRED) return t("errors.messageRequired");
+	return message;
+}
+
 /** Retry sends no composer text. Its refusal must not resurrect the draft
  * from an earlier, already-durable text send over today's unsent composer.
  * Retire that fallback synchronously, never when the async Retry settles:
@@ -240,10 +291,11 @@ function SystemLine({ children, testId }: { children: React.ReactNode; testId?: 
 /** One immediate optimistic placeholder; only its wording changes during
  * host-managed submission evaluation. The spinner keeps its identity. */
 export function PendingTurnIndicator({ evaluating }: { evaluating: boolean }) {
+	const { t } = useT("chat");
 	return (
 		<span className="flex items-center gap-2 font-ui text-xs font-medium uppercase tracking-wide text-muted-foreground">
-			<BrailleSpinner label={evaluating ? "Evaluating" : "Thinking"} />
-			<Shimmer duration={1}>{evaluating ? "EVALUATING…" : "THINKING…"}</Shimmer>
+			<BrailleSpinner label={evaluating ? t("session.evaluatingLabel") : t("session.thinkingLabel")} />
+			<Shimmer duration={1}>{evaluating ? t("session.evaluating") : t("session.thinking")}</Shimmer>
 		</span>
 	);
 }
@@ -299,6 +351,7 @@ export function Chat({
 	// settled terminal's callback — a stable ref assigned below, once
 	// syncFromServer exists (refs, not closures: no stale capture).
 	const reattachSettledRef = useRef<() => void>(() => {});
+	const { t } = useT(["chat", "common"]);
 
 	// THE SESSION HOOK (Wave D, owner-approved 2026-09-26): the app-owned
 	// replacement for useChat + the AI-SDK transport. The record is native
@@ -752,7 +805,7 @@ export function Chat({
 		let captured = "";
 		void runSubmission(target, () => ({ type: "thinking", content: { text: captured = capture(), images: [] } }), () => !busyRef.current && JSON.stringify(activeProblemOccurrenceOf(submissionLive.current.nativeMessages)) === JSON.stringify(target.problem.occurrence), async (prepared, attempt) => {
 			if (prepared.type !== "thinking") return false;
-			if (!prepared.content.text.trim() && !prepared.content.images.length) throw new Error("Thinking text or images are required. Your input has been kept.");
+			if (!prepared.content.text.trim() && !prepared.content.images.length) throw new Error(THINKING_REQUIRED);
 			attempt.deliver();
 			return send({ type: "thinking", problemCallId: target.problem.occurrence.toolCallId, occurrence: target.problem.occurrence, text: prepared.content.text, ...(prepared.content.images.length ? { images: prepared.content.images.map(image => ({ ...image })) } : {}) }, () => { clear(captured); attempt.accepted(); }, undefined, attempt.refused);
 		});
@@ -810,7 +863,7 @@ export function Chat({
 		let captured = "", capturedRevision = 0;
 		return runSubmission(target, () => { capturedRevision = composerEditRevision.current; return { type: "text", content: { text: captured = supplied ?? textRef.current.trim(), images: [] } }; }, () => submissionLive.current.ready && !pendingQuestionOf(submissionLive.current.nativeMessages) && !pendingPluginQuestionOf(submissionLive.current.nativeMessages) && !activeProblemOf(submissionLive.current.nativeMessages), async (prepared, attempt) => {
 			if (prepared.type !== "text") return false;
-			if (!prepared.content.text.trim() && !prepared.content.images.length) throw new Error("Message text or images are required. Your input has been kept.");
+			if (!prepared.content.text.trim() && !prepared.content.images.length) throw new Error(MESSAGE_REQUIRED);
 			if (beforePost && !beforePost(captured)) { attempt.cancel(); return false; }
 			draftRef.current = captured;
 			const accepted = () => { if (composerEditRevision.current === capturedRevision && textRef.current.trim() === captured) applyText(""); openingAccepted?.(); attempt.accepted(); };
@@ -953,6 +1006,7 @@ export function Chat({
 		phase: recording.destinationId === "main" ? recording.phase : "idle",
 		active: recording.destinationId === "main" && recording.active,
 		error: recording.destinationId === "main" ? recording.error : null,
+		errorDetail: recording.destinationId === "main" ? recording.errorDetail : null,
 		blocked: recording.destinationId !== "main" && recording.active,
 	};
 	/* When a dictation run ends, the bare composer takes focus (owner
@@ -982,8 +1036,8 @@ export function Chat({
 		return () => document.removeEventListener("focusin", remember);
 	}, [cycleChatFields]);
 	const citeAction = useMemo(
-		() => createCiteAction({ chatId, composer: citeInput, openEditor: setCitationEdit }),
-		[chatId, citeInput],
+		() => createCiteAction({ chatId, composer: citeInput, openEditor: setCitationEdit, t }),
+		[chatId, citeInput, t],
 	);
 	// One durable companion per explanation/check, in teaching AND practice.
 	// Main requests append new raw exchanges from every thread; closing only hides the UI.
@@ -1030,8 +1084,8 @@ export function Chat({
 		const hasHistory = sideThread.threads.some((thread) => thread.anchor.messageId === sourceMessageId && thread.messages.length > 0);
 		return <div className="mt-1 flex justify-end">
 			<Button type="button" variant="ghost" size="icon-xs" data-testid="side-conversation-button" data-side-segment-id={sourceMessageId}
-				data-has-history={hasHistory} aria-label={hasHistory ? "Open side conversation" : "Ask a side question"}
-				title={hasHistory ? "Open side conversation" : "Ask a side question"}
+				data-has-history={hasHistory} aria-label={hasHistory ? t("sideThread.openConversation") : t("sideThread.ask")}
+				title={hasHistory ? t("sideThread.openConversation") : t("sideThread.ask")}
 				className={hasHistory ? "border border-border/60 text-muted-foreground" : "text-muted-foreground/40 hover:text-muted-foreground"}
 				onClick={(event) => openSideThread({ sourceMessageId, anchor: { kind: "element", element: event.currentTarget } })}>
 				<MessageCircleQuestionIcon aria-hidden className="size-3.5" fill="currentColor" fillOpacity={hasHistory ? 0.12 : 0} />
@@ -1052,7 +1106,7 @@ export function Chat({
 		return () => window.removeEventListener(kbdEventForChat("toggle-question-thread"), toggleQuestionThread);
 	}, [toggleQuestionThread]);
 	// Advancing the lesson does not close or disable an old conversation.
-	const sideActions = useMemo(() => createSideQuestionActions({ open: openSideThread }), [openSideThread]);
+	const sideActions = useMemo(() => createSideQuestionActions({ open: openSideThread, t }), [openSideThread, t]);
 	const selectionActions = useMemo(() => [citeAction, ...sideActions], [citeAction, sideActions]);
 	const router = useRouter();
 	const transcriptElementRef = useRef<HTMLElement | null>(null);
@@ -1267,6 +1321,10 @@ export function Chat({
 	// The session's live plan (drives the top-bar chip; the marginalia
 	// derives its own from the same transcript).
 	const planTree = useMemo(() => latestTree(messages), [messages]);
+	// The session's vocabulary for the local dictation engine: its title and
+	// the plan's step names (the words a learner is likely to say here).
+	const dictationTerms = useMemo(() => [titleText, ...(planTree?.nodes.map((n) => n.title) ?? [])], [titleText, planTree]);
+	useDictationTerms(dictationTerms);
 
 	// ── Session usage (wave-4 stats bar) ──
 	// The money channel: the record's turns log and read-time server Pi
@@ -1662,8 +1720,8 @@ export function Chat({
 								onBlur={() => void commitRename(titleDraft)}
 								spellCheck={false}
 								data-plugin-chrome-title
-								aria-label="Session title"
-								title="Rename this session"
+								aria-label={t("session.titleAria")}
+								title={t("session.titleRename")}
 								className="lh-no-drag min-w-[8ch] max-w-[70%] shrink-0 bg-transparent font-title text-3xl tracking-tight caret-current outline-none [field-sizing:content]"
 							/>
 							{/* flex-1 spacer during rename too, so the chips stay at
@@ -1675,7 +1733,7 @@ export function Chat({
 					<>
 						<Hint
 							// F2 renames (registry) — surfaced on the hover.
-							label="Rename session"
+							label={t("common:shortcuts.rename-session")}
 							action="rename-session"
 							side="bottom"
 						>
@@ -1700,7 +1758,7 @@ export function Chat({
 					    structure beside the phase chip — access to the full-DAG popup
 					    at every width; the marginalia is the wide-screen glance view. */}
 					{planTree && (
-						<Hint label="Open the full plan" side="bottom">
+						<Hint label={t("session.planHint")} side="bottom">
 <button
 							type="button"
 							data-testid="plan-chip"
@@ -1711,7 +1769,7 @@ export function Chat({
 							className="lh-no-drag flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-border/80 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:border-border hover:text-foreground"
 						>
 							<WaypointsIcon className="size-3.5 text-primary" aria-hidden />
-							Plan
+							{t("session.planChip")}
 						</button>
 </Hint>
 					)}
@@ -1733,7 +1791,7 @@ export function Chat({
 							className="pointer-events-none flex shrink-0 select-none items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground"
 						>
 							<DumbbellIcon className="size-3" />
-							Practice
+							{t("session.practiceTag")}
 						</span>
 					) : (
 						<PhaseChip phase={phases.at(-1) ?? "probe"} />
@@ -1750,8 +1808,8 @@ export function Chat({
 						<div data-session-find-root="" className={`${COLUMN} flex flex-1 flex-col gap-4 pt-4`}>
 							{messages.length === 0 && !busy && (
 								<ConversationEmptyState
-									title="New session"
-									description="The teacher will open by probing what you already know."
+									title={t("session.emptyTitle")}
+									description={t("session.emptyDescription")}
 								/>
 							)}
 
@@ -1806,7 +1864,7 @@ export function Chat({
 														className="my-4 flex items-center justify-center gap-1.5 font-ui text-xs font-medium uppercase tracking-wide text-muted-foreground"
 													>
 														<ArrowRightIcon className="size-3" />
-														Next problem
+														{t("session.nextProblemLine")}
 													</div>
 												);
 											default:
@@ -1865,7 +1923,7 @@ export function Chat({
 												{/* The rail GROUPS (owner round 4, 2026-10-05): the YOU heading
 												    sits INSIDE the rail, same mono-xs register and same 1ch
 												    rail as the thinking rows — one quote geometry. */}
-												<div className="font-medium uppercase tracking-wide text-muted-foreground">You</div>
+												<div className="font-medium uppercase tracking-wide text-muted-foreground">{t("session.you")}</div>
 												<div className="lh-prose whitespace-pre-wrap text-foreground">
 													<PathText text={m.parts.filter((p) => p.type === "text").map((p) => p.text).join("\n")} />
 												</div>
@@ -1901,7 +1959,7 @@ export function Chat({
 												) {
 													return (
 														<SystemLine key={`retry-${pi}`} testId="tool-retry">
-															Retrying…
+															{t("session.retrying")}
 														</SystemLine>
 													);
 												}
@@ -1944,7 +2002,7 @@ export function Chat({
 													case "tool-recall": {
 														const malformed = !busy && malformedQuestions.find(call => call.messageId === part.sourceMessageId && call.contentIndex === part.sourceContentIndex && call.toolCallId === part.toolCallId);
 														if (malformed) return <MalformedQuestion key={pi} disabled={!!pending || compacting}
-															reason={pending ? "Answer or discard the remaining question first." : undefined}
+															reason={pending ? t("questionDock.retryBlocked") : undefined}
 															onRetry={() => {
 																draftRef.current = null;
 																void send({ type: "retry-question", messageId: malformed.messageId, contentIndex: malformed.contentIndex, toolCallId: malformed.toolCallId });
@@ -1998,20 +2056,20 @@ export function Chat({
 						    BEFORE beginTurn; the settle kick runs after endTurn). */}
 							{compacting && (
 								<span className="flex items-center gap-2 font-ui text-xs font-medium uppercase tracking-wide text-muted-foreground">
-									<BrailleSpinner label="Compacting context" />
-									<Shimmer duration={1}>COMPACTING CONTEXT…</Shimmer>
+									<BrailleSpinner label={t("session.compactingLabel")} />
+									<Shimmer duration={1}>{t("session.compacting")}</Shimmer>
 								</span>
 							)}
 							{(status === "submitted" || turnInFlight) && (
 								<PendingTurnIndicator evaluating={evaluating} />
 							)}
-							{openingError && <p role="alert" className="text-sm text-destructive">{OPENING_PROMPT_FAILURE}</p>}
+							{openingError && <p role="alert" className="text-sm text-destructive">{t("common:openingPromptFailure")}</p>}
 							{error && (
 								<div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm">
-									<span>Something went wrong: {error.message}</span>
+									<span>{t("errors.banner", { message: errorLine(error, t) })}</span>
 									{retryable && (
 										<Button variant="outline" size="xs" data-testid="retry-failed-turn" onClick={retryFailedTurn}>
-											Retry
+											{t("errors.retry")}
 										</Button>
 									)}
 								</div>
@@ -2042,7 +2100,7 @@ export function Chat({
 					onPreparePluginQuestion={preparePluginQuestion}
 					preparing={submissionRunner.occupied}
 					preparationStatus={<>
-						{preparationError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{preparationError}</p>}
+						{preparationError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{preparationLine(preparationError, t)}</p>}
 					</>}
 					pluginQuestion={pendingPlugin}
 					pluginDraft={pendingPlugin ? pluginQuestionDraft(pendingPlugin) : undefined}
@@ -2096,7 +2154,7 @@ export function Chat({
 										onClick={() => setSetupOpen(true)}
 										className="rounded-sm border border-border bg-card px-3 py-1.5 font-ui text-xs text-foreground transition-colors hover:border-muted-foreground/50 hover:bg-accent cursor-pointer"
 									>
-										Set up your models
+										{t("session.setupModels")}
 									</button>
 								</div>
 							)
@@ -2124,7 +2182,7 @@ export function Chat({
 							// applies.
 							nextProblem={nextReady}
 							onNext={sendNext}
-							placeholder={nextReady ? "Ask anything, or press Enter for the next one." : undefined}
+							placeholder={nextReady ? t("session.nextPlaceholder") : undefined}
 						/>
 					}
 					onSubmitAnswer={(output) => {
@@ -2480,6 +2538,7 @@ export function DockOverlay({
 	 *  home and /chat/new carry, above the composer while slots are unset. */
 	setupCta?: React.ReactNode;
 }) {
+	const { t } = useT("chat");
 	const controller = useOptionalInteractionLayers();
 	const { isAtBottom, scrollToBottom, scrollRef } = useStickToBottomContext();
 	// Render-fresh bottom state (flicker round): the arrival block below reads
@@ -2846,7 +2905,7 @@ export function DockOverlay({
 					<div ref={viewportRef} data-dock-viewport="" className="pointer-events-auto">
 					<div ref={bodyRef}>
 					{setupCta}
-					{reconciliation === "failed" && <div role="alert" className="mb-2 rounded-2xl border bg-card px-4 py-3 text-sm">Could not sync the saved session. <Button type="button" variant="ghost" onClick={onRetrySync}>Retry syncing</Button></div>}
+					{reconciliation === "failed" && <div role="alert" className="mb-2 rounded-2xl border bg-card px-4 py-3 text-sm">{t("errors.syncFailed")} <Button type="button" variant="ghost" onClick={onRetrySync}>{t("sync.retry")}</Button></div>}
 					{/* The queued-steer indicator (owner spec 2026-10-03): quiet
 					    one-liners above the shell - right-aligned to where its corner
 					    rounding starts, truncated, no background, no container. A
@@ -2888,8 +2947,8 @@ export function DockOverlay({
 								<PluginQuestionDock viewReader={customViewReader} snapshot={pluginQuestion} chatId={chatId} draft={pluginDraft} expanded={expanded} reveal={revealPending} onExpand={expandAndReveal} ready={pluginReady} available={pluginAvailable} reconciliation={reconciliation} readingRef={readingInputRef} onMicAvailable={onPluginMicAvailable} send={onPluginSend} dismiss={onPluginDismiss} prepareSubmission={onPreparePluginQuestion} />
 							) : unreadablePlugin ? (
 								<div className="px-4 py-3">
-									{reconciliation === "syncing" && <p role="status" className="text-sm text-muted-foreground">Preparing question…</p>}
-									{reconciliation === "ready" && <><p role="status" className="text-sm text-muted-foreground">Question unavailable</p><Button type="button" variant="ghost" disabled={!pluginReady} onClick={() => { void finishDictation().then(onPluginDismiss); }}>Dismiss question</Button></>}
+									{reconciliation === "syncing" && <p role="status" className="text-sm text-muted-foreground">{t("pluginQuestion.preparing")}</p>}
+									{reconciliation === "ready" && <><p role="status" className="text-sm text-muted-foreground">{t("pluginQuestion.unavailable")}</p><Button type="button" variant="ghost" disabled={!pluginReady} onClick={() => { void finishDictation().then(onPluginDismiss); }}>{t("pluginQuestion.dismiss")}</Button></>}
 								</div>
 							) : pending ? (
 								<QuestionDock
@@ -2974,7 +3033,7 @@ export function DockOverlay({
 				    mid-question unmount), and widening past the floor fades it
 				    back in. */}
 				{(pending || pluginQuestion) && plan && (
-					<Hint label="Open the full plan" side="bottom">
+					<Hint label={t("session.planHint")} side="bottom">
 <button
 						type="button"
 						data-testid="plan-marginalia"

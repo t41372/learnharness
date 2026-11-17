@@ -3,10 +3,11 @@
 import type { ReactNode } from "react";
 import { CheckIcon, ChevronRight } from "lucide-react";
 import { Hint } from "@/components/ui/hint";
+import { useT } from "@/components/i18n";
 
 /** Shared research/PDF completion grammar. The host owns the summary; only
  * the expanded body is replaceable by a plugin renderer. */
-export function WorkerResultDetails({ heading, children, icon = <CheckIcon className="size-3.5" />, testId, headerTestId, headerTooltip, disclosure = "labels", viewLabel = "view brief", hideLabel = "hide brief" }: {
+export function WorkerResultDetails({ heading, children, icon = <CheckIcon className="size-3.5" />, testId, headerTestId, headerTooltip, disclosure = "labels", viewLabel, hideLabel }: {
 	heading: ReactNode;
 	children: ReactNode;
 	icon?: ReactNode;
@@ -18,6 +19,7 @@ export function WorkerResultDetails({ heading, children, icon = <CheckIcon class
 	viewLabel?: string;
 	hideLabel?: string;
 }) {
+	const { t } = useT("artifacts");
 	const summary = (
 		<summary data-testid={headerTestId} className="relative flex cursor-pointer select-none list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
 			{icon}
@@ -25,8 +27,8 @@ export function WorkerResultDetails({ heading, children, icon = <CheckIcon class
 			{disclosure === "chevron" ? (
 				<ChevronRight aria-hidden="true" className="size-3 shrink-0 opacity-50 transition-transform group-open:rotate-90" />
 			) : <>
-				<span className="ml-1 text-xs text-muted-foreground/70 group-open:hidden">{viewLabel}</span>
-				<span className="ml-1 hidden text-xs text-muted-foreground/70 group-open:inline">{hideLabel}</span>
+				<span className="ml-1 text-xs text-muted-foreground/70 group-open:hidden">{viewLabel ?? t("steerCard.viewBrief")}</span>
+				<span className="ml-1 hidden text-xs text-muted-foreground/70 group-open:inline">{hideLabel ?? t("steerCard.hideBrief")}</span>
 			</>}
 		</summary>
 	);

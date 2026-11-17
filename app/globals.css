@@ -232,6 +232,22 @@ body {
 	line-height: 1.25;
 }
 
+/* The live dictation words (local engine, owner 2026-10-25): PathInput
+   paints its `data-dictation-preview` faded after the text — a pseudo-
+   element, so the words are never editable, selectable or part of the
+   value (the flush lands the final text once, when the run ends). The
+   empty field's placeholder gives way to them. Unlayered CSS beats the
+   utility layer's placeholder rule. */
+[contenteditable][data-dictation-preview]::before {
+	content: none;
+}
+[contenteditable][data-dictation-preview]::after {
+	content: attr(data-dictation-preview);
+	color: color-mix(in oklab, var(--color-muted-foreground) 60%, transparent);
+	pointer-events: none;
+	user-select: none;
+}
+
 /* Thin dark native scrollbar (app-wide): dark thumb, transparent track. */
 * {
 	scrollbar-width: thin;

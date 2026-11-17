@@ -70,6 +70,60 @@ export interface SessionRecordReadOptions {
 export interface PluginQuestionDraft { answer: PluginQuestionAnswerState; thinking: string; readingThinking: string }
 export type SessionStatus = "ready" | "submitted" | "streaming" | "error";
 
+/** The model's OWN failure lines (i18n wave, 2026-10-25): the English
+ *  `message` stays the state value (tests pin it; the refusal flow parses
+ *  server bodies out of it), and `code` (+ `status`) lets the banner say
+ *  the line in the interface language. Server, provider, and network text
+ *  carries no code and renders verbatim — except the model's own fixed
+ *  lines (the generic fallback, the dropped connection, the failed sync),
+ *  which are recognized word for word. */
+export type SessionErrorCode =
+	| "generic"
+	| "turnRunning"
+	| "attachFailed"
+	| "emptyStream"
+	| "streamDropped"
+	| "syncFailed"
+	| "sendFailed"
+	| "steerFailed"
+	| "dismissFailed"
+	| "pluginDismissFailed";
+
+export interface SessionError {
+	message: string;
+	code?: SessionErrorCode;
+	/** The HTTP status a "… failed (status)." line names. */
+	status?: number;
+}
+
+const GENERIC_ERROR = "An error occurred.";
+const STREAM_DROPPED = "The connection dropped before the turn completed.";
+const SYNC_FAILED = "Could not sync the saved session.";
+
+const FIXED_LINES: ReadonlyMap<string, SessionErrorCode> = new Map([
+	[GENERIC_ERROR, "generic"],
+	[STREAM_DROPPED, "streamDropped"],
+	[SYNC_FAILED, "syncFailed"],
+]);
+
+function sessionError(message: string, code?: SessionErrorCode, status?: number): SessionError {
+	const resolved = code ?? FIXED_LINES.get(message);
+	if (!resolved) return { message };
+	return status === undefined ? { message, code: resolved } : { message, code: resolved, status };
+}
+
+/** A coded failure thrown inside the model's own try blocks — the catch
+ *  keeps the code (a plain Error is server or network text). */
+class SessionFailure extends Error {
+	constructor(
+		message: string,
+		readonly code: SessionErrorCode,
+		readonly status?: number,
+	) {
+		super(message);
+	}
+}
+
 /** How often to poll turnInFlight while a racing turn runs (409 retry). */
 export const TURN_POLL_MS = 500;
 /** Give up waiting (a wake turn can run long) and surface the 409. */
@@ -113,8 +167,6 @@ async function turnInFlight(model: SessionModel): Promise<boolean | null> {
 		return null; // network hiccup: keep waiting, the deadline bounds us
 	}
 }
-
-const STREAM_DROPPED = "The connection dropped before the turn completed.";
 
 /** Mark transport failures without confusing JSON/application bugs with drops. */
 class StreamReadError extends Error {
@@ -225,7 +277,7 @@ export interface SessionState {
 	evaluating: boolean;
 	reconciliation: "ready" | "syncing" | "failed";
 	pluginQuestionAvailability?: PluginQuestionAvailability;
-	error: { message: string } | null;
+	error: SessionError | null;
 	/** Steers sent but not yet drained (composer steering, 2026-10-03):
 	 *  the queued indicator's truth. An entry dies when its id lands in
 	 *  the messages (the drain's verbatim events upsert the real card) —
@@ -315,7 +367,7 @@ export class SessionModel {
 	/** Presentation only; never changes admission, persistence or turn ownership. */
 	private evaluationOwner: AbortController | null = null;
 	/** Request/loop failures are transient; provider failures derive from messages. */
-	private errorValue: { message: string } | null = null;
+	private errorValue: SessionError | null = null;
 	/** Dismissing a banner must not authorize an automatic replacement turn. */
 	private automaticContinuationBlocked = false;
 	/** A completed failure from THIS consume, not the previous attempt's record. */
@@ -376,7 +428,7 @@ export class SessionModel {
 		const providerError =
 			latest !== undefined &&
 			!this.incompleteUsageIds.has(latest.id) && (!live || latest.id === this.liveFailureId)
-				? { message: latest.errorMessage ?? "An error occurred." }
+				? sessionError(latest.errorMessage ?? GENERIC_ERROR)
 				: null;
 		return {
 			messages: projectView(messages, live),
@@ -415,10 +467,17 @@ export class SessionModel {
 		this.onChange?.();
 	}
 
-	private setError(message: string | null): void {
-		this.errorValue = message === null ? null : { message };
+	private setError(message: string | null, code?: SessionErrorCode, status?: number): void {
+		this.errorValue = message === null ? null : sessionError(message, code, status);
 		if (message !== null) this.automaticContinuationBlocked = true;
 		this.onChange?.();
+	}
+
+	/** A caught failure: a SessionFailure keeps its code, anything else is
+	 *  raw text (or one of the model's fixed lines). */
+	private setFailure(err: unknown): void {
+		if (err instanceof SessionFailure) this.setError(err.message, err.code, err.status);
+		else this.setError((err as Error).message);
 	}
 
 	private invalidateCanonicalReads(): void { this.canonicalEpoch++; }
@@ -455,13 +514,13 @@ export class SessionModel {
 		if (!response.ok) {
 			const detail = await response.text();
 			if (options.tolerateHttpFailure) return undefined;
-			throw new Error(detail || "Could not sync the saved session.");
+			throw new Error(detail || SYNC_FAILED);
 		}
 		let text: string;
 		try { text = await response.text(); }
 		catch (error) { if (options.recoveringDrop && !options.signal?.aborted) throw new StreamReadError(error); throw error; }
 		const record = JSON.parse(text) as SessionRecordSnapshot;
-		if (!Array.isArray(record.messages)) throw new Error("Could not sync the saved session.");
+		if (!Array.isArray(record.messages)) throw new Error(SYNC_FAILED);
 		if (epoch !== this.canonicalEpoch || ticket < this.canonicalAcknowledged || options.signal?.aborted || options.isCurrent?.() === false) return undefined;
 		const mode = options.adoption ?? "replace";
 		// Returning undefined also prevents callers from certifying a deferred
@@ -542,11 +601,11 @@ export class SessionModel {
 		this.setStatus("submitted");
 		try {
 			const response = await this.fetch(`/api/chats/${encodeURIComponent(this.chatId)}/dismiss`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ input: { type: "dismiss-plugin-question", occurrence, ...(questionId ? { questionId } : {}) } }) });
-			if (!response.ok) throw new Error("The dismissal failed.");
+			if (!response.ok) throw new SessionFailure("The dismissal failed.", "pluginDismissFailed");
 			await response.text();
 			this.invalidateCanonicalReads();
 			await this.reconcile();
-		} catch (error) { this.setError((error as Error).message); }
+		} catch (error) { this.setFailure(error); }
 		finally { this.setStatus("ready"); }
 	}
 
@@ -596,7 +655,7 @@ export class SessionModel {
 		if (event.type === "error") {
 			// Loop-level failure (agent.continue threw outside the stream) —
 			// raw text (owner ruling, Wave D): the banner shows exactly this.
-			this.setError(String(event.errorText ?? "An error occurred."));
+			this.setError(String(event.errorText ?? GENERIC_ERROR));
 			return false;
 		}
 		const agent = event as unknown as AgentEvent;
@@ -712,7 +771,7 @@ export class SessionModel {
 	/** Consume one SSE body to its [DONE] terminal. The turn-settled
 	 *  terminal (stream-route only) fires the settle hook and ends. */
 	async consumeStream(res: Response, controller = this.consumeAbort, allowRecovery = true): Promise<void> {
-		if (!res.body) throw new Error("The turn stream body is empty.");
+		if (!res.body) throw new SessionFailure("The turn stream body is empty.", "emptyStream");
 		const reader = res.body.getReader();
 		let sawEvent = false;
 		let sawDone = false;
@@ -836,7 +895,10 @@ export class SessionModel {
 			}
 			const res = await this.fetchView(`/api/chats/${encodeURIComponent(this.chatId)}/stream`, controller.signal, !allowRecovery);
 			if (this.consumeAbort !== controller) return;
-			if (!res.ok) throw new Error((await res.text()) || "Failed to attach to the running turn.");
+			if (!res.ok) {
+				const body = await res.text();
+				throw body ? new Error(body) : new SessionFailure("Failed to attach to the running turn.", "attachFailed");
+			}
 			await this.consumeStream(res, controller, allowRecovery);
 		} catch (err) {
 			if (this.consumeAbort !== controller || controller.signal.aborted) return; // intentionally cancelled
@@ -847,7 +909,7 @@ export class SessionModel {
 				this.tail = this.tail.filter(m => !this.unconfirmedAnswers.has(m.id));
 				this.unconfirmedAnswers.clear();
 			});
-			this.setError(!allowRecovery && err instanceof StreamReadError ? STREAM_DROPPED : (err as Error).message);
+			this.setFailure(!allowRecovery && err instanceof StreamReadError ? new Error(STREAM_DROPPED) : err);
 			this.setStatus("error");
 		}
 	}
@@ -901,7 +963,7 @@ export class SessionModel {
 				if (this.consumeAbort !== controller || !record) return refused();
 				// No verified record/liveness: retain the draft and never guess
 				// whether a lost acknowledgement meant the input was accepted.
-				if (!Array.isArray(record.messages) || typeof record.turnInFlight !== "boolean") throw new Error("An error occurred.");
+				if (!Array.isArray(record.messages) || typeof record.turnInFlight !== "boolean") throw new Error(GENERIC_ERROR);
 				if (record.turnInFlight) {
 					settleDelivery();
 					await this.resumeStream(false);
@@ -971,21 +1033,22 @@ export class SessionModel {
 			}
 			if (res.status === 409) {
 				settleDelivery();
-				throw new Error("A turn is already running — try again in a moment.");
+				throw new SessionFailure("A turn is already running — try again in a moment.", "turnRunning");
 			}
 			if (!res.ok) {
 				settleDelivery();
 				// Keep model/key refusal envelopes verbatim: the page's refusal
 				// flow parses them. Retry's 400s are ordinary user-facing
 				// guidance, so show their error text without JSON syntax.
-				let message = (await res.text()) || `The send failed (${res.status}).`;
+				const body = await res.text();
+				let message = body || `The send failed (${res.status}).`;
 				if ((input.type === "retry" || input.type === "retry-question") && res.status === 400) {
 					try {
 						const refusal = JSON.parse(message) as { error?: unknown } | null;
 						if (typeof refusal?.error === "string" && refusal.error.length > 0) message = refusal.error;
 					} catch { /* Non-envelope failures keep their original text. */ }
 				}
-				throw new Error(message);
+				throw body ? new Error(message) : new SessionFailure(message, "sendFailed", res.status);
 			}
 			accepted = true;
 			// Acceptance fences reads belonging to THIS action, but a delayed
@@ -1032,7 +1095,7 @@ export class SessionModel {
 					for (const id of ids) this.unconfirmedAnswers.delete(id);
 				});
 			}
-			this.setError((err as Error).message);
+			this.setFailure(err);
 			this.setStatus("error");
 			if (imageBearing && !accepted && this.latestRequest === controller) {
 				// Refusal and lost acknowledgment both reconcile read-only. Canonical
@@ -1084,7 +1147,9 @@ export class SessionModel {
 			}
 			dropSteer();
 			settleDelivery();
-			this.setError((await res.text()) || `The steer failed (${res.status}).`);
+			const body = await res.text();
+			if (body) this.setError(body);
+			else this.setError(`The steer failed (${res.status}).`, "steerFailed", res.status);
 		} catch (err) {
 			dropSteer(); settleDelivery();
 			this.setError((err as Error).message);
@@ -1120,10 +1185,10 @@ export class SessionModel {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ input: { type: "dismiss", toolCallId, answer } }),
 			});
-			if (!res.ok) throw new Error(`The dismissal failed (${res.status}).`);
+			if (!res.ok) throw new SessionFailure(`The dismissal failed (${res.status}).`, "dismissFailed", res.status);
 			this.invalidateCanonicalReads();
 		} catch (err) {
-			this.setError((err as Error).message);
+			this.setFailure(err);
 		}
 	}
 
@@ -1143,10 +1208,10 @@ export class SessionModel {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ input: { type: "dismiss-problem", problemCallId } }),
 			});
-			if (!res.ok) throw new Error(`The dismissal failed (${res.status}).`);
+			if (!res.ok) throw new SessionFailure(`The dismissal failed (${res.status}).`, "dismissFailed", res.status);
 			this.invalidateCanonicalReads();
 		} catch (err) {
-			this.setError((err as Error).message);
+			this.setFailure(err);
 		}
 	}
 

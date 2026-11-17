@@ -35,6 +35,7 @@ import { CLAUDE_CODE_PROVIDER } from "./contracts/claude-code.ts";
 import type { ModelRole } from "../../config.ts";
 import type { ChatSettings } from "./contracts/chat.ts";
 import { isSearchEngineId, type SearchEngineId } from "./search.ts";
+import { isLanguageSetting, type LanguageSetting } from "./language.ts";
 import { isDictationLanguage, type DictationLanguage } from "./dictation.ts";
 import { parseFileAccessSettings, type FileAccessSettings } from "./file-access.ts";
 import { COLOR_OVERRIDE_KEYS, isThemeId, type AppearanceColorOverrides } from "./themes.ts";
@@ -340,11 +341,10 @@ export const ROLE_SLOT: Readonly<Record<ModelRole, ModelSlotName>> = {
 export interface GeneralSettings {
 	/** Automatic startup/24h update checks (default ON). Manual checks bypass this. */
 	autoUpdate?: boolean;
-}
-
-/** One app-wide dictation preference, shared by every composer. */
-export interface DictationSettings {
-	language?: DictationLanguage;
+	/** The interface language (i18n wave, 2026-10-25): a shipped language,
+	 *  or "system" (default) — follow the platform's preference
+	 *  (core/language.ts resolves it). */
+	language?: LanguageSetting;
 }
 
 /** Agent settings — everything about the non-conversation machinery. */
@@ -378,12 +378,58 @@ export interface AgentSettings {
 	 *  route); the switch is explicit so users keep a file on disk but run
 	 *  the source default to compare (owner decision 2026-09-19). */
 	prompts?: Record<string, boolean>;
+	/** The learner's instructions (agent-instructions wave, 2026-10-25):
+	 *  free text appended to EVERY agent's system prompt — the
+	 *  conversation agents, every sub-agent, extraction, compaction
+	 *  (src/agent/learner-instructions.ts). Absent/blank = nothing
+	 *  appended. Capped at LEARNER_INSTRUCTIONS_MAX_CHARS. */
+	instructions?: string;
 	/** Optional learner-source boundary, OFF when absent. ON with no folders
 	 *  refuses all learner-source reads. Paths are absolute or ~/ anchored;
 	 *  the current policy is read per new tool call/job start. Existing
 	 *  sensitive-location/credential denials always win, not a whole-data ban. */
 	fileAccess?: FileAccessSettings;
 }
+
+/** The dictation engines (local dictation, 2026-10-25): Deepgram in the
+ *  cloud (a key in Settings → Dictation), or Standard ASR on this device
+ *  (any engine plugin installed in the app's speech environment). */
+export const DICTATION_ENGINES = ["deepgram", "standard-asr"] as const;
+export type DictationEngine = (typeof DICTATION_ENGINES)[number];
+
+/** Dictation settings — which engine the Dictate button runs, and for
+ *  Standard ASR which model and language. Absent engine = Deepgram (the
+ *  engine dictation shipped with); absent language = "auto". */
+export interface DictationSettings {
+	engine?: DictationEngine;
+	/** The Standard ASR model key ("engine/model") — the selection survives
+	 *  engine switches, so flipping back to local keeps the model. */
+	model?: string;
+	/** A language the model declares selectable, or "auto". */
+	language?: string;
+}
+
+/** A Standard ASR model key: "engine/model" (the model part may be empty
+ *  for an engine's default preset, and may itself contain slashes). */
+export function isAsrModelKey(value: unknown): value is string {
+	return typeof value === "string" && value.length <= 200 && /^[a-z0-9][a-z0-9._-]*\/[^\s]*$/.test(value);
+}
+
+/** A language tag as Standard ASR declares them ("auto", "en", "zh-Hant"…). */
+export function isAsrLanguage(value: unknown): value is string {
+	return typeof value === "string" && /^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/.test(value);
+}
+
+/** Cloud choices use Nova-3's catalog; local plugins may declare language tags.
+ * Preserve the fork's legacy "auto" choice when reading existing records. */
+export function isDictationSettingLanguage(value: unknown, engine: unknown): value is string {
+	return engine === "standard-asr" || value === "auto" ? isAsrLanguage(value) : isDictationLanguage(value);
+}
+
+/** The longest learner-instruction text the record holds (the sanitizer
+ *  clamps to it, the PUT parser rejects past it): the text rides every
+ *  model call, so the bound is a cost guard. */
+export const LEARNER_INSTRUCTIONS_MAX_CHARS = 4000;
 
 /** Markdown-rendering knobs — the bare-bones set (owner decision). */
 export interface MdRenderingSettings {
@@ -516,7 +562,7 @@ export interface FactorySettings {
 	version: number;
 	agent: Required<Pick<AgentSettings, "workerRequestConcurrency">>;
 	general: Required<GeneralSettings>;
-	dictation: Required<DictationSettings>;
+	dictation: { language: DictationLanguage };
 	appearance: {
 		theme: string;
 		background: string | null;
@@ -538,7 +584,7 @@ export interface FactorySettings {
 export const FACTORY_SETTINGS: FactorySettings = {
 	version: CURRENT_SETTINGS_VERSION,
 	agent: { workerRequestConcurrency: 8 },
-	general: { autoUpdate: true },
+	general: { autoUpdate: true, language: "system" },
 	dictation: { language: "en" },
 	appearance: {
 		theme: "default",
@@ -586,6 +632,9 @@ function sanitizeGeneral(raw: Record<string, unknown>): GeneralSettings {
 	const out: GeneralSettings = {};
 	const autoUpdate = boolOrDrop(raw.autoUpdate);
 	if (autoUpdate !== undefined) out.autoUpdate = autoUpdate;
+	// An unknown language (a newer app's, a hand edit) drops — "system"
+	// resumes at resolution.
+	if (isLanguageSetting(raw.language)) out.language = raw.language;
 	return out;
 }
 
@@ -741,6 +790,9 @@ function sanitizeAgent(raw: Record<string, unknown>): AgentSettings {
 	if (tools) out.tools = tools;
 	const prompts = sanitizeBooleanMap(raw.prompts);
 	if (prompts) out.prompts = prompts;
+	// The learner's instructions: clamp-never-reject (an over-long disk
+	// value from a hand edit keeps its head; a non-string drops).
+	if (typeof raw.instructions === "string") out.instructions = raw.instructions.slice(0, LEARNER_INSTRUCTIONS_MAX_CHARS);
 	// Search preference: lenient read side (an unknown engine id drops;
 	// the write side's parser is strict — a stale client can't brick the
 	// record, it just loses the pin and auto-detection resumes).
@@ -807,6 +859,16 @@ function sanitizeAppearance(raw: Record<string, unknown>): AppearanceSettings {
 	return out;
 }
 
+function sanitizeDictation(raw: Record<string, unknown>): DictationSettings {
+	// Lenient read side (the write side's parser is strict): a bad field
+	// drops and its default resumes.
+	const out: DictationSettings = {};
+	if ((DICTATION_ENGINES as readonly unknown[]).includes(raw.engine)) out.engine = raw.engine as DictationEngine;
+	if (isAsrModelKey(raw.model)) out.model = raw.model;
+	if (isDictationSettingLanguage(raw.language, raw.engine)) out.language = raw.language;
+	return out;
+}
+
 function sanitizeGraph(raw: Record<string, unknown>): GraphSettings {
 	// Wave 7 collapse (owner ruling 2026-09-23): the section is the master
 	// switch ONLY. The dead rungs' keys (embedding/clustering/labeling/
@@ -865,13 +927,6 @@ export function sanitizeUserSettings(raw: unknown): UserSettings | null {
 	if (r.general !== null && typeof r.general === "object" && !Array.isArray(r.general)) {
 		out.general = sanitizeGeneral(r.general as Record<string, unknown>);
 	}
-	if (r.dictation !== undefined) {
-		const raw = r.dictation;
-		out.dictation = raw !== null && typeof raw === "object" && !Array.isArray(raw) &&
-			isDictationLanguage((raw as Record<string, unknown>).language)
-			? { language: (raw as DictationSettings).language }
-			: {};
-	}
 	if (r.claudeCode !== undefined) {
 		const raw = r.claudeCode;
 		out.claudeCode = raw !== null && typeof raw === "object" && !Array.isArray(raw)
@@ -896,6 +951,9 @@ export function sanitizeUserSettings(raw: unknown): UserSettings | null {
 	}
 	if (r.compaction !== undefined && r.compaction !== null && typeof r.compaction === "object") {
 		out.compaction = sanitizeCompaction(r.compaction as Record<string, unknown>);
+	}
+	if (r.dictation !== null && typeof r.dictation === "object" && !Array.isArray(r.dictation)) {
+		out.dictation = sanitizeDictation(r.dictation as Record<string, unknown>);
 	}
 	// Unknown top-level keys ride along untouched (forward-compat). One
 	// known-DEAD key is stripped instead of riding: `chat` (the old

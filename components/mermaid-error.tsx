@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n";
 import type { MermaidErrorComponentProps } from "streamdown";
 
 /**
@@ -16,7 +17,9 @@ export const MermaidError = ({
 	retry,
 	className,
 	displayOnly = false,
-}: MermaidErrorComponentProps & { className?: string; displayOnly?: boolean }) => (
+}: MermaidErrorComponentProps & { className?: string; displayOnly?: boolean }) => {
+	const { t } = useT("graph");
+	return (
 	<div
 		className={cn(
 			"my-4 rounded-xl border border-destructive/40 bg-destructive/5 p-4",
@@ -25,7 +28,7 @@ export const MermaidError = ({
 		data-streamdown="mermaid-error"
 	>
 		<p className="text-sm font-medium text-destructive">
-			Diagram failed to render
+			{t("mermaidError.title")}
 		</p>
 		<p className="mt-1 font-mono text-xs break-words text-muted-foreground">
 			{error}
@@ -36,14 +39,15 @@ export const MermaidError = ({
 			</pre>
 		) : <details className="mt-3">
 			<summary className="cursor-pointer text-xs text-muted-foreground">
-				Show diagram source
+				{t("mermaidError.showSource")}
 			</summary>
 			<pre className="mt-2 overflow-x-auto rounded-lg bg-muted p-3 font-mono text-xs text-foreground">
 				{chart}
 			</pre>
 		</details>}
 		{!displayOnly && <Button className="mt-3" onClick={retry} size="sm" variant="outline">
-			Retry
+			{t("mermaidError.retry")}
 		</Button>}
 	</div>
-);
+	);
+};
