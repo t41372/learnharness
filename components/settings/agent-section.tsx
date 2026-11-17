@@ -1090,7 +1090,7 @@ export function AgentSection({
 
 /** The hint under the instructions box (exported for the copy pin). */
 export const INSTRUCTIONS_HINT =
-	"Added to the end of every agent's instructions — the teacher, practice, research, demos, visuals and the knowledge graph. Applies from the next reply.";
+	"Added to the end of every agent's instructions — the teacher, practice, side questions, research, demos, visuals, the knowledge graph and plugins. Applies from the next reply.";
 
 /** The learner's-instructions editor: a draft over the stored text, saved
  *  explicitly. The draft is kept until the stored value catches up with it
