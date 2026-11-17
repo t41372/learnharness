@@ -28,7 +28,7 @@ import type {
 	ModelSlot,
 	RoleModelOverride,
 } from "../core/settings.ts";
-import { BACKGROUND_MODEL_ROLES, CACHE_RETENTIONS, COMPACTION_THRESHOLD_FLOOR, CUSTOM_MODEL_PIN_FLOOR, EXTRACTION_CHUNK_TOKENS_FLOOR, MODEL_SLOTS } from "../core/settings.ts";
+import { BACKGROUND_MODEL_ROLES, CACHE_RETENTIONS, COMPACTION_THRESHOLD_FLOOR, CUSTOM_MODEL_PIN_FLOOR, EXTRACTION_CHUNK_TOKENS_FLOOR, LEARNER_INSTRUCTIONS_MAX_CHARS, MODEL_SLOTS } from "../core/settings.ts";
 import { WRITABLE_TOOL_KEYS } from "../core/pending.ts";
 import { isSearchEngineId, SEARCH_ENGINES } from "../core/search.ts";
 import { isDictationLanguage } from "../core/dictation.ts";
@@ -217,6 +217,15 @@ export function parseAgentSettingsBody(body: unknown): SettingsBodyResult<AgentS
 			return { ok: false, error: "graphTools.enabled must be a boolean" };
 		}
 		settings.graphTools = graphTools.enabled === undefined ? {} : { enabled: graphTools.enabled };
+	}
+	// The learner's instructions (2026-10-25): a string within the cap;
+	// blank stores nothing (absence IS the unset).
+	if (raw.instructions !== undefined) {
+		if (typeof raw.instructions !== "string") return { ok: false, error: "instructions must be a string" };
+		if (raw.instructions.length > LEARNER_INSTRUCTIONS_MAX_CHARS) {
+			return { ok: false, error: `instructions must be at most ${LEARNER_INSTRUCTIONS_MAX_CHARS} characters` };
+		}
+		if (raw.instructions.trim()) settings.instructions = raw.instructions;
 	}
 	if (raw.fileAccess !== undefined) {
 		const parsed = parseFileAccessSettings(raw.fileAccess);

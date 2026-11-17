@@ -82,8 +82,14 @@ export function createPluginInference(
 	const dependencies = (): Promise<PluginInferenceDeps> => {
 		check(signal);
 		if (injected) return Promise.resolve(injected);
-		return defaults ??= Promise.all([import("./model-catalog.ts"), import("../agent/models.ts"), import("./keys.ts")]).then(([catalog, models, keys]) => ({
-			catalog: catalog.modelCatalog, providerKeyPresent: keys.providerKeyPresent, engineForSpec: models.piEngineForSpec,
+		return defaults ??= Promise.all([
+			import("./model-catalog.ts"), import("../agent/models.ts"), import("./keys.ts"), import("../agent/learner-instructions.ts"), import("./stores.ts"),
+		]).then(([catalog, models, keys, learner, stores]) => ({
+			catalog: catalog.modelCatalog, providerKeyPresent: keys.providerKeyPresent,
+			// Plugin agents write what the learner reads too: their engines carry
+			// the learner's instructions, read fresh per engine (agent-instructions wave).
+			engineForSpec: (model, background, lifecycle) =>
+				learner.withLearnerInstructions(models.piEngineForSpec(model, background, lifecycle), stores.effectiveSettings().agent.instructions),
 		}));
 	};
 	const catalog = async (caller = signal) => {
