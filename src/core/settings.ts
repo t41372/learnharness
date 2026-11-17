@@ -373,6 +373,12 @@ export interface AgentSettings {
 	 *  route); the switch is explicit so users keep a file on disk but run
 	 *  the source default to compare (owner decision 2026-09-19). */
 	prompts?: Record<string, boolean>;
+	/** The learner's instructions (agent-instructions wave, 2026-10-25):
+	 *  free text appended to EVERY agent's system prompt — the
+	 *  conversation agents, every sub-agent, extraction, compaction
+	 *  (src/agent/learner-instructions.ts). Absent/blank = nothing
+	 *  appended. Capped at LEARNER_INSTRUCTIONS_MAX_CHARS. */
+	instructions?: string;
 	/** Optional learner-source boundary, OFF when absent. ON with no folders
 	 *  refuses all learner-source reads. Paths are absolute or ~/ anchored;
 	 *  the current policy is read per new tool call/job start. Existing
@@ -414,6 +420,11 @@ export function isAsrLanguage(value: unknown): value is string {
 export function isDictationSettingLanguage(value: unknown, engine: unknown): value is string {
 	return engine === "standard-asr" || value === "auto" ? isAsrLanguage(value) : isDictationLanguage(value);
 }
+
+/** The longest learner-instruction text the record holds (the sanitizer
+ *  clamps to it, the PUT parser rejects past it): the text rides every
+ *  model call, so the bound is a cost guard. */
+export const LEARNER_INSTRUCTIONS_MAX_CHARS = 4000;
 
 /** Markdown-rendering knobs — the bare-bones set (owner decision). */
 export interface MdRenderingSettings {
@@ -771,6 +782,9 @@ function sanitizeAgent(raw: Record<string, unknown>): AgentSettings {
 	if (tools) out.tools = tools;
 	const prompts = sanitizeBooleanMap(raw.prompts);
 	if (prompts) out.prompts = prompts;
+	// The learner's instructions: clamp-never-reject (an over-long disk
+	// value from a hand edit keeps its head; a non-string drops).
+	if (typeof raw.instructions === "string") out.instructions = raw.instructions.slice(0, LEARNER_INSTRUCTIONS_MAX_CHARS);
 	// Search preference: lenient read side (an unknown engine id drops;
 	// the write side's parser is strict — a stale client can't brick the
 	// record, it just loses the pin and auto-detection resumes).

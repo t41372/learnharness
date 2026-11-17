@@ -81,7 +81,7 @@ A matching successful `probe_done` result selects the teacher and queues a fresh
 
 Practice uses the same turn/persistence/recovery path, not a separate problem-set service. [`tools/practice.ts`](../src/agent/tools/practice.ts) commits a statement and solution with `problem`; `conclude` records the outcome and reveals that solution. A turn-scoped gate enforces one active problem. The post-conclusion pause is doctrine, not a terminating `conclude` result. Next adds an explicit marker. Practice outcomes are session evidence, not graph mastery; ordinary practice settlement skips extraction.
 
-[Prompt composition](../src/agent/prompts/README.md) and [tool-content display recovery](tool-content-recovery.md) have separate references. Plugins can add bounded question/problem types without replacing builtins; see [Trusted local plugins](#trusted-local-plugins-api-v1).
+[Prompt composition](../src/agent/prompts/README.md) and [tool-content display recovery](tool-content-recovery.md) have separate references. The learner's own instructions (Settings → Agent, `agent.instructions`) are not part of that composition: [`withLearnerInstructions`](../src/agent/learner-instructions.ts) wraps every engine the server builds, so each request — conversation, side question, compaction and background worker — carries them as a named system section. Plugins can add bounded question/problem types without replacing builtins; see [Trusted local plugins](#trusted-local-plugins-api-v1).
 
 ## Background work
 

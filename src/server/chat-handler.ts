@@ -7,6 +7,7 @@ import {
 	type TeachingAgent,
 } from "../agent/teacher-agent.ts";
 import { piEngineForSpec, type PiEngine } from "../agent/models.ts";
+import { appendLearnerInstructions, withLearnerInstructions } from "../agent/learner-instructions.ts";
 import { connectionBackgroundAllowed as subscriptionBackgroundAllowed, connectionScopeCurrent, isSubscriptionProvider } from "../agent/subscription-connections.ts";
 import { nativeSubscriptionError } from "../agent/subscription-stream.ts";
 import { chatGPTStreamError } from "../agent/chatgpt-stream.ts";
@@ -165,7 +166,9 @@ setTurnRunner(async (chatId, input) => {
  *  FRESH so a settings PUT between dispatch and spawn lands. */
 function resolveEngine(role: ModelRole): PiEngine | undefined {
 	const spec = resolveRoleSpec(role, stores.settingsStore.readSettings());
-	return spec ? piEngineForSpec(spec, true, undefined, retentionForSlot(ROLE_SLOT[role])) : undefined;
+	// The learner's instructions ride every background agent's calls too
+	// (agent-instructions wave, 2026-10-25) — read fresh with the spec.
+	return spec ? withLearnerInstructions(piEngineForSpec(spec, true, undefined, retentionForSlot(ROLE_SLOT[role])), effectiveSettings().agent.instructions) : undefined;
 }
 
 /** Slot policy is independent of model overrides. Read fresh per operation,
@@ -333,11 +336,15 @@ export async function handleChatInput(
 		beforeDispatch: (scope) => { requestCycle?.beforeDispatch(scope); admitSideContext(); },
 		noDispatch: (kind) => requestCycle?.noDispatch(kind),
 	};
+	// The learner's instructions (agent-instructions wave, 2026-10-25): the
+	// ONE seam every agent shares is its engine — every engine this turn
+	// builds (conversation, compaction) carries them.
+	const instructions = effective.agent.instructions;
 	let conversationEngine: PiEngine;
 	let compactionEngine: PiEngine;
 	try {
-		conversationEngine = piEngineForSpec(conversation, () => callPurpose.background, lifecycle, retentionForSlot("strong"));
-		compactionEngine = piEngineForSpec(conversation, true, undefined, retentionForSlot("strong"));
+		conversationEngine = withLearnerInstructions(piEngineForSpec(conversation, () => callPurpose.background, lifecycle, retentionForSlot("strong")), instructions);
+		compactionEngine = withLearnerInstructions(piEngineForSpec(conversation, true, undefined, retentionForSlot("strong")), instructions);
 	}
 	catch { return Response.json({ error: conversation.provider === "chatgpt" ? chatGPTStreamError("model catalog") : isSubscriptionProvider(conversation.provider) ? nativeSubscriptionError(conversation.provider, "model catalog") : "The selected model is unavailable." }, { status: 503 }); }
 	const capturedPolicy = submissionImagePolicyKey(conversationEngine);
@@ -364,7 +371,7 @@ export async function handleChatInput(
 	const modelIdForCompaction = `${conversationEngine.model.provider}:${conversationEngine.model.id}`;
 	const contextWindow = catalogContextLimits().get(modelIdForCompaction);
 	const thresholdTokens = effectiveThresholdTokens(effective.compaction?.thresholdTokens, contextWindow);
-	const systemPromptTokens = Math.ceil(composeInstructions(record.kind === "practice" ? "practice" : "teacher").length / 4);
+	const systemPromptTokens = Math.ceil(appendLearnerInstructions(composeInstructions(record.kind === "practice" ? "practice" : "teacher"), instructions).length / 4);
 	const estimateModel = effective.compaction.includeReasoning ? conversationEngine.model : undefined;
 	const fitsSideContext = (messages: readonly LhMessage[]) => {
 		const live = messages.filter((message) => (message as { role: string }).role !== "system");
@@ -928,7 +935,7 @@ export async function handleChatInput(
 						const spec = resolveConversationSpec(stores.chatStore.getChat(chatId)?.settings, fresh.models.strong);
 						if (!spec || !connectionBackgroundAllowed(spec.provider)) return null;
 						let kickEngine: PiEngine;
-						try { kickEngine = piEngineForSpec(spec, true, undefined, retentionForSlot("strong")); } catch { return null; }
+						try { kickEngine = withLearnerInstructions(piEngineForSpec(spec, true, undefined, retentionForSlot("strong")), fresh.agent.instructions); } catch { return null; }
 						const kickModelId = `${kickEngine.model.provider}:${kickEngine.model.id}`;
 						const freshRecord = stores.chatStore.getChat(chatId);
 						if (!freshRecord) return null;
@@ -943,7 +950,7 @@ export async function handleChatInput(
 								fresh.compaction?.thresholdTokens,
 								catalogContextLimits().get(kickModelId),
 							),
-							systemPromptTokens: Math.ceil(composeInstructions(freshRecord.kind === "practice" ? "practice" : "teacher").length / 4),
+							systemPromptTokens: Math.ceil(appendLearnerInstructions(composeInstructions(freshRecord.kind === "practice" ? "practice" : "teacher"), fresh.agent.instructions).length / 4),
 						};
 					}, chatId);
 			},
