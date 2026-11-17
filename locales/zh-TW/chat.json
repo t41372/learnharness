@@ -174,19 +174,17 @@
 		"branchPage": "{{current}} / {{total}}"
 	},
 	"attachments": {
-		"choose": "加入附件",
-		"supported": "圖片、PDF、文字或程式碼 · 最多 10 個檔案 · 每檔 20 MB",
-		"tooMany": "每則訊息最多可附加 10 個檔案。",
-		"tooLarge": "每個附件必須小於或等於 20 MB。",
-		"failed": "上傳失敗，請檢查檔案類型後再試一次。",
-		"retry": "再試一次",
-		"uploading": "正在上傳…",
+		"attachImages": "加入圖片",
+		"dropImages": "拖放到這裡以加入圖片",
+		"staged": "待傳送的圖片",
+		"preview": "待傳送的圖片：{{name}}",
 		"remove": "移除 {{name}}",
-		"download": "下載",
-		"close": "關閉預覽",
-		"loading": "正在載入預覽…",
-		"previewError": "無法預覽此檔案，你仍可下載檔案。",
-		"previewTruncated": "預覽已縮短，下載檔案可查看完整內容。"
+		"tooMany": "每個輸入框最多 10 張圖片，這張圖片不會傳送。",
+		"tooLarge": "超過 20 MB，這張圖片不會傳送。",
+		"unsupported": "只能傳送 PNG、JPEG、GIF 和 WebP 圖片。",
+		"unreadable": "無法讀取這張圖片。",
+		"overBudget": "一次傳送的圖片資料過多，這張圖片不會傳送。請先傳送其他圖片。",
+		"noTarget": "請先開啟一個對話，再加入圖片。"
 	},
 	"sync": {
 		"retry": "重新同步"

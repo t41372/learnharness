@@ -174,19 +174,17 @@
 		"branchPage": "{{current}} / {{total}}"
 	},
 	"attachments": {
-		"choose": "添加附件",
-		"supported": "图片、PDF、文本或代码 · 最多 10 个文件 · 每个 20 MB",
-		"tooMany": "每条消息最多可附加 10 个文件。",
-		"tooLarge": "每个附件必须小于或等于 20 MB。",
-		"failed": "上传失败，请检查文件类型后重试。",
-		"retry": "重试",
-		"uploading": "正在上传…",
+		"attachImages": "添加图片",
+		"dropImages": "拖放到这里以添加图片",
+		"staged": "待发送的图片",
+		"preview": "待发送的图片：{{name}}",
 		"remove": "移除 {{name}}",
-		"download": "下载",
-		"close": "关闭预览",
-		"loading": "正在加载预览…",
-		"previewError": "无法预览此文件，你仍可下载文件。",
-		"previewTruncated": "预览已缩短，下载文件可查看完整内容。"
+		"tooMany": "每个输入框最多 10 张图片，这张图片不会发送。",
+		"tooLarge": "超过 20 MB，这张图片不会发送。",
+		"unsupported": "只能发送 PNG、JPEG、GIF 和 WebP 图片。",
+		"unreadable": "无法读取这张图片。",
+		"overBudget": "一次发送的图片数据过多，这张图片不会发送。请先发送其他图片。",
+		"noTarget": "请先打开一个会话，再添加图片。"
 	},
 	"sync": {
 		"retry": "重新同步"
